@@ -76,6 +76,21 @@ export {
 	scaffoldFeatureWithContext,
 } from "./features/numbering";
 export { generateTestStubs } from "./features/test-stubs";
+// Feedback
+export {
+	type FeedbackRecord,
+	getFeedbackSummary,
+	recordFeedback,
+} from "./feedback/collector";
+export {
+	acknowledgeFinding,
+	dismissFinding,
+	getNoisyRules,
+	loadPreferences,
+	type Preferences,
+	type RulePreference,
+	savePreferences,
+} from "./feedback/preferences";
 // Git
 export {
 	type Commit,
