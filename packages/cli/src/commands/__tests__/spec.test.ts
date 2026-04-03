@@ -85,6 +85,10 @@ afterEach(() => {
 function createMockDeps(overrides?: Partial<SpecDepsType>): SpecDepsType {
 	return {
 		getCurrentBranch: async (_cwd: string) => mockCurrentBranch,
+		runTests: async (_testPath: string, _cwd: string) => ({
+			passCount: 0,
+			failCount: 3,
+		}),
 		...overrides,
 	};
 }
@@ -444,5 +448,89 @@ describe("specAction", () => {
 
 		expect(result.generated).toBe(true);
 		expect(result.outputPath).toBe(join(featureDir, "spec-tests.ts"));
+	});
+
+	// ── Red-green enforcement tests ─────────────────────────────────────────
+
+	test("red-green verified when all stubs fail", async () => {
+		const featureDir = join(tmpDir, ".maina", "features", "001-user-auth");
+		mkdirSync(featureDir, { recursive: true });
+		writeFileSync(
+			join(featureDir, "plan.md"),
+			`## Tasks\n\n- T001: Implement login\n`,
+		);
+
+		const result = await specAction(
+			{ featureDir, cwd: tmpDir },
+			createMockDeps({
+				runTests: async () => ({ passCount: 0, failCount: 3 }),
+			}),
+		);
+
+		expect(result.generated).toBe(true);
+		expect(result.redPhaseVerified).toBe(true);
+		expect(result.redGreenWarning).toBeUndefined();
+	});
+
+	test("warning when stubs pass immediately", async () => {
+		const featureDir = join(tmpDir, ".maina", "features", "001-user-auth");
+		mkdirSync(featureDir, { recursive: true });
+		writeFileSync(
+			join(featureDir, "plan.md"),
+			`## Tasks\n\n- T001: Implement login\n- T002: Add logout\n`,
+		);
+
+		const result = await specAction(
+			{ featureDir, cwd: tmpDir },
+			createMockDeps({
+				runTests: async () => ({ passCount: 2, failCount: 4 }),
+			}),
+		);
+
+		expect(result.generated).toBe(true);
+		expect(result.redPhaseVerified).toBe(false);
+		expect(result.redGreenWarning).toContain("2 stub(s) passed immediately");
+	});
+
+	test("red-green skipped when noRedGreen option is true", async () => {
+		const featureDir = join(tmpDir, ".maina", "features", "001-user-auth");
+		mkdirSync(featureDir, { recursive: true });
+		writeFileSync(
+			join(featureDir, "plan.md"),
+			`## Tasks\n\n- T001: Implement login\n`,
+		);
+
+		const result = await specAction(
+			{ featureDir, cwd: tmpDir, noRedGreen: true },
+			createMockDeps({
+				runTests: async () => ({ passCount: 0, failCount: 3 }),
+			}),
+		);
+
+		expect(result.generated).toBe(true);
+		expect(result.redPhaseVerified).toBeUndefined();
+		expect(result.redGreenWarning).toBeUndefined();
+	});
+
+	test("red-green check failure does not block spec generation", async () => {
+		const featureDir = join(tmpDir, ".maina", "features", "001-user-auth");
+		mkdirSync(featureDir, { recursive: true });
+		writeFileSync(
+			join(featureDir, "plan.md"),
+			`## Tasks\n\n- T001: Implement login\n`,
+		);
+
+		const result = await specAction(
+			{ featureDir, cwd: tmpDir },
+			createMockDeps({
+				runTests: async () => {
+					throw new Error("bun test not found");
+				},
+			}),
+		);
+
+		expect(result.generated).toBe(true);
+		expect(result.redPhaseVerified).toBeUndefined();
+		expect(result.redGreenWarning).toBeUndefined();
 	});
 });
