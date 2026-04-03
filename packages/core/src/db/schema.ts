@@ -51,6 +51,26 @@ export const feedback = sqliteTable("feedback", {
 	createdAt: text("created_at").notNull(),
 });
 
+export const commitSnapshots = sqliteTable("commit_snapshots", {
+	id: text("id").primaryKey(),
+	timestamp: text("timestamp").notNull(),
+	branch: text("branch").notNull(),
+	commitHash: text("commit_hash").notNull(),
+	verifyDurationMs: integer("verify_duration_ms").notNull(),
+	totalDurationMs: integer("total_duration_ms").notNull(),
+	contextTokens: integer("context_tokens").notNull(),
+	contextBudget: integer("context_budget").notNull(),
+	contextUtilization: real("context_utilization").notNull(),
+	cacheHits: integer("cache_hits").notNull(),
+	cacheMisses: integer("cache_misses").notNull(),
+	findingsTotal: integer("findings_total").notNull(),
+	findingsErrors: integer("findings_errors").notNull(),
+	findingsWarnings: integer("findings_warnings").notNull(),
+	toolsRun: integer("tools_run").notNull(),
+	syntaxPassed: integer("syntax_passed", { mode: "boolean" }).notNull(),
+	pipelinePassed: integer("pipeline_passed", { mode: "boolean" }).notNull(),
+});
+
 export const promptVersions = sqliteTable("prompt_versions", {
 	id: text("id").primaryKey(),
 	task: text("task").notNull(),
