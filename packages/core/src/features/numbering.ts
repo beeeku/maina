@@ -8,27 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Result } from "../db/index";
-
-/**
- * Convert a string to kebab-case.
- * Handles: spaces, camelCase, PascalCase, underscores.
- */
-function toKebabCase(input: string): string {
-	return (
-		input
-			// Insert hyphen before uppercase letters in camelCase/PascalCase
-			.replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-			// Replace spaces, underscores, and multiple hyphens with single hyphen
-			.replace(/[\s_]+/g, "-")
-			// Remove non-alphanumeric characters except hyphens
-			.replace(/[^a-z0-9-]/gi, "")
-			// Collapse multiple hyphens
-			.replace(/-+/g, "-")
-			// Trim leading/trailing hyphens
-			.replace(/^-|-$/g, "")
-			.toLowerCase()
-	);
-}
+import { toKebabCase } from "../utils";
 
 /**
  * Extract numeric prefix from a feature directory name.

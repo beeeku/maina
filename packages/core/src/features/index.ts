@@ -9,3 +9,4 @@ export {
 	scaffoldFeature,
 	scaffoldFeatureWithContext,
 } from "./numbering";
+export { generateTestStubs } from "./test-stubs";

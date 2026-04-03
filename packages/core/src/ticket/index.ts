@@ -74,44 +74,45 @@ export function detectModules(
 		const dbResult = getContextDb(mainaDir);
 		if (!dbResult.ok) return [];
 
-		const { db } = dbResult.value;
+		const db = dbResult.value.db;
+		try {
+			// Get all unique module names from semantic entities
+			const rows = db
+				.prepare("SELECT DISTINCT file_path FROM semantic_entities")
+				.all() as Array<{ file_path: string }>;
 
-		// Get all unique module names from semantic entities
-		const rows = db
-			.prepare("SELECT DISTINCT file_path FROM semantic_entities")
-			.all() as Array<{ file_path: string }>;
+			if (rows.length === 0) {
+				return [];
+			}
 
-		if (rows.length === 0) {
+			// Extract module names from file paths (first dir after src/)
+			const moduleSet = new Set<string>();
+			for (const row of rows) {
+				const match = row.file_path.match(/(?:^|\/)?src\/([^/]+)\//);
+				if (match?.[1]) {
+					moduleSet.add(match[1]);
+				}
+			}
+
+			// Build keywords from title + body (lowercase, split by non-alpha)
+			const text = `${title} ${body}`.toLowerCase();
+			const keywords = text.split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+
+			// Match modules against keywords
+			const matched: string[] = [];
+			for (const mod of moduleSet) {
+				const modLower = mod.toLowerCase();
+				if (
+					keywords.some((kw) => modLower.includes(kw) || kw.includes(modLower))
+				) {
+					matched.push(mod);
+				}
+			}
+
+			return [...new Set(matched)];
+		} finally {
 			db.close();
-			return [];
 		}
-
-		// Extract module names from file paths (first dir after src/)
-		const moduleSet = new Set<string>();
-		for (const row of rows) {
-			const match = row.file_path.match(/(?:^|\/)?src\/([^/]+)\//);
-			if (match?.[1]) {
-				moduleSet.add(match[1]);
-			}
-		}
-
-		// Build keywords from title + body (lowercase, split by non-alpha)
-		const text = `${title} ${body}`.toLowerCase();
-		const keywords = text.split(/[^a-z0-9]+/).filter((w) => w.length > 2);
-
-		// Match modules against keywords
-		const matched: string[] = [];
-		for (const mod of moduleSet) {
-			const modLower = mod.toLowerCase();
-			if (
-				keywords.some((kw) => modLower.includes(kw) || kw.includes(modLower))
-			) {
-				matched.push(mod);
-			}
-		}
-
-		db.close();
-		return [...new Set(matched)];
 	} catch {
 		return [];
 	}

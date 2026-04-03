@@ -10,6 +10,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import type { Result } from "../db/index";
+import { extractAcceptanceCriteria } from "../utils";
 
 export interface VerificationReport {
 	passed: boolean;
@@ -20,41 +21,6 @@ export interface CheckResult {
 	name: string;
 	passed: boolean;
 	details: string[];
-}
-
-/**
- * Extract the content under `## Acceptance criteria` from a spec file.
- * Returns individual criterion lines (trimmed, without leading `- ` or `- [ ] `).
- */
-function extractAcceptanceCriteria(specContent: string): string[] {
-	const lines = specContent.split("\n");
-	const criteria: string[] = [];
-	let inSection = false;
-
-	for (const line of lines) {
-		const trimmed = line.trim();
-
-		// Detect start of acceptance criteria section (case-insensitive)
-		if (/^##\s+acceptance\s+criteria/i.test(trimmed)) {
-			inSection = true;
-			continue;
-		}
-
-		// Stop at next heading
-		if (inSection && /^##\s/.test(trimmed)) {
-			break;
-		}
-
-		if (inSection && trimmed.startsWith("-")) {
-			// Strip leading `- `, `- [ ] `, `- [x] `
-			const content = trimmed.replace(/^-\s*(\[.\]\s*)?/, "").trim();
-			if (content.length > 0) {
-				criteria.push(content);
-			}
-		}
-	}
-
-	return criteria;
 }
 
 /**

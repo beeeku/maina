@@ -1,4 +1,4 @@
-import { getApiKey } from "../config/index";
+import { tryAIGenerate } from "./try-generate";
 
 /**
  * Generate a conventional commit message from a diff using AI.
@@ -11,33 +11,17 @@ export async function generateCommitMessage(
 	stagedFiles: string[],
 	mainaDir: string,
 ): Promise<string | null> {
-	const apiKey = getApiKey();
-	if (!apiKey) return null;
+	const aiResult = await tryAIGenerate(
+		"commit",
+		mainaDir,
+		{ diff, files: stagedFiles.join(", ") },
+		`Generate a conventional commit message for this diff:\n\n${diff}\n\nFiles: ${stagedFiles.join(", ")}`,
+	);
 
-	try {
-		const { buildSystemPrompt } = await import("../prompts/engine");
-		const { generate } = await import("./index");
-
-		const builtPrompt = await buildSystemPrompt("commit", mainaDir, {
-			diff,
-			files: stagedFiles.join(", "),
-		});
-
-		const result = await generate({
-			task: "commit",
-			systemPrompt: builtPrompt.prompt,
-			userPrompt: `Generate a conventional commit message for this diff:\n\n${diff}\n\nFiles: ${stagedFiles.join(", ")}`,
-			files: stagedFiles,
-			mainaDir,
-		});
-
-		if (result.text && !result.text.includes("API key")) {
-			// Clean up: extract first line as commit message
-			const firstLine = result.text.trim().split("\n")[0] ?? "";
-			return firstLine.replace(/^["'`]|["'`]$/g, "").trim() || null;
-		}
-	} catch {
-		// AI failure returns null -- fall back to manual
+	if (aiResult.text) {
+		// Clean up: extract first line as commit message
+		const firstLine = aiResult.text.trim().split("\n")[0] ?? "";
+		return firstLine.replace(/^["'`]|["'`]$/g, "").trim() || null;
 	}
 
 	return null;

@@ -1,5 +1,4 @@
-import { join } from "node:path";
-import { initDatabase } from "../db/index.ts";
+import { getContextDb } from "../db/index.ts";
 
 export interface EpisodicEntry {
 	id: string;
@@ -43,8 +42,7 @@ function rowToEntry(row: EpisodicRow): EpisodicEntry {
  * Never throws — returns null on failure.
  */
 function openDb(mainaDir: string) {
-	const dbPath = join(mainaDir, "context", "index.db");
-	const result = initDatabase(dbPath);
+	const result = getContextDb(mainaDir);
 	if (!result.ok) return null;
 	return result.value.db;
 }

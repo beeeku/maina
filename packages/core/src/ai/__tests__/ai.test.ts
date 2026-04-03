@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	test,
+} from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,12 +16,44 @@ import { generate } from "../index";
 
 const TEST_DIR = join(tmpdir(), `maina-ai-test-${Date.now()}`);
 
+/** Env vars that can trigger host-mode delegation or provide API keys. */
+const HOST_ENV_VARS = [
+	"MAINA_API_KEY",
+	"OPENROUTER_API_KEY",
+	"ANTHROPIC_API_KEY",
+	"CLAUDECODE",
+	"CLAUDE_CODE_ENTRYPOINT",
+	"CURSOR",
+	"MAINA_HOST_MODE",
+] as const;
+
+/** Saved env values restored after each test. */
+let savedEnv: Record<string, string | undefined> = {};
+
 beforeAll(() => {
 	mkdirSync(TEST_DIR, { recursive: true });
 });
 
 afterAll(() => {
 	rmSync(TEST_DIR, { recursive: true, force: true });
+});
+
+beforeEach(() => {
+	savedEnv = {};
+	for (const key of HOST_ENV_VARS) {
+		savedEnv[key] = process.env[key];
+	}
+});
+
+afterEach(() => {
+	for (const key of HOST_ENV_VARS) {
+		const original = savedEnv[key];
+		if (original !== undefined) {
+			process.env[key] = original;
+		} else {
+			delete process.env[key];
+		}
+	}
 });
 
 function makeDir(sub: string): string {
@@ -60,11 +100,10 @@ describe("generate — cache hit", () => {
 
 describe("generate — no API key", () => {
 	test("returns helpful error message when no API key is set", async () => {
-		// Ensure env vars are unset for this test
-		const originalMaina = process.env.MAINA_API_KEY;
-		const originalOpenRouter = process.env.OPENROUTER_API_KEY;
-		delete process.env.MAINA_API_KEY;
-		delete process.env.OPENROUTER_API_KEY;
+		// Clear ALL env vars that could provide keys or trigger host delegation
+		for (const key of HOST_ENV_VARS) {
+			delete process.env[key];
+		}
 
 		const mainaDir = makeDir("no-api-key");
 
@@ -74,11 +113,6 @@ describe("generate — no API key", () => {
 			userPrompt: "Review this code: const x = 1;",
 			mainaDir,
 		});
-
-		// Restore env vars
-		if (originalMaina !== undefined) process.env.MAINA_API_KEY = originalMaina;
-		if (originalOpenRouter !== undefined)
-			process.env.OPENROUTER_API_KEY = originalOpenRouter;
 
 		expect(result.cached).toBe(false);
 		expect(result.text).toContain("API key");

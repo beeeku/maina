@@ -341,32 +341,22 @@ export async function reviewCodeQualityWithAI(
 
 	// Try AI review if API key available
 	try {
-		const { getApiKey } = await import("../config/index");
-		const apiKey = getApiKey();
-		if (!apiKey) {
-			return deterministicResult;
-		}
-
-		const { buildSystemPrompt } = await import("../prompts/engine");
-		const { generate } = await import("../ai/index");
-
-		const builtPrompt = await buildSystemPrompt("review", mainaDir, {
-			diff,
-			conventions: conventions ?? "",
-			constitution: "", // loaded by buildSystemPrompt from .maina/constitution.md
-			language: "TypeScript",
-		});
-
-		const aiResult = await generate({
-			task: "review",
-			systemPrompt: builtPrompt.prompt,
-			userPrompt: `Review this diff:\n\n${diff}`,
+		const { tryAIGenerate } = await import("../ai/try-generate");
+		const aiResult = await tryAIGenerate(
+			"review",
 			mainaDir,
-		});
+			{
+				diff,
+				conventions: conventions ?? "",
+				constitution: "",
+				language: "TypeScript",
+			},
+			`Review this diff:\n\n${diff}`,
+		);
 
 		// Parse AI findings and merge with deterministic ones
 		// For now, add AI summary as an info finding
-		if (aiResult.cached || aiResult.text) {
+		if (aiResult.text) {
 			deterministicResult.findings.push({
 				stage: "code-quality",
 				severity: "info",

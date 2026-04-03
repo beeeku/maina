@@ -22,10 +22,9 @@ function err<E>(error: E): Result<never, E> {
 }
 
 /**
- * Create all tables defined in the schema using raw SQL.
- * Uses CREATE TABLE IF NOT EXISTS so this is safe to call repeatedly.
+ * Create context tables: episodic_entries, semantic_entities, dependency_edges.
  */
-function createTables(db: Database): void {
+function createContextTables(db: Database): void {
 	db.exec(`
 		CREATE TABLE IF NOT EXISTS episodic_entries (
 			id TEXT PRIMARY KEY,
@@ -55,7 +54,14 @@ function createTables(db: Database): void {
 			weight REAL,
 			type TEXT NOT NULL
 		);
+	`);
+}
 
+/**
+ * Create cache tables: cache_entries.
+ */
+function createCacheTables(db: Database): void {
+	db.exec(`
 		CREATE TABLE IF NOT EXISTS cache_entries (
 			id TEXT PRIMARY KEY,
 			key TEXT NOT NULL UNIQUE,
@@ -66,7 +72,14 @@ function createTables(db: Database): void {
 			created_at TEXT NOT NULL,
 			ttl INTEGER
 		);
+	`);
+}
 
+/**
+ * Create feedback tables: feedback, prompt_versions.
+ */
+function createFeedbackTables(db: Database): void {
+	db.exec(`
 		CREATE TABLE IF NOT EXISTS feedback (
 			id TEXT PRIMARY KEY,
 			prompt_hash TEXT NOT NULL,
@@ -86,7 +99,14 @@ function createTables(db: Database): void {
 			usage_count INTEGER,
 			created_at TEXT NOT NULL
 		);
+	`);
+}
 
+/**
+ * Create stats tables: commit_snapshots.
+ */
+function createStatsTables(db: Database): void {
+	db.exec(`
 		CREATE TABLE IF NOT EXISTS commit_snapshots (
 			id TEXT PRIMARY KEY,
 			timestamp TEXT NOT NULL,
@@ -111,15 +131,21 @@ function createTables(db: Database): void {
 
 /**
  * Initialise a SQLite database at the given path, creating parent directories as needed.
+ * Accepts an optional table creator function; if omitted no tables are created.
  * Returns a Result containing the raw Database and the Drizzle ORM instance.
  * Never throws — all errors are returned as Err values.
  */
-export function initDatabase(dbPath: string): Result<DbHandle> {
+export function initDatabase(
+	dbPath: string,
+	tableCreator?: (db: Database) => void,
+): Result<DbHandle> {
 	try {
 		mkdirSync(dirname(dbPath), { recursive: true });
 		const db = new Database(dbPath, { create: true });
 		db.exec("PRAGMA journal_mode=WAL;");
-		createTables(db);
+		if (tableCreator) {
+			tableCreator(db);
+		}
 		const orm = drizzle(db, { schema });
 		return ok({ db, drizzle: orm });
 	} catch (e) {
@@ -132,7 +158,10 @@ export function initDatabase(dbPath: string): Result<DbHandle> {
  * Contains: episodic_entries, semantic_entities, dependency_edges.
  */
 export function getContextDb(mainaDir: string): Result<DbHandle> {
-	return initDatabase(join(mainaDir, "context", "index.db"));
+	return initDatabase(
+		join(mainaDir, "context", "index.db"),
+		createContextTables,
+	);
 }
 
 /**
@@ -140,7 +169,7 @@ export function getContextDb(mainaDir: string): Result<DbHandle> {
  * Contains: cache_entries.
  */
 export function getCacheDb(mainaDir: string): Result<DbHandle> {
-	return initDatabase(join(mainaDir, "cache", "cache.db"));
+	return initDatabase(join(mainaDir, "cache", "cache.db"), createCacheTables);
 }
 
 /**
@@ -148,7 +177,7 @@ export function getCacheDb(mainaDir: string): Result<DbHandle> {
  * Contains: feedback, prompt_versions.
  */
 export function getFeedbackDb(mainaDir: string): Result<DbHandle> {
-	return initDatabase(join(mainaDir, "feedback.db"));
+	return initDatabase(join(mainaDir, "feedback.db"), createFeedbackTables);
 }
 
 /**
@@ -156,5 +185,5 @@ export function getFeedbackDb(mainaDir: string): Result<DbHandle> {
  * Contains: commit_snapshots.
  */
 export function getStatsDb(mainaDir: string): Result<DbHandle> {
-	return initDatabase(join(mainaDir, "stats.db"));
+	return initDatabase(join(mainaDir, "stats.db"), createStatsTables);
 }

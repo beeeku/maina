@@ -2,27 +2,8 @@
  * Feature tools — test stub generation and cross-artifact analysis for MCP clients.
  */
 
-import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-
-/**
- * Resolve the path to the CLI spec module at runtime.
- * Uses a computed string so TypeScript does not try to include it
- * in the rootDir check at compile time.
- */
-function specModulePath(): string {
-	return join(
-		import.meta.dir,
-		"..",
-		"..",
-		"..",
-		"cli",
-		"src",
-		"commands",
-		"spec",
-	);
-}
 
 export function registerFeatureTools(server: McpServer): void {
 	server.tool(
@@ -32,8 +13,8 @@ export function registerFeatureTools(server: McpServer): void {
 		async ({ planPath }) => {
 			try {
 				const content = await Bun.file(planPath).text();
-				const mod = await import(specModulePath());
-				const stubs = mod.generateTestStubs(content, "feature");
+				const { generateTestStubs } = await import("@maina/core");
+				const stubs = generateTestStubs(content, "feature");
 				return { content: [{ type: "text" as const, text: stubs }] };
 			} catch (e) {
 				return {

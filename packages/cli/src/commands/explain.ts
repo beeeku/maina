@@ -5,6 +5,7 @@ import {
 	generateDependencyDiagram,
 	generateModuleSummary,
 	type ModuleSummary,
+	tryAIGenerate,
 } from "@maina/core";
 import { Command } from "commander";
 
@@ -86,33 +87,20 @@ export async function explainAction(
 	// Try AI summary when API key available
 	let aiSummary: string | undefined;
 	if (!isEmpty) {
-		try {
-			const { getApiKey } = await import("@maina/core");
-			if (getApiKey()) {
-				const { buildSystemPrompt } = await import("@maina/core");
-				const { generate } = await import("@maina/core");
-				const modulesText = summaries
-					.map(
-						(s) =>
-							`${s.module}: ${s.functions}fn, ${s.classes}cls, ${s.interfaces}ifc`,
-					)
-					.join("\n");
-				const builtPrompt = await buildSystemPrompt("explain", mainaDir, {
-					diagram,
-					modules: modulesText,
-				});
-				const result = await generate({
-					task: "explain",
-					systemPrompt: builtPrompt.prompt,
-					userPrompt: `Summarize this codebase structure:\n\n${diagram}\n\nModules:\n${modulesText}`,
-					mainaDir,
-				});
-				if (result.text && !result.text.includes("API key")) {
-					aiSummary = result.text;
-				}
-			}
-		} catch {
-			// AI summary failure — deterministic output is always shown
+		const modulesText = summaries
+			.map(
+				(s) =>
+					`${s.module}: ${s.functions}fn, ${s.classes}cls, ${s.interfaces}ifc`,
+			)
+			.join("\n");
+		const aiResult = await tryAIGenerate(
+			"explain",
+			mainaDir,
+			{ diagram, modules: modulesText },
+			`Summarize this codebase structure:\n\n${diagram}\n\nModules:\n${modulesText}`,
+		);
+		if (aiResult.text) {
+			aiSummary = aiResult.text;
 		}
 	}
 

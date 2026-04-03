@@ -121,7 +121,7 @@ async function loadSemanticLayer(
 		);
 
 		// Persist entities + dependency graph to DB for cross-session recall
-		persistSemanticContext(mainaDir, semanticContext);
+		persistSemanticContext(mainaDir, semanticContext, repoRoot);
 
 		return assembleSemanticText(semanticContext, filter);
 	} catch {

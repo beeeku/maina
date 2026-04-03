@@ -8,6 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Result } from "../db/index";
+import { toKebabCase } from "../utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,22 +17,6 @@ export interface AdrSummary {
 	title: string;
 	status: string;
 	path: string;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Convert a string to kebab-case.
- * Handles: spaces, camelCase, PascalCase, underscores.
- */
-function toKebabCase(input: string): string {
-	return input
-		.replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-		.replace(/[\s_]+/g, "-")
-		.replace(/[^a-z0-9-]/gi, "")
-		.replace(/-+/g, "-")
-		.replace(/^-|-$/g, "")
-		.toLowerCase();
 }
 
 /**

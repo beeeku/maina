@@ -12,6 +12,7 @@ import { learnCommand } from "./commands/learn";
 import { planCommand } from "./commands/plan";
 import { prCommand } from "./commands/pr";
 import { promptCommand } from "./commands/prompt";
+import { reviewCommand } from "./commands/review";
 import { reviewDesignCommand } from "./commands/review-design";
 import { specCommand } from "./commands/spec";
 import { statsCommand } from "./commands/stats";
@@ -41,6 +42,7 @@ export function createProgram(): Command {
 	program.addCommand(explainCommand());
 	program.addCommand(initCommand());
 	program.addCommand(prCommand());
+	program.addCommand(reviewCommand());
 	program.addCommand(reviewDesignCommand());
 	program.addCommand(statusCommand());
 	return program;
