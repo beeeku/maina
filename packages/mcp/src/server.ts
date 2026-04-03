@@ -1,0 +1,32 @@
+/**
+ * MCP Server — exposes Maina engines as tools for Claude Code, Cursor, and other IDE agents.
+ */
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { registerContextTools } from "./tools/context";
+import { registerExplainTools } from "./tools/explain";
+import { registerFeatureTools } from "./tools/features";
+import { registerReviewTools } from "./tools/review";
+import { registerVerifyTools } from "./tools/verify";
+
+export function createMcpServer(): McpServer {
+	const server = new McpServer(
+		{ name: "maina", version: "0.1.0" },
+		{ capabilities: { tools: {} } },
+	);
+
+	registerContextTools(server);
+	registerVerifyTools(server);
+	registerFeatureTools(server);
+	registerExplainTools(server);
+	registerReviewTools(server);
+
+	return server;
+}
+
+export async function startServer(): Promise<void> {
+	const server = createMcpServer();
+	const transport = new StdioServerTransport();
+	await server.connect(transport);
+}
