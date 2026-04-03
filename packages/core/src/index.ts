@@ -224,6 +224,15 @@ export {
 } from "./ticket/index";
 // Utils
 export { toKebabCase } from "./utils";
+// Verify — AI Review
+export {
+	type AIReviewOptions,
+	type AIReviewResult,
+	type EntityWithBody,
+	type ReferencedFunction,
+	resolveReferencedFunctions,
+	runAIReview,
+} from "./verify/ai-review";
 export {
 	type DetectedTool,
 	detectTool,
