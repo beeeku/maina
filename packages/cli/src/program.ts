@@ -9,6 +9,7 @@ import { learnCommand } from "./commands/learn";
 import { planCommand } from "./commands/plan";
 import { promptCommand } from "./commands/prompt";
 import { specCommand } from "./commands/spec";
+import { statsCommand } from "./commands/stats";
 import { verifyCommand } from "./commands/verify";
 
 export function createProgram(): Command {
@@ -25,6 +26,7 @@ export function createProgram(): Command {
 	program.addCommand(commitCommand());
 	program.addCommand(planCommand());
 	program.addCommand(specCommand());
+	program.addCommand(statsCommand());
 	program.addCommand(verifyCommand());
 	program.addCommand(doctorCommand());
 	return program;
