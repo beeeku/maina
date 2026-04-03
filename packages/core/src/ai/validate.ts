@@ -17,7 +17,7 @@ const SLOP_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
 		message: "AI suggested console.log — stripped",
 	},
 	{
-		pattern: /\/\/\s*TODO(?!\s*[(#[])/gi,
+		pattern: /\/\/\s*TODO(?!\s*[(#[])/g,
 		message: "AI generated TODO without ticket reference",
 	},
 	{

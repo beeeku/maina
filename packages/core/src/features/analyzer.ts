@@ -75,23 +75,48 @@ function extractTasks(content: string): ParsedTask[] {
 			continue;
 		}
 
-		if (inSection && /^##\s/.test(trimmed)) {
+		if (
+			inSection &&
+			/^##\s/.test(trimmed) &&
+			!/^###\s+(T\d+):/i.test(trimmed)
+		) {
 			break;
 		}
 
+		// Support checklist format: - [ ] T001: description
 		if (inSection && trimmed.startsWith("-")) {
-			const content = trimmed.replace(/^-\s*(\[.\]\s*)?/, "").trim();
-			if (content.length === 0) continue;
+			const taskContent = trimmed.replace(/^-\s*(\[.\]\s*)?/, "").trim();
+			if (taskContent.length === 0) continue;
 
-			const idMatch = content.match(/^(T\d+):\s*(.*)/i);
+			const idMatch = taskContent.match(/^(T\d+):\s*(.*)/i);
 			if (idMatch) {
 				tasks.push({
 					id: idMatch[1]?.toUpperCase() ?? null,
 					description: idMatch[2] ?? "",
-					fullLine: content,
+					fullLine: taskContent,
 				});
 			} else {
-				tasks.push({ id: null, description: content, fullLine: content });
+				tasks.push({
+					id: null,
+					description: taskContent,
+					fullLine: taskContent,
+				});
+			}
+		}
+
+		// Support heading format: ### T001: description
+		if (!inSection || !trimmed.startsWith("-")) {
+			const headingMatch = trimmed.match(/^###\s+(T\d+):\s*(.*)/i);
+			if (headingMatch) {
+				const id = headingMatch[1]?.toUpperCase() ?? null;
+				// Avoid duplicates if already found in ## Tasks checklist
+				if (!tasks.some((t) => t.id === id)) {
+					tasks.push({
+						id,
+						description: headingMatch[2] ?? "",
+						fullLine: `${id}: ${headingMatch[2] ?? ""}`,
+					});
+				}
 			}
 		}
 	}
@@ -211,13 +236,21 @@ function checkOrphanedTasks(
 		if (seen.has(key)) continue;
 		seen.add(key);
 
+		// Check if task references requirement IDs (R1, AC1, etc.) that appear in spec
+		const refPattern = /\b(?:R\d+|AC\d+)\b/gi;
+		const taskRefs = task.fullLine.match(refPattern) ?? [];
+		const hasSpecRef = taskRefs.some((ref) =>
+			specLower.includes(ref.toLowerCase()),
+		);
+		if (hasSpecRef) continue; // Task explicitly references a spec requirement
+
 		const taskWords = significantWords(task.description);
 		if (taskWords.length === 0) continue;
 
 		const matchedCount = taskWords.filter((w) => allSpecWords.has(w)).length;
 		const coverage = matchedCount / taskWords.length;
 
-		if (coverage < 0.3) {
+		if (coverage < 0.2) {
 			const source = planTasks.includes(task) ? "plan.md" : "tasks.md";
 			findings.push({
 				severity: "warning",

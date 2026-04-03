@@ -259,8 +259,8 @@ export function detectTodosWithoutTickets(
 	const findings: Finding[] = [];
 	const lines = content.split("\n");
 
-	// Match TODO or FIXME in comments
-	const todoPattern = /(?:\/\/|\/\*|\*)\s*(?:TODO|FIXME)\b/i;
+	// Match TODO or FIXME in comments (case-sensitive — these are always uppercase)
+	const todoPattern = /(?:\/\/|\/\*|\*)\s*(?:TODO|FIXME)\b/;
 	// Ticket reference patterns: #123, PROJ-123, [#123], (PROJ-123)
 	const ticketPattern = /#\d+|\b[A-Z][A-Z0-9]+-\d+/;
 

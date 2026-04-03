@@ -139,7 +139,7 @@ export function comprehensiveReview(
 	// Check for TODO without ticket
 	for (const line of addedLines) {
 		if (
-			/\/\/\s*TODO(?!\s*[(#[])/i.test(line.content) &&
+			/\/\/\s*TODO(?!\s*[(#[])/.test(line.content) &&
 			!line.file.includes(".test.")
 		) {
 			findings.push({
