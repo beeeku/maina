@@ -10,6 +10,7 @@ export interface SpecActionOptions {
 	featureDir?: string; // Explicit feature dir, or auto-detect from branch
 	output?: string; // Output file path (default: feature dir / spec-tests.ts)
 	cwd?: string;
+	noRedGreen?: boolean; // Skip red-green enforcement check
 }
 
 export interface SpecActionResult {
@@ -17,15 +18,44 @@ export interface SpecActionResult {
 	reason?: string;
 	outputPath?: string;
 	taskCount?: number;
+	redPhaseVerified?: boolean;
+	redGreenWarning?: string;
 }
 
 export interface SpecDeps {
 	getCurrentBranch: (cwd: string) => Promise<string>;
+	runTests?: (
+		testPath: string,
+		cwd: string,
+	) => Promise<{ passCount: number; failCount: number }>;
 }
 
 // ── Default Dependencies ─────────────────────────────────────────────────────
 
-const defaultDeps: SpecDeps = { getCurrentBranch };
+/**
+ * Default test runner: spawns `bun test` on the given file and parses pass/fail counts.
+ */
+async function defaultRunTests(
+	testPath: string,
+	cwd: string,
+): Promise<{ passCount: number; failCount: number }> {
+	const proc = Bun.spawn(["bun", "test", testPath], {
+		cwd,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	const stdout = await new Response(proc.stdout).text();
+	await proc.exited;
+
+	const passMatch = stdout.match(/(\d+)\s+pass/);
+	const failMatch = stdout.match(/(\d+)\s+fail/);
+	const passCount = passMatch ? Number.parseInt(passMatch[1] as string, 10) : 0;
+	const failCount = failMatch ? Number.parseInt(failMatch[1] as string, 10) : 0;
+
+	return { passCount, failCount };
+}
+
+const defaultDeps: SpecDeps = { getCurrentBranch, runTests: defaultRunTests };
 
 // ── Feature Directory Resolution ─────────────────────────────────────────────
 
@@ -130,11 +160,27 @@ export async function specAction(
 
 	await Bun.write(outputPath, testContent);
 
-	return {
+	const result: SpecActionResult = {
 		generated: true,
 		outputPath,
 		taskCount,
 	};
+
+	// ── Step 6: Red-green enforcement ────────────────────────────────────
+	if (!options.noRedGreen && deps.runTests) {
+		try {
+			const { passCount, failCount } = await deps.runTests(outputPath, cwd);
+
+			if (passCount > 0) {
+				result.redGreenWarning = `${passCount} stub(s) passed immediately — these may not be testing anything useful`;
+			}
+			result.redPhaseVerified = failCount > 0 && passCount === 0;
+		} catch {
+			// Red-green check failure should not block spec generation
+		}
+	}
+
+	return result;
 }
 
 // ── Commander Command ────────────────────────────────────────────────────────
@@ -144,17 +190,26 @@ export function specCommand(): Command {
 		.description("Generate TDD test stubs from plan")
 		.option("--feature-dir <dir>", "Feature directory path")
 		.option("-o, --output <path>", "Output file path")
+		.option("--no-red-green", "Skip red-green enforcement check")
 		.action(async (options) => {
 			intro("maina spec");
 
 			const result = await specAction({
 				featureDir: options.featureDir,
 				output: options.output,
+				noRedGreen: options.redGreen === false,
 			});
 
 			if (result.generated) {
 				log.success(`Generated ${result.taskCount} test stub(s)`);
 				log.info(`Output: ${result.outputPath}`);
+
+				if (result.redPhaseVerified) {
+					log.success("Red phase verified — all stubs fail as expected");
+				} else if (result.redGreenWarning) {
+					log.warning(result.redGreenWarning);
+				}
+
 				outro("Test stubs ready — run tests to see red phase");
 			} else {
 				log.error(result.reason ?? "Unknown error");

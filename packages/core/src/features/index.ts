@@ -10,3 +10,9 @@ export {
 	scaffoldFeatureWithContext,
 } from "./numbering";
 export { generateTestStubs } from "./test-stubs";
+export type {
+	TaskTrace,
+	TraceabilityReport,
+	TraceDeps,
+} from "./traceability";
+export { traceFeature } from "./traceability";
