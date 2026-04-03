@@ -66,9 +66,8 @@ describe("bootstrap", () => {
 		expect(content).toContain("maina verify");
 		expect(content).toContain("maina commit");
 		expect(content).toContain("maina context");
-		expect(content).toContain("maina plan");
-		expect(content).toContain("maina analyze");
-		expect(content).toContain("[NEEDS CLARIFICATION]");
+		expect(content).toContain("maina doctor");
+		expect(content).toContain("constitution.md");
 	});
 
 	test("creates CI workflow", async () => {
@@ -81,11 +80,29 @@ describe("bootstrap", () => {
 		const content = readFileSync(ciPath, "utf-8");
 		expect(content).toContain("name: Maina CI");
 		expect(content).toContain("actions/checkout@v4");
-		expect(content).toContain("oven-sh/setup-bun@v2");
-		expect(content).toContain("bun install");
-		expect(content).toContain("bun run check");
-		expect(content).toContain("bun run typecheck");
-		expect(content).toContain("bun run test");
+	});
+
+	test("detects bun stack from package.json", async () => {
+		// Create a Bun project
+		writeFileSync(
+			join(tmpDir, "package.json"),
+			JSON.stringify({ devDependencies: { "@types/bun": "latest" } }),
+		);
+		writeFileSync(join(tmpDir, "tsconfig.json"), "{}");
+
+		const result = await bootstrap(tmpDir);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value.detectedStack.runtime).toBe("bun");
+			expect(result.value.detectedStack.language).toBe("typescript");
+
+			const ci = readFileSync(
+				join(tmpDir, ".github", "workflows", "maina-ci.yml"),
+				"utf-8",
+			);
+			expect(ci).toContain("oven-sh/setup-bun@v2");
+			expect(ci).toContain("bun install");
+		}
 	});
 
 	test("creates prompts directory with defaults", async () => {
