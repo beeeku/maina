@@ -140,8 +140,16 @@ export async function generate(
 	// Host delegation: when running inside Claude Code/Cursor without own API key,
 	// return the prompt so the host agent can process it via MCP or skills
 	if (shouldDelegateToHost()) {
+		const delegationText = `[HOST_DELEGATION] Task: ${task}\n\nSystem: ${systemPrompt}\n\nUser: ${userPrompt}`;
+		// Cache the delegation prompt to avoid rebuilding on repeat calls
+		const ttl = getTtl(task as Parameters<typeof getTtl>[0]);
+		const storedDelegation = { text: delegationText, model: "host" };
+		cache.set(cacheKey, JSON.stringify(storedDelegation), {
+			ttl,
+			model: "host",
+		});
 		return {
-			text: `[HOST_DELEGATION] Task: ${task}\n\nSystem: ${systemPrompt}\n\nUser: ${userPrompt}`,
+			text: delegationText,
 			cached: false,
 			model: "host",
 		};

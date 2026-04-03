@@ -288,25 +288,57 @@ export async function assembleContext(
 		);
 	}
 
-	// Retrieval layer — only if searchQuery is provided
-	if (needsLayer(needs, "retrieval") && options.searchQuery) {
-		const retrievalOptions: RetrievalOptions = {
-			cwd: options.scope ?? repoRoot,
-			tokenBudget: budget.retrieval,
-		};
-		layerPromises.push(
-			buildRetrievalLayer(options.searchQuery, retrievalOptions),
-		);
-	} else if (needsLayer(needs, "retrieval")) {
-		// Layer is needed but no query — add empty placeholder so it appears in reports
-		layerPromises.push(
-			Promise.resolve({
-				name: "retrieval",
-				text: "",
-				tokens: 0,
-				priority: 3,
-			}),
-		);
+	// Retrieval layer — auto-generates search query from staged/changed files if not provided
+	if (needsLayer(needs, "retrieval")) {
+		let query = options.searchQuery;
+
+		// Auto-generate query from recent changes if none provided
+		if (!query) {
+			try {
+				const [staged, changed] = await Promise.all([
+					getStagedFiles(repoRoot),
+					getChangedFiles("HEAD~3", repoRoot),
+				]);
+				const recentFiles = [...new Set([...staged, ...changed])];
+				if (recentFiles.length > 0) {
+					// Extract meaningful terms and join with | for ripgrep alternation
+					const terms = recentFiles
+						.flatMap(
+							(f) =>
+								f
+									.split("/")
+									.pop()
+									?.replace(/\.\w+$/, "")
+									.split(/[-_.]/) ?? [],
+						)
+						.filter((t) => t.length > 3)
+						.slice(0, 5);
+					if (terms.length > 0) {
+						query = terms.join("|");
+					}
+				}
+			} catch {
+				// Failed to auto-generate — leave as empty
+			}
+		}
+
+		if (query) {
+			const retrievalOptions: RetrievalOptions = {
+				cwd: options.scope ?? repoRoot,
+				tokenBudget: budget.retrieval,
+			};
+			layerPromises.push(buildRetrievalLayer(query, retrievalOptions));
+		} else {
+			// No query possible — add empty placeholder so it appears in reports
+			layerPromises.push(
+				Promise.resolve({
+					name: "retrieval",
+					text: "",
+					tokens: 0,
+					priority: 3,
+				}),
+			);
+		}
 	}
 
 	// Build all layers in parallel
