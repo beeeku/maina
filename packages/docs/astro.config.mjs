@@ -1,0 +1,68 @@
+import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  site: 'https://beeeku.github.io',
+  base: '/maina',
+  vite: { plugins: [tailwindcss()] },
+  integrations: [
+    starlight({
+      title: 'Maina',
+      logo: {
+        src: './src/assets/mynah.svg',
+        replacesTitle: false,
+      },
+      social: [
+        {
+          icon: 'github',
+          label: 'GitHub',
+          href: 'https://github.com/beeeku/maina',
+        },
+      ],
+      editLink: {
+        baseUrl: 'https://github.com/beeeku/maina/edit/master/packages/docs/',
+      },
+      sidebar: [
+        {
+          label: 'Start Here',
+          items: [
+            { slug: 'getting-started' },
+            { slug: 'commands' },
+          ],
+        },
+        {
+          label: 'Reference',
+          items: [
+            { slug: 'configuration' },
+            { slug: 'mcp' },
+            { slug: 'skills' },
+          ],
+        },
+        {
+          label: 'Engines',
+          items: [
+            { slug: 'engines/context' },
+            { slug: 'engines/prompt' },
+            { slug: 'engines/verify' },
+          ],
+        },
+        {
+          label: 'Roadmap',
+          items: [
+            { slug: 'roadmap' },
+          ],
+        },
+      ],
+      expressiveCode: {
+        themes: ['github-dark', 'github-light'],
+        useStarlightDarkModeSwitch: true,
+        useStarlightUiThemeColors: true,
+        styleOverrides: {
+          borderRadius: '0.5rem',
+        },
+      },
+      customCss: ['./src/styles/global.css'],
+    }),
+  ],
+});
