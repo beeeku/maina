@@ -23,7 +23,8 @@ todos.db
 .maina/stats.db
 .maina/stats.db-shm
 .maina/stats.db-wal
-.maina/benchmarks/
+.maina/benchmarks/*.json
+!.maina/benchmarks/stories/
 
 # Maina — shared files ARE tracked:
 # .maina/constitution.md
@@ -37,3 +38,4 @@ packages/docs/.astro/
 
 # Superpowers brainstorm sessions
 .superpowers/
+.claude/

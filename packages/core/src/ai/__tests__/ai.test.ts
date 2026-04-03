@@ -5,6 +5,7 @@ import {
 	beforeEach,
 	describe,
 	expect,
+	it,
 	test,
 } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
@@ -13,10 +14,11 @@ import { join } from "node:path";
 import { buildCacheKey, hashContent } from "../../cache/keys";
 import { createCacheManager } from "../../cache/manager";
 import { generate } from "../index";
+import { getTaskTier } from "../tiers";
 
 const TEST_DIR = join(tmpdir(), `maina-ai-test-${Date.now()}`);
 
-/** Env vars that can trigger host-mode delegation or provide API keys. */
+/** Env vars that can trigger host-mode delegation, provide API keys, or override config. */
 const HOST_ENV_VARS = [
 	"MAINA_API_KEY",
 	"OPENROUTER_API_KEY",
@@ -25,6 +27,7 @@ const HOST_ENV_VARS = [
 	"CLAUDE_CODE_ENTRYPOINT",
 	"CURSOR",
 	"MAINA_HOST_MODE",
+	"MAINA_PROVIDER",
 ] as const;
 
 /** Saved env values restored after each test. */
@@ -64,6 +67,11 @@ function makeDir(sub: string): string {
 
 describe("generate — cache hit", () => {
 	test("returns cached result when cache has matching entry", async () => {
+		// Clear all env vars that can influence model resolution / host delegation
+		for (const key of HOST_ENV_VARS) {
+			delete process.env[key];
+		}
+
 		const mainaDir = makeDir("cache-hit");
 		const cache = createCacheManager(mainaDir);
 
@@ -174,5 +182,15 @@ describe("generate — cache key construction", () => {
 		});
 
 		expect(key1).not.toBe(key2);
+	});
+});
+
+describe("getTaskTier — code-review tasks", () => {
+	it("should map code-review to mechanical tier", () => {
+		expect(getTaskTier("code-review")).toBe("mechanical");
+	});
+
+	it("should map deep-code-review to standard tier", () => {
+		expect(getTaskTier("deep-code-review")).toBe("standard");
 	});
 });
