@@ -12,6 +12,7 @@
  * 8. Return unified PipelineResult
  */
 
+import { createCacheManager } from "../cache/manager";
 import { getStagedFiles } from "../git/index";
 import type { DetectedTool } from "./detect";
 import { detectTools } from "./detect";
@@ -133,10 +134,12 @@ export async function runPipeline(
 
 	const toolPromises: Promise<ToolReport>[] = [];
 
-	// Slop detector always runs (no external tool dependency)
+	// Slop detector always runs (no external tool dependency), cache-aware
+	const mainaDir = options?.mainaDir ?? ".maina";
+	const slopCache = createCacheManager(mainaDir);
 	toolPromises.push(
 		runToolWithTiming("slop", async () => {
-			const result = await detectSlop(files, { cwd });
+			const result = await detectSlop(files, { cwd, cache: slopCache });
 			return { findings: result.findings, skipped: false };
 		}),
 	);

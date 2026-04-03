@@ -12,11 +12,13 @@ export interface RetrievalOptions {
 }
 
 /**
- * Check if a CLI tool is available on PATH using `which`.
+ * Check if a CLI tool is available by trying to run it with --version.
+ * Uses --version instead of `which` because tools may be shell functions
+ * (e.g., Claude Code wraps rg as a function).
  */
 export async function isToolAvailable(tool: string): Promise<boolean> {
 	try {
-		const proc = Bun.spawn(["which", tool], {
+		const proc = Bun.spawn([tool, "--version"], {
 			stdout: "pipe",
 			stderr: "pipe",
 		});
@@ -169,6 +171,7 @@ export async function searchWithGrep(
 			[
 				"grep",
 				"-rn",
+				"-E",
 				"--include=*.ts",
 				"--include=*.tsx",
 				"--include=*.js",
