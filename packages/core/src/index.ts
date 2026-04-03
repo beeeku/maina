@@ -15,6 +15,24 @@ export {
 export { type TryAIResult, tryAIGenerate } from "./ai/try-generate";
 // AI validation
 export { type AIValidationResult, validateAIOutput } from "./ai/validate";
+export {
+	buildReport,
+	buildTier3Report,
+	formatComparison,
+	formatTier3Comparison,
+} from "./benchmark/reporter";
+export { parseTestOutput, runBenchmark } from "./benchmark/runner";
+export { listStories, loadStory } from "./benchmark/story-loader";
+// Benchmark
+export type {
+	BenchmarkMetrics,
+	BenchmarkReport,
+	LoadedStory,
+	StepMetrics,
+	StoryConfig,
+	Tier3Results,
+	Tier3Totals,
+} from "./benchmark/types";
 // Cache
 export {
 	type CacheManager,
@@ -45,6 +63,7 @@ export type { Result } from "./db/index";
 // Design (ADR)
 export {
 	type AdrSummary,
+	generateHldLld,
 	getNextAdrNumber,
 	listAdrs,
 	scaffoldAdr,
@@ -206,6 +225,15 @@ export {
 } from "./ticket/index";
 // Utils
 export { toKebabCase } from "./utils";
+// Verify — AI Review
+export {
+	type AIReviewOptions,
+	type AIReviewResult,
+	type EntityWithBody,
+	type ReferencedFunction,
+	resolveReferencedFunctions,
+	runAIReview,
+} from "./verify/ai-review";
 export {
 	type DetectedTool,
 	detectTool,

@@ -14,7 +14,8 @@
 
 import { createCacheManager } from "../cache/manager";
 import { getNoisyRules } from "../feedback/preferences";
-import { getStagedFiles } from "../git/index";
+import { getDiff, getStagedFiles } from "../git/index";
+import { type AIReviewResult, runAIReview } from "./ai-review";
 import type { DetectedTool } from "./detect";
 import { detectTools } from "./detect";
 import type { Finding } from "./diff-filter";
@@ -52,6 +53,7 @@ export interface PipelineOptions {
 	files?: string[]; // specific files (default: staged files)
 	baseBranch?: string; // for diff filter (default: "main")
 	diffOnly?: boolean; // default: true
+	deep?: boolean; // NEW — triggers standard-tier AI review
 	cwd?: string;
 	mainaDir?: string;
 }
@@ -182,10 +184,26 @@ export async function runPipeline(
 
 	const toolReports = await Promise.all(toolPromises);
 
+	// ── Step 4b: Warn if all external tools were skipped ─────────────────
+	const externalTools = toolReports.filter((r) => r.tool !== "slop");
+	const allExternalSkipped =
+		externalTools.length > 0 && externalTools.every((r) => r.skipped);
+
 	// ── Step 5: Collect all findings ──────────────────────────────────────
 	const allFindings: Finding[] = [];
 	for (const report of toolReports) {
 		allFindings.push(...report.findings);
+	}
+
+	if (allExternalSkipped) {
+		const skippedNames = externalTools.map((r) => r.tool).join(", ");
+		allFindings.push({
+			tool: "pipeline",
+			file: "",
+			line: 0,
+			message: `No external verification tools ran (${skippedNames} skipped). Run \`maina doctor\` to check tool health or \`maina init\` to configure.`,
+			severity: "warning",
+		});
 	}
 
 	// ── Step 6: Apply diff-only filter ────────────────────────────────────
@@ -201,25 +219,59 @@ export async function runPipeline(
 		hiddenCount = 0;
 	}
 
-	// ── Step 6b: Downgrade noisy rules based on preferences ──────────────
+	// ── Step 6b: Skip or downgrade noisy rules based on preferences ─────
 	try {
 		const noisy = getNoisyRules(mainaDir);
-		const noisyIds = new Set(noisy.map((r) => r.ruleId));
-		for (const finding of shownFindings) {
-			if (finding.ruleId && noisyIds.has(finding.ruleId)) {
-				// Downgrade: error→warning, warning→info
+		const noisyMap = new Map(noisy.map((r) => [r.ruleId, r]));
+		shownFindings = shownFindings.filter((finding) => {
+			if (!finding.ruleId) return true;
+			const rule = noisyMap.get(finding.ruleId);
+			if (!rule) return true;
+			// Skip entirely if FP rate > 50% — these erode trust
+			if (rule.falsePositiveRate > 0.5) return false;
+			// Downgrade if borderline (>30%)
+			if (rule.falsePositiveRate > 0.3) {
 				if (finding.severity === "error") finding.severity = "warning";
 				else if (finding.severity === "warning") finding.severity = "info";
 			}
-		}
+			return true;
+		});
 	} catch {
 		// Preference loading failure should never block verification
 	}
 
-	// ── Step 7: Determine pass/fail ───────────────────────────────────────
+	// ── Step 7: AI review (mechanical always, standard if --deep) ────────
+	const deep = options?.deep ?? false;
+	let diffText = "";
+	try {
+		diffText = diffOnly ? await getDiff(baseBranch, undefined, cwd) : "";
+	} catch {
+		// getDiff failure should not block pipeline
+	}
+
+	const aiReviewResult: AIReviewResult = await runAIReview({
+		diff: diffText,
+		entities: [], // Entities require tree-sitter + file body reads; wired when semantic index is hydrated
+		deep,
+		mainaDir: options?.mainaDir ?? ".maina",
+	});
+
+	const aiReport: ToolReport = {
+		tool: "ai-review",
+		findings: aiReviewResult.findings,
+		skipped: aiReviewResult.skipped,
+		duration: aiReviewResult.duration,
+	};
+
+	toolReports.push(aiReport);
+
+	// Merge AI findings into shown findings
+	shownFindings.push(...aiReviewResult.findings);
+
+	// ── Step 8: Determine pass/fail ───────────────────────────────────────
 	const passed = !shownFindings.some((f) => f.severity === "error");
 
-	// ── Step 8: Return unified result ─────────────────────────────────────
+	// ── Step 9: Return unified result ─────────────────────────────────────
 	const cacheStats = slopCache.stats();
 	return {
 		passed,
