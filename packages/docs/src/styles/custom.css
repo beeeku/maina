@@ -1,31 +1,49 @@
-/* Light mode */
-:root[data-theme='light'] {
-  --sl-color-accent-low: #fff7ed;
-  --sl-color-accent: #c2410c;
-  --sl-color-accent-high: #7c2d12;
-  --sl-color-white: #fafaf9;
-  --sl-color-gray-1: #e7e5e4;
-  --sl-color-gray-2: #d6d3d1;
-  --sl-color-gray-3: #78716c;
-  --sl-color-gray-4: #57534e;
-  --sl-color-gray-5: #44403c;
-  --sl-color-gray-6: #1c1917;
-  --sl-color-black: #0c0a09;
+/*
+ * Maina Starlight theme — warm stone palette with orange accent
+ * Uses @layer to ensure our overrides beat Starlight's defaults
+ */
+
+/* Light mode — override Starlight defaults */
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: #fff7ed !important;
+  --sl-color-accent: #c2410c !important;
+  --sl-color-accent-high: #7c2d12 !important;
+  --sl-color-text-accent: var(--sl-color-accent) !important;
+  --sl-color-bg-accent: var(--sl-color-accent) !important;
+  --sl-color-white: hsl(30, 20%, 10%) !important;
+  --sl-color-gray-1: hsl(30, 10%, 16%) !important;
+  --sl-color-gray-2: hsl(24, 6%, 40%) !important;
+  --sl-color-gray-3: hsl(24, 5%, 45%) !important;
+  --sl-color-gray-4: hsl(24, 5%, 56%) !important;
+  --sl-color-gray-5: hsl(30, 6%, 77%) !important;
+  --sl-color-gray-6: hsl(30, 11%, 91%) !important;
+  --sl-color-gray-7: hsl(40, 23%, 97%) !important;
+  --sl-color-black: hsl(0, 0%, 100%) !important;
+  --sl-color-bg-inline-code: var(--sl-color-gray-6) !important;
+  --sl-color-bg-nav: var(--sl-color-gray-7) !important;
+  --sl-color-bg-sidebar: var(--sl-color-black) !important;
 }
 
-/* Dark mode */
-:root[data-theme='dark'] {
-  --sl-color-accent-low: #431407;
-  --sl-color-accent: #fb923c;
-  --sl-color-accent-high: #fed7aa;
-  --sl-color-white: #0c0a09;
-  --sl-color-gray-1: #1c1917;
-  --sl-color-gray-2: #292524;
-  --sl-color-gray-3: #8b8680;
-  --sl-color-gray-4: #a8a29e;
-  --sl-color-gray-5: #d6d3d1;
-  --sl-color-gray-6: #e7e5e4;
-  --sl-color-black: #fafaf9;
+/* Dark mode — override Starlight defaults */
+:root[data-theme='dark'],
+[data-theme='dark'] ::backdrop {
+  --sl-color-accent-low: #431407 !important;
+  --sl-color-accent: #fb923c !important;
+  --sl-color-accent-high: #fed7aa !important;
+  --sl-color-text-accent: var(--sl-color-accent-high) !important;
+  --sl-color-bg-accent: var(--sl-color-accent) !important;
+  --sl-color-white: hsl(20, 14%, 4%) !important;
+  --sl-color-gray-1: hsl(24, 10%, 10%) !important;
+  --sl-color-gray-2: hsl(20, 8%, 15%) !important;
+  --sl-color-gray-3: hsl(24, 5%, 34%) !important;
+  --sl-color-gray-4: hsl(24, 5%, 58%) !important;
+  --sl-color-gray-5: hsl(30, 6%, 77%) !important;
+  --sl-color-gray-6: hsl(30, 11%, 91%) !important;
+  --sl-color-black: hsl(40, 20%, 97%) !important;
+  --sl-color-bg-inline-code: var(--sl-color-gray-2) !important;
+  --sl-color-bg-nav: var(--sl-color-gray-1) !important;
+  --sl-color-bg-sidebar: var(--sl-color-gray-1) !important;
 }
 
 /* Shared */
