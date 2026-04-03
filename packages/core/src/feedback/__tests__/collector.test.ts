@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { getFeedbackDb } from "../../db/index";
+import { getContextDb, getFeedbackDb } from "../../db/index";
 import { recordOutcome } from "../../prompts/engine";
 import {
 	type FeedbackRecord,
 	getFeedbackSummary,
 	recordFeedback,
+	recordFeedbackWithCompression,
 } from "../collector";
 
 let tmpDir: string;
@@ -108,5 +109,111 @@ describe("getFeedbackSummary", () => {
 		expect(summary.accepted).toBe(0);
 		expect(summary.rejected).toBe(0);
 		expect(summary.acceptRate).toBe(0);
+	});
+});
+
+describe("recordFeedbackWithCompression", () => {
+	test("accepted review with aiOutput triggers compression and episodic storage", () => {
+		recordFeedbackWithCompression(tmpDir, {
+			promptHash: "review-hash-1",
+			task: "review",
+			accepted: true,
+			timestamp: new Date().toISOString(),
+			aiOutput: "Overall: code looks good. Warning: missing null check.",
+			diff: `--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,3 +1,5 @@
++import { bar } from './bar';`,
+		});
+
+		// Verify episodic entry was created in context DB
+		const dbResult = getContextDb(tmpDir);
+		expect(dbResult.ok).toBe(true);
+		if (!dbResult.ok) return;
+
+		const { db } = dbResult.value;
+		const rows = db
+			.query(
+				"SELECT * FROM episodic_entries WHERE type = 'review' ORDER BY created_at DESC",
+			)
+			.all() as Array<{
+			content: string;
+			summary: string;
+			type: string;
+		}>;
+
+		expect(rows.length).toBe(1);
+		expect(rows[0]?.type).toBe("review");
+		expect(rows[0]?.summary).toBe("Accepted review");
+		expect(rows[0]?.content).toContain("[review] Accepted review");
+	});
+
+	test("rejected review does NOT trigger compression", () => {
+		recordFeedbackWithCompression(tmpDir, {
+			promptHash: "review-hash-2",
+			task: "review",
+			accepted: false,
+			timestamp: new Date().toISOString(),
+			aiOutput: "Some review output",
+			diff: "some diff",
+		});
+
+		// Verify no episodic entry was created
+		const dbResult = getContextDb(tmpDir);
+		expect(dbResult.ok).toBe(true);
+		if (!dbResult.ok) return;
+
+		const { db } = dbResult.value;
+		const rows = db
+			.query("SELECT * FROM episodic_entries WHERE type = 'review'")
+			.all();
+
+		expect(rows.length).toBe(0);
+	});
+
+	test("accepted non-review task does NOT trigger compression", () => {
+		recordFeedbackWithCompression(tmpDir, {
+			promptHash: "commit-hash-1",
+			task: "commit",
+			accepted: true,
+			timestamp: new Date().toISOString(),
+			aiOutput: "Generated commit message",
+			diff: "some diff",
+		});
+
+		// Verify no episodic entry was created
+		const dbResult = getContextDb(tmpDir);
+		expect(dbResult.ok).toBe(true);
+		if (!dbResult.ok) return;
+
+		const { db } = dbResult.value;
+		const rows = db
+			.query("SELECT * FROM episodic_entries WHERE type = 'review'")
+			.all();
+
+		expect(rows.length).toBe(0);
+	});
+
+	test("missing aiOutput on accepted review does NOT trigger compression", () => {
+		recordFeedbackWithCompression(tmpDir, {
+			promptHash: "review-hash-3",
+			task: "review",
+			accepted: true,
+			timestamp: new Date().toISOString(),
+			// No aiOutput provided
+			diff: "some diff",
+		});
+
+		// Verify no episodic entry was created
+		const dbResult = getContextDb(tmpDir);
+		expect(dbResult.ok).toBe(true);
+		if (!dbResult.ok) return;
+
+		const { db } = dbResult.value;
+		const rows = db
+			.query("SELECT * FROM episodic_entries WHERE type = 'review'")
+			.all();
+
+		expect(rows.length).toBe(0);
 	});
 });

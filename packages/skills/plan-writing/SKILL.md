@@ -43,7 +43,7 @@ When starting a new feature, refactor, or significant change. The planning workf
 maina plan user-auth
 
 # Creates:
-# .maina/features/F003-user-auth/
+# .maina/features/003-user-auth/
 #   spec.md   (template with sections to fill)
 #   plan.md   (template with sections to fill)
 
