@@ -14,6 +14,8 @@ import type { Finding } from "./diff-filter";
 export interface SecretlintOptions {
 	files?: string[];
 	cwd?: string;
+	/** Pre-resolved availability — skips redundant detection if provided. */
+	available?: boolean;
 }
 
 export interface SecretlintResult {
@@ -131,8 +133,9 @@ export function parseSecretlintOutput(output: string): Finding[] {
 export async function runSecretlint(
 	options?: SecretlintOptions,
 ): Promise<SecretlintResult> {
-	const available = await isToolAvailable("secretlint");
-	if (!available) {
+	const toolAvailable =
+		options?.available ?? (await isToolAvailable("secretlint"));
+	if (!toolAvailable) {
 		return { findings: [], skipped: true };
 	}
 

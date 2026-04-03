@@ -16,6 +16,8 @@ export interface SemgrepOptions {
 	rulesDir?: string;
 	config?: string;
 	cwd?: string;
+	/** Pre-resolved availability — skips redundant detection if provided. */
+	available?: boolean;
 }
 
 export interface SemgrepResult {
@@ -130,8 +132,9 @@ export function parseSarif(sarifJson: string): Finding[] {
 export async function runSemgrep(
 	options?: SemgrepOptions,
 ): Promise<SemgrepResult> {
-	const available = await isToolAvailable("semgrep");
-	if (!available) {
+	const toolAvailable =
+		options?.available ?? (await isToolAvailable("semgrep"));
+	if (!toolAvailable) {
 		return { findings: [], skipped: true };
 	}
 
