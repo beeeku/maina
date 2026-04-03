@@ -13,6 +13,8 @@ export interface Preferences {
 	updatedAt: string;
 }
 
+const MIN_RULE_SAMPLES = 5;
+
 const PREFS_FILE = "preferences.json";
 
 function prefsPath(mainaDir: string): string {
@@ -100,6 +102,7 @@ export function acknowledgeFinding(mainaDir: string, ruleId: string): void {
 export function getNoisyRules(mainaDir: string): RulePreference[] {
 	const prefs = loadPreferences(mainaDir);
 	return Object.values(prefs.rules).filter(
-		(rule) => rule.totalCount > 0 && rule.falsePositiveRate > 0.5,
+		(rule) =>
+			rule.falsePositiveRate > 0.5 && rule.totalCount >= MIN_RULE_SAMPLES,
 	);
 }

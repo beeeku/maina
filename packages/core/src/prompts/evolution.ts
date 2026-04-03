@@ -265,22 +265,19 @@ export function resolveABTests(mainaDir: string): ABResolution[] {
 
 		const candidateAcceptRate = candidateAccepted / candidateTotal;
 
-		// Get incumbent feedback stats (all feedback for this task EXCEPT candidate hash)
-		const incumbentRow = db
-			.query(
-				`SELECT COUNT(*) as total,
-				        SUM(CASE WHEN accepted = 1 THEN 1 ELSE 0 END) as accepted_count
-				 FROM feedback WHERE command = ? AND prompt_hash != ?`,
+		// Get recent incumbent feedback (last 100 samples, excluding candidate)
+		const incumbentRows = db
+			.prepare(
+				`SELECT accepted FROM feedback WHERE command = ? AND prompt_hash != ? ORDER BY created_at DESC LIMIT 100`,
 			)
-			.get(task, candidateHash) as {
-			total: number;
-			accepted_count: number;
-		} | null;
+			.all(task, candidateHash) as Array<{ accepted: number }>;
 
-		const incumbentTotal = incumbentRow?.total ?? 0;
-		const incumbentAccepted = incumbentRow?.accepted_count ?? 0;
+		const incumbentTotal = incumbentRows.length;
+		const incumbentAccepted = incumbentRows.filter(
+			(r) => r.accepted === 1,
+		).length;
 		const incumbentAcceptRate =
-			incumbentTotal > 0 ? incumbentAccepted / incumbentTotal : 0;
+			incumbentTotal > 0 ? incumbentAccepted / incumbentTotal : 0.5;
 
 		if (candidateAcceptRate > incumbentAcceptRate + AB_MARGIN) {
 			// Candidate outperforms — promote

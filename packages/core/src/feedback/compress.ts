@@ -86,7 +86,7 @@ export function storeCompressedReview(
 ): void {
 	addEntry(mainaDir, {
 		content: compressed,
-		summary: `Accepted ${task} review`,
+		summary: task === "review" ? "Accepted review" : `Accepted ${task} review`,
 		type: "review",
 	});
 }

@@ -144,7 +144,7 @@ describe("storeCompressedReview", () => {
 
 		expect(rows.length).toBe(1);
 		expect(rows[0]?.content).toBe(compressed);
-		expect(rows[0]?.summary).toBe("Accepted review review");
+		expect(rows[0]?.summary).toBe("Accepted review");
 		expect(rows[0]?.type).toBe("review");
 	});
 });

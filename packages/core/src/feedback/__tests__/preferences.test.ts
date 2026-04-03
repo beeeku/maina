@@ -69,15 +69,19 @@ describe("acknowledgeFinding", () => {
 });
 
 describe("getNoisyRules", () => {
-	test("returns rules with >50% false positive rate", () => {
-		// noisy rule: 3 dismissed out of 4 total (75%)
+	test("returns rules with >50% false positive rate and >= 5 samples", () => {
+		// noisy rule: 5 dismissed out of 6 total (83%) — meets MIN_RULE_SAMPLES
+		dismissFinding(tmpDir, "noisy-rule");
+		dismissFinding(tmpDir, "noisy-rule");
 		dismissFinding(tmpDir, "noisy-rule");
 		dismissFinding(tmpDir, "noisy-rule");
 		dismissFinding(tmpDir, "noisy-rule");
 		acknowledgeFinding(tmpDir, "noisy-rule");
 
-		// good rule: 1 dismissed out of 4 total (25%)
+		// good rule: 1 dismissed out of 6 total (17%) — not noisy
 		dismissFinding(tmpDir, "good-rule");
+		acknowledgeFinding(tmpDir, "good-rule");
+		acknowledgeFinding(tmpDir, "good-rule");
 		acknowledgeFinding(tmpDir, "good-rule");
 		acknowledgeFinding(tmpDir, "good-rule");
 		acknowledgeFinding(tmpDir, "good-rule");
@@ -85,12 +89,25 @@ describe("getNoisyRules", () => {
 		// borderline rule: exactly 50% — should NOT be included (>50% required)
 		dismissFinding(tmpDir, "borderline-rule");
 		acknowledgeFinding(tmpDir, "borderline-rule");
+		dismissFinding(tmpDir, "borderline-rule");
+		acknowledgeFinding(tmpDir, "borderline-rule");
+		dismissFinding(tmpDir, "borderline-rule");
+		acknowledgeFinding(tmpDir, "borderline-rule");
 
 		const noisy = getNoisyRules(tmpDir);
 
 		expect(noisy.length).toBe(1);
 		expect(noisy[0]?.ruleId).toBe("noisy-rule");
-		expect(noisy[0]?.falsePositiveRate).toBeCloseTo(0.75, 5);
+		expect(noisy[0]?.falsePositiveRate).toBeCloseTo(5 / 6, 5);
+	});
+
+	test("excludes rules with fewer than 5 samples even if false positive rate is 100%", () => {
+		// Only 1 sample — 100% false positive rate but below MIN_RULE_SAMPLES
+		dismissFinding(tmpDir, "low-sample-rule");
+
+		const noisy = getNoisyRules(tmpDir);
+
+		expect(noisy.length).toBe(0);
 	});
 });
 
