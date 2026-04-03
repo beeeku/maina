@@ -6,7 +6,8 @@
     "packages/cli",
     "packages/core",
     "packages/mcp",
-    "packages/skills"
+    "packages/skills",
+    "packages/docs"
   ],
   "scripts": {
     "dev": "bun run --filter '*' dev",
