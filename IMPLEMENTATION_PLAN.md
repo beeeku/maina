@@ -1265,11 +1265,14 @@ Use maina plan + maina spec to scaffold this sprint.
 
 ## Sprint 10 — Publish
 
+**Pre-requisite:** Push repo to GitHub before this sprint. `git remote add origin <url> && git push -u origin master`.
+
 **T001** — npm package: `bunx maina --version` works globally
 **T002** — Single binary: `bun build --compile`, GitHub Release (macOS + Linux)
 **T003** — Homebrew formula
 **T004** — Docusaurus docs: quickstart, commands, config, MCP, custom prompts, Semgrep rules
 **T005** — README with quickstart, demo GIF, badges
+**T006** — Dogfood comparison report: `maina stats` data from all sprints, Claude+Superpowers vs Claude+Maina metrics
 
 ---
 
