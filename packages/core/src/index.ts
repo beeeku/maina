@@ -59,6 +59,16 @@ export {
 	parseChangedLines,
 } from "./verify/diff-filter";
 export {
+	detectCommentedCode,
+	detectConsoleLogs,
+	detectEmptyBodies,
+	detectHallucinatedImports,
+	detectSlop,
+	detectTodosWithoutTickets,
+	type SlopResult,
+	type SlopRule,
+} from "./verify/slop";
+export {
 	parseBiomeOutput,
 	type SyntaxDiagnostic,
 	type SyntaxGuardResult,
