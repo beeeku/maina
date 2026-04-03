@@ -1,5 +1,6 @@
 import { log } from "@clack/prompts";
 import {
+	generatePrSummary as coreGeneratePrSummary,
 	getCurrentBranch as coreGetCurrentBranch,
 	getDiff as coreGetDiff,
 	getRecentCommits as coreGetRecentCommits,
@@ -42,6 +43,12 @@ export interface PrDeps {
 	runTwoStageReview: (
 		...args: Parameters<typeof coreRunTwoStageReview>
 	) => ReturnType<typeof coreRunTwoStageReview>;
+	generatePrSummary: (
+		diff: string,
+		commits: Array<{ hash: string; message: string }>,
+		reviewSummary: string,
+		mainaDir: string,
+	) => Promise<string>;
 }
 
 // ── Default createPr implementation ─────────────────────────────────────────
@@ -111,6 +118,7 @@ const defaultDeps: PrDeps = {
 	getRecentCommits: coreGetRecentCommits,
 	getCurrentBranch: coreGetCurrentBranch,
 	runTwoStageReview: coreRunTwoStageReview,
+	generatePrSummary: coreGeneratePrSummary,
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -206,11 +214,6 @@ export async function prAction(
 	// ── Step 3: Build PR description ─────────────────────────────────────
 	const commits = await deps.getRecentCommits(20, cwd);
 
-	const commitList =
-		commits.length > 0
-			? commits.map((c) => `- ${c.message} (${c.hash.slice(0, 7)})`).join("\n")
-			: "No commits found.";
-
 	const reviewSection = reviewResult.passed
 		? "All checks passed."
 		: formatReviewFindings([
@@ -218,13 +221,13 @@ export async function prAction(
 				...(reviewResult.stage2?.findings ?? []),
 			]);
 
-	const body = `## Changes
-
-${commitList}
-
-## Review
-
-${reviewSection}`;
+	const mainaDir = `${cwd}/.maina`;
+	const body = await deps.generatePrSummary(
+		diff,
+		commits,
+		reviewSection,
+		mainaDir,
+	);
 
 	// ── Step 4: Resolve title ────────────────────────────────────────────
 	const title = options.title ?? titleFromBranch(branch);
