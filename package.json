@@ -1,0 +1,28 @@
+{
+  "name": "maina",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/cli",
+    "packages/core",
+    "packages/mcp",
+    "packages/skills"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "build": "bun run --filter '*' build",
+    "test": "bun test --recursive",
+    "check": "bunx @biomejs/biome check .",
+    "typecheck": "bun run --filter '*' typecheck",
+    "verify": "bun run check && bun run typecheck && bun run test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "bun-types": "^1.3.11",
+    "bunup": "^0.16.31",
+    "drizzle-kit": "^0.31.10",
+    "lefthook": "^2.1.4"
+  }
+}
