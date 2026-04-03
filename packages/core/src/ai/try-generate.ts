@@ -3,6 +3,7 @@ import { getApiKey } from "../config/index";
 export interface TryAIResult {
 	text: string | null;
 	fromAI: boolean;
+	promptHash?: string;
 }
 
 /**
@@ -35,7 +36,7 @@ export async function tryAIGenerate(
 			!result.text.includes("API key") &&
 			!result.text.startsWith("[HOST_DELEGATION]")
 		) {
-			return { text: result.text, fromAI: true };
+			return { text: result.text, fromAI: true, promptHash: builtPrompt.hash };
 		}
 	} catch {
 		// AI failure — return null for fallback
