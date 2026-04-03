@@ -7,8 +7,10 @@ import { contextCommand } from "./commands/context";
 import { designCommand } from "./commands/design";
 import { doctorCommand } from "./commands/doctor";
 import { explainCommand } from "./commands/explain";
+import { initCommand } from "./commands/init";
 import { learnCommand } from "./commands/learn";
 import { planCommand } from "./commands/plan";
+import { prCommand } from "./commands/pr";
 import { promptCommand } from "./commands/prompt";
 import { reviewDesignCommand } from "./commands/review-design";
 import { specCommand } from "./commands/spec";
@@ -36,6 +38,8 @@ export function createProgram(): Command {
 	program.addCommand(designCommand());
 	program.addCommand(doctorCommand());
 	program.addCommand(explainCommand());
+	program.addCommand(initCommand());
+	program.addCommand(prCommand());
 	program.addCommand(reviewDesignCommand());
 	return program;
 }
