@@ -26,6 +26,11 @@ const config: KnipConfig = {
 			entry: [],
 			project: ["**/*.ts"],
 		},
+		"packages/docs": {
+			entry: ["src/content.config.ts", "astro.config.mjs"],
+			project: ["src/**/*.{ts,astro,mdx}"],
+			ignore: ["dist/**", ".astro/**"],
+		},
 	},
 	ignore: [".maina/**", "examples/**", "scripts/**"],
 	ignoreBinaries: ["tsc"],
