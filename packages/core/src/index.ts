@@ -24,6 +24,8 @@ export {
 	setVerificationResult,
 	trackFile,
 } from "./context/working";
+// DB (Result type)
+export type { Result } from "./db/index";
 // Design (ADR)
 export {
 	type AdrSummary,
@@ -87,6 +89,12 @@ export {
 	runHooks,
 	scanHooks,
 } from "./hooks/index";
+// Init
+export {
+	bootstrap,
+	type InitOptions,
+	type InitReport,
+} from "./init/index";
 export { loadDefault, type PromptTask } from "./prompts/defaults/index";
 // Prompts
 export {
@@ -106,6 +114,16 @@ export {
 	promote,
 	retire,
 } from "./prompts/evolution";
+// PR Review (two-stage)
+export {
+	type ReviewFinding as PrReviewFinding,
+	type ReviewOptions as PrReviewOptions,
+	type ReviewResult as PrReviewResult,
+	type ReviewStageResult,
+	reviewCodeQuality,
+	reviewSpecCompliance,
+	runTwoStageReview,
+} from "./review/index";
 // Stats
 export {
 	type CommitSnapshot,
