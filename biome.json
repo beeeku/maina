@@ -32,7 +32,9 @@
 			"**/*.js",
 			"**/*.jsx",
 			"!**/dist",
-			"!**/node_modules"
+			"!**/node_modules",
+			"!packages/docs/.astro",
+			"!packages/docs/dist"
 		]
 	}
 }
