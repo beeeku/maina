@@ -62,6 +62,12 @@ function makeDeps(overrides: Partial<PrDepsType> = {}): PrDepsType {
 			const { runTwoStageReview: real } = require("@maina/core");
 			return real(options);
 		},
+		generatePrSummary: async (_diff, commits, reviewSummary) => {
+			const commitList = commits
+				.map((c) => `- ${c.message} (${c.hash.slice(0, 7)})`)
+				.join("\n");
+			return `## Summary\n\nTest summary.\n\n## What Changed\n\n${commitList}\n\n## Review\n\n${reviewSummary}`;
+		},
 		...overrides,
 	};
 }
