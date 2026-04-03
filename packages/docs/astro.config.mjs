@@ -25,30 +25,30 @@ export default defineConfig({
         {
           label: 'Start Here',
           items: [
-            { slug: 'docs/getting-started' },
-            { slug: 'docs/commands' },
+            { slug: 'getting-started' },
+            { slug: 'commands' },
           ],
         },
         {
           label: 'Reference',
           items: [
-            { slug: 'docs/configuration' },
-            { slug: 'docs/mcp' },
-            { slug: 'docs/skills' },
+            { slug: 'configuration' },
+            { slug: 'mcp' },
+            { slug: 'skills' },
           ],
         },
         {
           label: 'Engines',
           items: [
-            { slug: 'docs/engines/context' },
-            { slug: 'docs/engines/prompt' },
-            { slug: 'docs/engines/verify' },
+            { slug: 'engines/context' },
+            { slug: 'engines/prompt' },
+            { slug: 'engines/verify' },
           ],
         },
         {
           label: 'Roadmap',
           items: [
-            { slug: 'docs/roadmap' },
+            { slug: 'roadmap' },
           ],
         },
       ],
