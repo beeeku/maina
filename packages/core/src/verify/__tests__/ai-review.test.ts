@@ -1,4 +1,35 @@
-import { describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+
+// Mock tryAIGenerate
+let mockAIResult: {
+	text: string | null;
+	fromAI: boolean;
+	hostDelegation: boolean;
+} = {
+	text: null,
+	fromAI: false,
+	hostDelegation: false,
+};
+
+mock.module("../../ai/try-generate", () => ({
+	tryAIGenerate: async () => mockAIResult,
+}));
+
+mock.module("../../cache/keys", () => ({
+	hashContent: (s: string) => `hash-${s.length}`,
+	buildCacheKey: async () => "test-cache-key",
+}));
+
+mock.module("../../cache/manager", () => ({
+	createCacheManager: () => ({
+		get: () => null,
+		set: () => {},
+		stats: () => ({ l1Hits: 0, l2Hits: 0, misses: 0 }),
+	}),
+}));
+
+afterAll(() => mock.restore());
+
 import { resolveReferencedFunctions } from "../ai-review";
 
 describe("resolveReferencedFunctions", () => {
@@ -99,5 +130,113 @@ describe("resolveReferencedFunctions", () => {
 
 		const result = resolveReferencedFunctions(diff, []);
 		expect(result).toHaveLength(0);
+	});
+});
+
+// Import AFTER mocking
+const { runAIReview } = await import("../ai-review");
+
+describe("runAIReview", () => {
+	const baseOptions = {
+		diff: "+  const x = validateInput(data);",
+		entities: [],
+		mainaDir: ".maina",
+	};
+
+	beforeEach(() => {
+		mockAIResult = { text: null, fromAI: false, hostDelegation: false };
+	});
+
+	it("should return findings from AI response (mechanical tier)", async () => {
+		mockAIResult = {
+			text: JSON.stringify({
+				findings: [
+					{
+						file: "src/app.ts",
+						line: 10,
+						message: "validateInput may return null but caller doesn't check",
+						severity: "warning",
+						ruleId: "ai-review/edge-case",
+					},
+				],
+			}),
+			fromAI: true,
+			hostDelegation: false,
+		};
+
+		const result = await runAIReview(baseOptions);
+
+		expect(result.findings).toHaveLength(1);
+		expect(result.findings[0]?.tool).toBe("ai-review");
+		expect(result.findings[0]?.severity).toBe("warning");
+		expect(result.tier).toBe("mechanical");
+		expect(result.skipped).toBe(false);
+	});
+
+	it("should cap severity to warning in mechanical mode", async () => {
+		mockAIResult = {
+			text: JSON.stringify({
+				findings: [
+					{
+						file: "src/app.ts",
+						line: 5,
+						message: "bad",
+						severity: "error",
+						ruleId: "ai-review/contract",
+					},
+				],
+			}),
+			fromAI: true,
+			hostDelegation: false,
+		};
+
+		const result = await runAIReview(baseOptions);
+		expect(result.findings[0]?.severity).toBe("warning");
+	});
+
+	it("should allow error severity in deep mode", async () => {
+		mockAIResult = {
+			text: JSON.stringify({
+				findings: [
+					{
+						file: "src/app.ts",
+						line: 5,
+						message: "spec violation",
+						severity: "error",
+						ruleId: "ai-review/spec-compliance",
+					},
+				],
+			}),
+			fromAI: true,
+			hostDelegation: false,
+		};
+
+		const result = await runAIReview({ ...baseOptions, deep: true });
+		expect(result.findings[0]?.severity).toBe("error");
+		expect(result.tier).toBe("standard");
+	});
+
+	it("should skip gracefully when AI is unavailable", async () => {
+		mockAIResult = { text: null, fromAI: false, hostDelegation: false };
+		const result = await runAIReview(baseOptions);
+		expect(result.findings).toHaveLength(0);
+		expect(result.skipped).toBe(true);
+	});
+
+	it("should skip gracefully on malformed AI response", async () => {
+		mockAIResult = { text: "not json", fromAI: true, hostDelegation: false };
+		const result = await runAIReview(baseOptions);
+		expect(result.findings).toHaveLength(0);
+		expect(result.skipped).toBe(true);
+	});
+
+	it("should handle host delegation by skipping", async () => {
+		mockAIResult = {
+			text: "[HOST_DELEGATION] prompt here",
+			fromAI: false,
+			hostDelegation: true,
+		};
+		const result = await runAIReview(baseOptions);
+		expect(result.skipped).toBe(true);
 	});
 });
