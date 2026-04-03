@@ -18,6 +18,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Result } from "../db/index";
+import { extractAcceptanceCriteria, STOP_WORDS } from "../utils";
 
 export interface AnalysisReport {
 	featureDir: string;
@@ -49,38 +50,6 @@ function readOptionalFile(path: string): string | null {
 	} catch {
 		return null;
 	}
-}
-
-/**
- * Extract acceptance criteria from spec content.
- * Returns individual criterion lines (trimmed, without leading `- ` or `- [ ] `).
- */
-function extractAcceptanceCriteria(specContent: string): string[] {
-	const lines = specContent.split("\n");
-	const criteria: string[] = [];
-	let inSection = false;
-
-	for (const line of lines) {
-		const trimmed = line.trim();
-
-		if (/^##\s+acceptance\s+criteria/i.test(trimmed)) {
-			inSection = true;
-			continue;
-		}
-
-		if (inSection && /^##\s/.test(trimmed)) {
-			break;
-		}
-
-		if (inSection && trimmed.startsWith("-")) {
-			const content = trimmed.replace(/^-\s*(\[.\]\s*)?/, "").trim();
-			if (content.length > 0) {
-				criteria.push(content);
-			}
-		}
-	}
-
-	return criteria;
 }
 
 /**
@@ -129,31 +98,6 @@ function extractTasks(content: string): ParsedTask[] {
 
 	return tasks;
 }
-
-const STOP_WORDS = new Set([
-	"the",
-	"and",
-	"for",
-	"are",
-	"but",
-	"not",
-	"you",
-	"all",
-	"can",
-	"has",
-	"her",
-	"was",
-	"one",
-	"our",
-	"out",
-	"with",
-	"that",
-	"this",
-	"from",
-	"have",
-	"will",
-	"should",
-]);
 
 /**
  * Extract significant keywords from a text (3+ chars, not stop words).

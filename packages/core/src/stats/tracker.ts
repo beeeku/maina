@@ -1,5 +1,5 @@
 import type { Result } from "../db/index.ts";
-import { getStatsDb } from "../db/index.ts";
+import { getContextDb, getStatsDb } from "../db/index.ts";
 
 export interface SnapshotInput {
 	branch: string;
@@ -407,8 +407,6 @@ export function getComparison(mainaDir: string): Result<ComparisonReport> {
 		let semanticEntities = 0;
 		let dependencyEdges = 0;
 		try {
-			const { getContextDb } =
-				require("../db/index") as typeof import("../db/index");
 			const ctxDb = getContextDb(mainaDir);
 			if (ctxDb.ok) {
 				const epCount = ctxDb.value.db

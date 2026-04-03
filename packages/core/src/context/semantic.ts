@@ -266,6 +266,7 @@ export function assembleSemanticText(
 export function persistSemanticContext(
 	mainaDir: string,
 	context: SemanticContext,
+	repoRoot: string,
 ): void {
 	try {
 		const dbResult = getContextDb(mainaDir);
@@ -304,8 +305,8 @@ export function persistSemanticContext(
 			for (const [target, weight] of targets) {
 				insertEdge.run(
 					crypto.randomUUID(),
-					relative(process.cwd(), source),
-					relative(process.cwd(), target),
+					relative(repoRoot, source),
+					relative(repoRoot, target),
 					weight,
 					"import",
 				);

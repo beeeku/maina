@@ -48,6 +48,14 @@ let verifyPlanCalls: Array<{ planPath: string; specPath: string }> = [];
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 mock.module("@maina/core", () => ({
+	toKebabCase: (input: string) =>
+		input
+			.replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+			.replace(/[\s_]+/g, "-")
+			.replace(/[^a-z0-9-]/gi, "")
+			.replace(/-+/g, "-")
+			.replace(/^-|-$/g, "")
+			.toLowerCase(),
 	getNextFeatureNumber: async (mainaDir: string) => {
 		getNextFeatureNumberCalls.push(mainaDir);
 		if (mockNextNumberError) {

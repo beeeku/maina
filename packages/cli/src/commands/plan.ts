@@ -14,6 +14,7 @@ import {
 	getNextFeatureNumber,
 	scaffoldFeature,
 	scaffoldFeatureWithContext,
+	toKebabCase,
 	verifyPlan,
 } from "@maina/core";
 import { Command } from "commander";
@@ -101,21 +102,6 @@ export interface PlanDeps {
 }
 
 const defaultDeps: PlanDeps = { gitCheckout, gitAdd, gitCommit };
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Convert a string to kebab-case for branch names.
- */
-function toKebabCase(input: string): string {
-	return input
-		.replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-		.replace(/[\s_]+/g, "-")
-		.replace(/[^a-z0-9-]/gi, "")
-		.replace(/-+/g, "-")
-		.replace(/^-|-$/g, "")
-		.toLowerCase();
-}
 
 // ── Interactive Design Prompts ───────────────────────────────────────────────
 

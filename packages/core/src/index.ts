@@ -3,6 +3,7 @@ export const VERSION = "0.1.0";
 // AI
 export { generateCommitMessage } from "./ai/commit-msg";
 export { generate } from "./ai/index";
+export { type TryAIResult, tryAIGenerate } from "./ai/try-generate";
 // AI validation
 export { type AIValidationResult, validateAIOutput } from "./ai/validate";
 // Cache
@@ -74,6 +75,7 @@ export {
 	scaffoldFeature,
 	scaffoldFeatureWithContext,
 } from "./features/numbering";
+export { generateTestStubs } from "./features/test-stubs";
 // Git
 export {
 	type Commit,
@@ -120,6 +122,14 @@ export {
 	promote,
 	retire,
 } from "./prompts/evolution";
+// Comprehensive Review (Superpowers-style)
+export {
+	type ComprehensiveReviewFinding,
+	type ComprehensiveReviewOptions,
+	type ComprehensiveReviewResult,
+	comprehensiveReview,
+	type ReviewSeverity,
+} from "./review/comprehensive";
 // PR Review (two-stage)
 export {
 	type ReviewFinding as PrReviewFinding,
@@ -154,6 +164,8 @@ export {
 	type TicketOptions,
 	type TicketResult,
 } from "./ticket/index";
+// Utils
+export { toKebabCase } from "./utils";
 export {
 	type DetectedTool,
 	detectTool,

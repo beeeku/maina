@@ -1,5 +1,4 @@
-import { join } from "node:path";
-import { initDatabase } from "../db/index";
+import { getCacheDb } from "../db/index";
 
 export interface CacheEntry {
 	key: string;
@@ -69,7 +68,7 @@ export interface CacheManager {
 
 export function createCacheManager(mainaDir: string): CacheManager {
 	// Initialise L2 (SQLite)
-	const dbResult = initDatabase(join(mainaDir, "cache", "cache.db"));
+	const dbResult = getCacheDb(mainaDir);
 	if (!dbResult.ok) {
 		// Return a no-op manager that always misses — never throw
 		const noop: CacheManager = {

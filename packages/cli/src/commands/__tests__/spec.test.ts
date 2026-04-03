@@ -22,8 +22,12 @@ let mockCurrentBranch = "feature/001-user-auth";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
+// Re-export generateTestStubs from the real module so the test can use it
+const realCore = await import("@maina/core");
+
 mock.module("@maina/core", () => ({
 	getCurrentBranch: async (_cwd?: string) => mockCurrentBranch,
+	generateTestStubs: realCore.generateTestStubs,
 }));
 
 mock.module("@clack/prompts", () => ({
@@ -49,7 +53,8 @@ afterAll(() => {
 
 // ── Import the module under test AFTER mocks ─────────────────────────────────
 
-const { generateTestStubs, specAction } = await import("../spec");
+const { specAction } = await import("../spec");
+const { generateTestStubs } = await import("@maina/core");
 type SpecDepsType = import("../spec").SpecDeps;
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
