@@ -21,6 +21,7 @@ export interface ExplainActionResult {
 	reason?: string;
 	diagram?: string;
 	summaries?: ModuleSummary[];
+	aiSummary?: string;
 	outputPath?: string;
 	empty?: boolean;
 }
@@ -82,10 +83,44 @@ export async function explainAction(
 	// Detect if codebase is empty (no edges, no entities)
 	const isEmpty = diagram === "graph LR\n" && summaries.length === 0;
 
+	// Try AI summary when API key available
+	let aiSummary: string | undefined;
+	if (!isEmpty) {
+		try {
+			const { getApiKey } = await import("@maina/core");
+			if (getApiKey()) {
+				const { buildSystemPrompt } = await import("@maina/core");
+				const { generate } = await import("@maina/core");
+				const modulesText = summaries
+					.map(
+						(s) =>
+							`${s.module}: ${s.functions}fn, ${s.classes}cls, ${s.interfaces}ifc`,
+					)
+					.join("\n");
+				const builtPrompt = await buildSystemPrompt("explain", mainaDir, {
+					diagram,
+					modules: modulesText,
+				});
+				const result = await generate({
+					task: "explain",
+					systemPrompt: builtPrompt.prompt,
+					userPrompt: `Summarize this codebase structure:\n\n${diagram}\n\nModules:\n${modulesText}`,
+					mainaDir,
+				});
+				if (result.text && !result.text.includes("API key")) {
+					aiSummary = result.text;
+				}
+			}
+		} catch {
+			// AI summary failure — deterministic output is always shown
+		}
+	}
+
 	return {
 		displayed: true,
 		diagram,
 		summaries,
+		aiSummary,
 		outputPath: options.output,
 		empty: isEmpty,
 	};
@@ -97,6 +132,7 @@ function displayExplain(
 	diagram: string,
 	summaries: ModuleSummary[],
 	empty: boolean,
+	aiSummary?: string,
 ): void {
 	if (empty) {
 		log.warning(
@@ -112,6 +148,12 @@ function displayExplain(
 		log.info("");
 		log.info("Module Summary:");
 		log.message(formatSummaryTable(summaries));
+	}
+
+	if (aiSummary) {
+		log.info("");
+		log.info("AI Summary:");
+		log.message(aiSummary);
 	}
 }
 
@@ -140,6 +182,7 @@ export function explainCommand(): Command {
 				result.diagram ?? "",
 				result.summaries ?? [],
 				result.empty ?? false,
+				result.aiSummary,
 			);
 
 			// Write to file if --output specified
