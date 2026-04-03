@@ -17,7 +17,7 @@ describe("isToolAvailable", () => {
 describe("search", () => {
 	test("finds getCurrentBranch in git/index.ts", async () => {
 		const results = await search("getCurrentBranch", {
-			cwd: "/Users/Bikash/try/maina",
+			cwd: process.cwd(),
 		});
 		expect(results.length).toBeGreaterThan(0);
 		const found = results.some(
@@ -30,7 +30,7 @@ describe("search", () => {
 	test("respects maxResults limit", async () => {
 		// Search for something that appears many times (e.g. 'export')
 		const results = await search("export", {
-			cwd: "/Users/Bikash/try/maina",
+			cwd: process.cwd(),
 			maxResults: 3,
 		});
 		expect(results.length).toBeLessThanOrEqual(3);
@@ -40,7 +40,7 @@ describe("search", () => {
 		// Use a pattern that cannot appear in real source code
 		const needle = ["ZZZZ", "QQQQ", "NOSUCHSYMBOL", "9999"].join("__");
 		const results = await search(needle, {
-			cwd: "/Users/Bikash/try/maina",
+			cwd: process.cwd(),
 		});
 		expect(results).toEqual([]);
 	});
