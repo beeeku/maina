@@ -1157,7 +1157,113 @@ Test that skills trigger automatically from naive prompts like
 
 ---
 
-## Sprint 9 — Publish
+## Sprint 9 — Spec Quality + Verification Discipline (Karpathy Principles)
+
+**Goal:** Make maina's spec/plan system world-class by applying Karpathy's core principles: measure everything, verify every claim, iterate with tight feedback loops, and treat specs as training data — garbage in, garbage out.
+
+### Philosophy
+
+Andrej Karpathy's approach to building reliable systems applies directly to specification quality:
+
+1. **"The most dangerous thing is a slightly wrong answer"** — A spec that seems complete but has gaps is worse than no spec. Maina must catch the gaps deterministically.
+2. **"You need to stare at your data"** — Specs are the "training data" for implementation. If the spec is vague, the code will hallucinate.
+3. **"Start with the simplest thing, measure, iterate"** — Every spec should have measurable acceptance criteria. If you can't write a test for it, the requirement isn't clear enough.
+4. **"Loss curves don't lie"** — Track spec quality metrics over time. Are plans getting more consistent? Are fewer orphaned tasks appearing? Is the verify-skip rate dropping?
+
+### Tasks
+
+**T001 — Rationalization prevention system**
+```
+- [ ] packages/core/src/verify/discipline.ts
+      Track skip events: when --skip or --no-verify is used on maina commit,
+      log it as a "discipline violation" in stats.db
+      skipRate = skips / totalCommits — shown in maina stats
+      If skipRate > 20%, maina stats shows a warning
+- [ ] Test: 5 commits with 2 skips → skipRate 40% → warning shown
+```
+
+**T002 — Red-green enforcement for maina spec**
+```
+- [ ] After maina spec generates test stubs, automatically run them
+      Verify ALL stubs fail (red phase). If any pass, flag as "test not
+      testing anything useful — rewrite"
+      This catches the Karpathy principle: "a test that passes immediately
+      proves nothing"
+- [ ] Test: generated stubs all have expect(true).toBe(false) → all red → pass
+        Modified stub that passes → flagged as suspicious
+```
+
+**T003 — Spec quality scoring**
+```
+- [ ] packages/core/src/features/quality.ts
+      scoreSpec(specPath) → QualityReport with:
+      - measurability: % of acceptance criteria that contain measurable verbs
+        (validates, returns, creates, sends, rejects) vs vague verbs
+        (handles, manages, supports, processes)
+      - completeness: ratio of [NEEDS CLARIFICATION] markers to total criteria
+      - testability: can each criterion be expressed as a test assertion?
+      - ambiguity: count of weasel words (might, maybe, should, could, etc.)
+      Overall score 0-100. Below 60 = warning. Below 40 = block.
+- [ ] Test: spec with "validates email format" scores high;
+        spec with "handles authentication" scores low
+```
+
+**T004 — Plan-to-code traceability**
+```
+- [ ] packages/core/src/features/traceability.ts
+      After implementation, verify each plan task has corresponding:
+      - Test file (by task number in test name or file name)
+      - Implementation file (by function/type names from plan)
+      - Commit (by conventional commit message referencing task)
+      Missing traceability = warning in maina analyze
+- [ ] Test: plan with T001-T003, commits reference T001 and T003 →
+        T002 flagged as untraced
+```
+
+**T005 — Spec evolution metrics in maina stats**
+```
+- [ ] Track per-feature: initial spec score, final spec score,
+      analyze findings at creation vs at merge
+      Show improvement trend: "Specs improving: avg score 45 → 72 over 5 features"
+- [ ] maina stats --specs shows spec-specific metrics
+```
+
+**T006 — Stop conditions for maina commit**
+```
+- [ ] If maina analyze finds errors (not warnings) on current feature,
+      maina commit shows a warning: "Feature 001-stats-tracker has 3 spec
+      consistency errors. Run maina analyze to review."
+      Does NOT block — just warns. User can always proceed.
+      Configurable: .maina/preferences.json { "analyzeOnCommit": true }
+- [ ] Test: feature with spec errors → warning shown on commit;
+        clean feature → no warning
+```
+
+### Delegation prompt
+```
+Read PRODUCT_SPEC.md and IMPLEMENTATION_PLAN.md Sprint 9.
+
+Build Karpathy-principled verification into maina's spec/plan system.
+Core insight: specs are training data — quality in = quality out.
+
+Key deliverables:
+1. Rationalization prevention (skip tracking + warnings)
+2. Red-green enforcement (spec stubs must fail)
+3. Spec quality scoring (measurability, testability, ambiguity)
+4. Plan-to-code traceability (every task → test + code + commit)
+5. Evolution metrics (are specs improving over time?)
+6. Stop conditions (analyze warnings on commit)
+
+Compare against Superpowers' TDD and verification-before-completion
+skills — steal the discipline, automate the checks.
+
+Use maina plan + maina spec to scaffold this sprint.
+6 tasks, fresh subagent per task.
+```
+
+---
+
+## Sprint 10 — Publish
 
 **T001** — npm package: `bunx maina --version` works globally
 **T002** — Single binary: `bun build --compile`, GitHub Release (macOS + Linux)
@@ -1167,7 +1273,7 @@ Test that skills trigger automatically from naive prompts like
 
 ---
 
-## Sprint 10 — Launch
+## Sprint 11 — Launch
 
 **T001** — Show HN, dev.to article
 **T002** — GitHub Discussions, issue templates, CONTRIBUTING.md
@@ -1187,3 +1293,5 @@ Test that skills trigger automatically from naive prompts like
 | 6 | Full 10-step workflow | What's total friction vs manual? |
 | 7 | MCP in Cursor | Does `getContext` eliminate context-switching? |
 | 8 | `maina learn` after 8 weeks | Do evolved prompts outperform originals? |
+| 9 | `maina stats --specs` after 5+ features | Are spec quality scores trending up? Is skip rate below 10%? |
+| 10 | `bunx maina` on a fresh repo | Can a new user go from zero to verified commit in 2 minutes? |
