@@ -2,10 +2,11 @@
  * Init module — bootstraps Maina in a repository.
  *
  * Creates `.maina/` directory structure and scaffolds default files.
+ * Detects project type from package.json and customizes templates.
  * Never overwrites existing files unless `force: true`.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Result } from "../db/index";
 
@@ -19,22 +20,195 @@ export interface InitReport {
 	created: string[];
 	skipped: string[];
 	directory: string;
+	detectedStack: DetectedStack;
+}
+
+export interface DetectedStack {
+	runtime: "bun" | "node" | "deno" | "unknown";
+	language: "typescript" | "javascript" | "unknown";
+	testRunner: string;
+	linter: string;
+	framework: string;
+}
+
+// ── Project Detection ───────────────────────────────────────────────────────
+
+function detectStack(repoRoot: string): DetectedStack {
+	const stack: DetectedStack = {
+		runtime: "unknown",
+		language: "unknown",
+		testRunner: "unknown",
+		linter: "unknown",
+		framework: "none",
+	};
+
+	// Try reading package.json
+	const pkgPath = join(repoRoot, "package.json");
+	if (!existsSync(pkgPath)) return stack;
+
+	let pkg: Record<string, unknown>;
+	try {
+		pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+	} catch {
+		return stack;
+	}
+
+	const allDeps = {
+		...(pkg.dependencies as Record<string, string> | undefined),
+		...(pkg.devDependencies as Record<string, string> | undefined),
+		...(pkg.peerDependencies as Record<string, string> | undefined),
+	};
+
+	// Runtime detection
+	if (
+		allDeps["@types/bun"] ||
+		allDeps["bun-types"] ||
+		existsSync(join(repoRoot, "bun.lock"))
+	) {
+		stack.runtime = "bun";
+	} else if (
+		existsSync(join(repoRoot, "deno.json")) ||
+		existsSync(join(repoRoot, "deno.jsonc"))
+	) {
+		stack.runtime = "deno";
+	} else {
+		stack.runtime = "node";
+	}
+
+	// Language detection
+	if (existsSync(join(repoRoot, "tsconfig.json")) || allDeps.typescript) {
+		stack.language = "typescript";
+	} else {
+		stack.language = "javascript";
+	}
+
+	// Test runner detection
+	if (stack.runtime === "bun") {
+		stack.testRunner = "bun:test";
+	} else if (allDeps.vitest) {
+		stack.testRunner = "vitest";
+	} else if (allDeps.jest || allDeps["@jest/core"]) {
+		stack.testRunner = "jest";
+	} else if (allDeps.mocha) {
+		stack.testRunner = "mocha";
+	}
+
+	// Linter detection
+	if (allDeps["@biomejs/biome"]) {
+		stack.linter = "biome";
+	} else if (allDeps.eslint) {
+		stack.linter = "eslint";
+	} else if (allDeps.prettier) {
+		stack.linter = "prettier";
+	}
+
+	// Framework detection
+	if (allDeps.next) {
+		stack.framework = "next.js";
+	} else if (allDeps.express) {
+		stack.framework = "express";
+	} else if (allDeps.hono) {
+		stack.framework = "hono";
+	} else if (allDeps.react && !allDeps.next) {
+		stack.framework = "react";
+	} else if (allDeps.vue) {
+		stack.framework = "vue";
+	} else if (allDeps.svelte) {
+		stack.framework = "svelte";
+	}
+
+	return stack;
 }
 
 // ── Templates ────────────────────────────────────────────────────────────────
 
-const CONSTITUTION_TEMPLATE = `# Project Constitution
+function buildConstitution(stack: DetectedStack): string {
+	const runtimeLine =
+		stack.runtime !== "unknown"
+			? `- Runtime: ${stack.runtime === "bun" ? "Bun (NOT Node.js)" : stack.runtime}`
+			: "- Runtime: [NEEDS CLARIFICATION]";
+
+	const langLine =
+		stack.language !== "unknown"
+			? `- Language: ${stack.language === "typescript" ? "TypeScript strict mode" : "JavaScript"}`
+			: "- Language: [NEEDS CLARIFICATION]";
+
+	const lintLine =
+		stack.linter !== "unknown"
+			? `- Lint/Format: ${stack.linter}`
+			: "- Lint/Format: [NEEDS CLARIFICATION]";
+
+	const testLine =
+		stack.testRunner !== "unknown"
+			? `- Test: ${stack.testRunner}`
+			: "- Test: [NEEDS CLARIFICATION]";
+
+	const frameworkLine =
+		stack.framework !== "none" ? `- Framework: ${stack.framework}\n` : "";
+
+	return `# Project Constitution
+
+Non-negotiable rules. Injected into every AI call.
 
 ## Stack
-- [NEEDS CLARIFICATION] Define your runtime, language, and tools.
-
+${runtimeLine}
+${langLine}
+${lintLine}
+${testLine}
+${frameworkLine}
 ## Architecture
 - [NEEDS CLARIFICATION] Define architectural constraints.
 
 ## Verification
 - All commits pass: lint + typecheck + test
-- [NEEDS CLARIFICATION] Define quality gates.
+- Diff-only: only report findings on changed lines
+
+## Conventions
+- [NEEDS CLARIFICATION] Add project-specific conventions.
 `;
+}
+
+function buildAgentsMd(stack: DetectedStack): string {
+	const runCmd = stack.runtime === "bun" ? "bun" : "npm";
+	const installCmd = stack.runtime === "bun" ? "bun install" : "npm install";
+
+	return `# AGENTS.md
+
+This repo uses [Maina](https://github.com/user/maina) for verification-first development.
+
+## Quick Start
+\`\`\`bash
+${installCmd}
+maina doctor    # check tool health
+maina verify    # run verification pipeline
+maina commit    # verify + commit
+\`\`\`
+
+## Commands
+| Command | Purpose |
+|---------|---------|
+| \`maina commit\` | Verify staged changes and commit |
+| \`maina verify\` | Run full verification pipeline |
+| \`maina context\` | Generate focused codebase context |
+| \`maina plan <name>\` | Create feature with spec/plan/tasks |
+| \`maina analyze\` | Check spec/plan consistency |
+| \`maina review\` | Two-stage code review |
+| \`maina stats\` | Show verification metrics |
+| \`maina doctor\` | Check tool health |
+
+## Config Files
+| File | Purpose | Who Edits |
+|------|---------|-----------|
+| \`.maina/constitution.md\` | Project DNA — stack, rules, gates | Team (stable, rarely changes) |
+| \`AGENTS.md\` | Agent instructions — commands, conventions | Team |
+| \`CLAUDE.md\` | Claude Code specific instructions | Optional, Claude Code users |
+| \`.maina/prompts/*.md\` | Prompt overrides for review/commit/etc | Maina (via \`maina learn\`) |
+
+## Runtime
+- Package manager: \`${runCmd}\`
+- Test: \`${runCmd} test\`
+`;
+}
 
 const REVIEW_PROMPT_TEMPLATE = `# Review Prompt
 
@@ -43,8 +217,6 @@ Review the following code changes for:
 2. Style — does it follow project conventions?
 3. Safety — are there security or performance concerns?
 4. Tests — are changes adequately tested?
-
-[NEEDS CLARIFICATION] Add project-specific review criteria.
 `;
 
 const COMMIT_PROMPT_TEMPLATE = `# Commit Message Prompt
@@ -54,38 +226,34 @@ Generate a conventional commit message for the staged changes.
 Format: <type>(<scope>): <description>
 
 Types: feat, fix, refactor, test, docs, chore, ci, perf
-
-[NEEDS CLARIFICATION] Add project-specific commit conventions.
 `;
 
-const AGENTS_TEMPLATE = `# AGENTS.md
+function buildCiWorkflow(stack: DetectedStack): string {
+	const isBun = stack.runtime === "bun";
+	const setup = isBun
+		? "      - uses: oven-sh/setup-bun@v2"
+		: "      - uses: actions/setup-node@v4";
+	const install = isBun ? "bun install" : "npm ci";
+	const check = isBun ? "bun run check" : "npm run lint";
+	const typecheck =
+		stack.language === "typescript"
+			? `      - run: ${isBun ? "bun run typecheck" : "npx tsc --noEmit"}\n`
+			: "";
+	const test = isBun ? "bun test" : "npm test";
 
-This repo uses Maina for verification. Run \`maina verify\` before committing.
-
-## Commands
-- \`maina commit\` — Verify and commit
-- \`maina verify\` — Run verification pipeline
-- \`maina context\` — Generate codebase context
-- \`maina plan <name>\` — Create feature branch
-- \`maina analyze\` — Check spec/plan consistency
-
-## Conventions
-[NEEDS CLARIFICATION] Add your team's conventions here.
-`;
-
-const CI_WORKFLOW_TEMPLATE = `name: Maina CI
+	return `name: Maina CI
 on: [push, pull_request]
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun run check
-      - run: bun run typecheck
-      - run: bun run test
+${setup}
+      - run: ${install}
+      - run: ${check}
+${typecheck}      - run: ${test}
 `;
+}
 
 // ── File Manifest ────────────────────────────────────────────────────────────
 
@@ -95,11 +263,11 @@ interface FileEntry {
 	content: string;
 }
 
-function getFileManifest(): FileEntry[] {
+function getFileManifest(stack: DetectedStack): FileEntry[] {
 	return [
 		{
 			relativePath: ".maina/constitution.md",
-			content: CONSTITUTION_TEMPLATE,
+			content: buildConstitution(stack),
 		},
 		{
 			relativePath: ".maina/prompts/review.md",
@@ -111,11 +279,11 @@ function getFileManifest(): FileEntry[] {
 		},
 		{
 			relativePath: "AGENTS.md",
-			content: AGENTS_TEMPLATE,
+			content: buildAgentsMd(stack),
 		},
 		{
 			relativePath: ".github/workflows/maina-ci.yml",
-			content: CI_WORKFLOW_TEMPLATE,
+			content: buildCiWorkflow(stack),
 		},
 	];
 }
@@ -128,6 +296,7 @@ const EXTRA_DIRS = [".maina/hooks"];
 /**
  * Bootstrap Maina in the given repository root.
  *
+ * Detects project type from package.json and customizes templates.
  * Creates `.maina/` directory structure and scaffolds default files.
  * Never overwrites existing files unless `force: true`.
  * Returns a report of what was created vs skipped.
@@ -142,6 +311,9 @@ export async function bootstrap(
 	const skipped: string[] = [];
 
 	try {
+		// Detect project stack from package.json
+		const detectedStack = detectStack(repoRoot);
+
 		// Ensure .maina/ exists
 		mkdirSync(mainaDir, { recursive: true });
 
@@ -150,8 +322,8 @@ export async function bootstrap(
 			mkdirSync(join(repoRoot, dir), { recursive: true });
 		}
 
-		// Scaffold each file
-		const manifest = getFileManifest();
+		// Scaffold each file with stack-aware templates
+		const manifest = getFileManifest(detectedStack);
 		for (const entry of manifest) {
 			const fullPath = join(repoRoot, entry.relativePath);
 			const dirPath = join(fullPath, "..");
@@ -169,7 +341,7 @@ export async function bootstrap(
 
 		return {
 			ok: true,
-			value: { created, skipped, directory: mainaDir },
+			value: { created, skipped, directory: mainaDir, detectedStack },
 		};
 	} catch (e) {
 		return {

@@ -127,6 +127,7 @@ export {
 // Init
 export {
 	bootstrap,
+	type DetectedStack,
 	type InitOptions,
 	type InitReport,
 } from "./init/index";

@@ -1,7 +1,12 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { intro, log, outro } from "@clack/prompts";
-import { bootstrap, type InitReport, type Result } from "@maina/core";
+import {
+	bootstrap,
+	type DetectedStack,
+	type InitReport,
+	type Result,
+} from "@maina/core";
 import { Command } from "commander";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -53,6 +58,17 @@ export async function initAction(
 	}
 
 	const report = result.value;
+	const s = report.detectedStack;
+
+	// Show detected stack
+	deps.log.info("Detected stack:");
+	deps.log.message(`  Runtime:    ${s.runtime}`);
+	deps.log.message(`  Language:   ${s.language}`);
+	deps.log.message(`  Test:       ${s.testRunner}`);
+	deps.log.message(`  Linter:     ${s.linter}`);
+	if (s.framework !== "none") {
+		deps.log.message(`  Framework:  ${s.framework}`);
+	}
 
 	// Display created files
 	if (report.created.length > 0) {
@@ -72,9 +88,18 @@ export async function initAction(
 
 	// Suggest next steps
 	deps.log.step("Next steps:");
-	deps.log.message("  1. Edit .maina/constitution.md with your project DNA");
-	deps.log.message("  2. Customize .maina/prompts/ for your team");
-	deps.log.message("  3. Run `maina doctor` to check your setup");
+	deps.log.message("  1. Review .maina/constitution.md — your project DNA");
+	deps.log.message("  2. Run `maina doctor` to check tool health");
+	deps.log.message("  3. Run `maina verify` on your first commit");
+	deps.log.message("");
+	deps.log.message("  Config guide:");
+	deps.log.message(
+		"    .maina/constitution.md  — Stack rules, shared by all agents",
+	);
+	deps.log.message("    AGENTS.md               — Instructions for AI agents");
+	deps.log.message(
+		"    CLAUDE.md               — Claude Code specific (optional)",
+	);
 
 	return result;
 }
