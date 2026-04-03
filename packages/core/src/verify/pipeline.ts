@@ -125,6 +125,12 @@ export async function runPipeline(
 	const detectedTools = await detectTools();
 
 	// ── Step 4: Run all available tools in PARALLEL ───────────────────────
+	// Build a lookup from detection results to avoid redundant subprocess spawns
+	const toolAvailability = new Map<string, boolean>();
+	for (const t of detectedTools) {
+		toolAvailability.set(t.name, t.available);
+	}
+
 	const toolPromises: Promise<ToolReport>[] = [];
 
 	// Slop detector always runs (no external tool dependency)
@@ -135,17 +141,33 @@ export async function runPipeline(
 		}),
 	);
 
-	// Semgrep
+	// Semgrep — pass pre-resolved availability
 	toolPromises.push(
-		runToolWithTiming("semgrep", () => runSemgrep({ files, cwd })),
+		runToolWithTiming("semgrep", () =>
+			runSemgrep({
+				files,
+				cwd,
+				available: toolAvailability.get("semgrep") ?? false,
+			}),
+		),
 	);
 
-	// Trivy
-	toolPromises.push(runToolWithTiming("trivy", () => runTrivy({ cwd })));
-
-	// Secretlint
+	// Trivy — pass pre-resolved availability
 	toolPromises.push(
-		runToolWithTiming("secretlint", () => runSecretlint({ files, cwd })),
+		runToolWithTiming("trivy", () =>
+			runTrivy({ cwd, available: toolAvailability.get("trivy") ?? false }),
+		),
+	);
+
+	// Secretlint — pass pre-resolved availability
+	toolPromises.push(
+		runToolWithTiming("secretlint", () =>
+			runSecretlint({
+				files,
+				cwd,
+				available: toolAvailability.get("secretlint") ?? false,
+			}),
+		),
 	);
 
 	const toolReports = await Promise.all(toolPromises);

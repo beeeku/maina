@@ -14,6 +14,8 @@ import type { Finding } from "./diff-filter";
 export interface TrivyOptions {
 	scanType?: "fs" | "repo";
 	cwd?: string;
+	/** Pre-resolved availability — skips redundant detection if provided. */
+	available?: boolean;
 }
 
 export interface TrivyResult {
@@ -122,8 +124,8 @@ export function parseTrivyJson(json: string): Finding[] {
  * If trivy fails, returns `{ findings: [], skipped: false }`.
  */
 export async function runTrivy(options?: TrivyOptions): Promise<TrivyResult> {
-	const available = await isToolAvailable("trivy");
-	if (!available) {
+	const toolAvailable = options?.available ?? (await isToolAvailable("trivy"));
+	if (!toolAvailable) {
 		return { findings: [], skipped: true };
 	}
 
