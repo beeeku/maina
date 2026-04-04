@@ -25,14 +25,20 @@ bunx maina commit
 ### 1. Initialize
 
 ```bash
-maina init
+maina init --install
 ```
 
-This creates the `.maina/` directory in your repo with:
+This creates the `.maina/` directory in your repo and installs missing verification tools:
 - `constitution.md` -- your project's non-negotiable rules
 - `prompts/` -- custom AI prompt templates
 - `hooks/` -- lifecycle scripts
 - `AGENTS.md` -- cross-tool agent instructions
+
+Then configure your project settings:
+
+```bash
+maina configure
+```
 
 ### 2. Make changes and commit
 
@@ -77,15 +83,16 @@ No accounts. No Docker. No cloud. Everything runs locally in your terminal.
 
 ## What happens during `maina commit`
 
-1. **Syntax guard** -- Biome checks your code compiles and parses (under 500ms). If it fails, the commit is rejected immediately.
-2. **Parallel analysis** -- All detected tools (Biome, Semgrep, Trivy, etc.) run in parallel on your diff.
-3. **Diff-only filter** -- Only findings on changed lines are reported. No pre-existing noise.
-4. **AI fix** (if AI is configured) -- Context-aware fix suggestions for any findings.
+1. **Syntax guard** -- Language-aware linting (Biome for TS, ruff for Python, go vet for Go, clippy for Rust). Under 500ms. Rejects immediately on failure.
+2. **Parallel analysis** -- 12 tools run in parallel: slop, Semgrep, Trivy, Secretlint, SonarQube, Stryker, diff-cover, AI review.
+3. **Diff-only filter** -- Only findings on changed lines. No pre-existing noise.
+4. **AI fix** (if AI configured) -- Context-aware fix suggestions.
 5. **Git commit** -- If everything passes, your changes are committed with a conventional commit message.
+6. **Workflow tracking** -- Step recorded in workflow context + async RL feedback for prompt evolution.
 
 ## Next Steps
 
-- [Commands](/maina/commands) -- All 20 commands across Define, Build, Verify, and Meta phases
+- [Commands](/maina/commands) -- All 24 commands across Define, Build, Verify, and Meta phases
 - [Configuration](/maina/configuration) -- Model tiers, constitution, custom prompts
 - [MCP Server](/maina/mcp) -- Add Maina to your IDE
 - [Engines](/maina/engines/context) -- How Context, Prompt, and Verify engines work

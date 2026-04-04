@@ -3,36 +3,52 @@ title: Roadmap
 description: Upcoming features and the future direction of Maina.
 ---
 
-Maina is open source (Apache 2.0) and actively developed. Here is what is planned.
+Maina is open source (Apache 2.0) and actively developed. Here is what is shipped and planned.
 
-## v1.1 -- Structured Output
+## Shipped (v0.2.0)
+
+- **24 CLI commands** across Define, Build, Verify, and Meta phases
+- **12-tool verification pipeline** -- Biome, Semgrep, Trivy, Secretlint, SonarQube, Stryker, diff-cover, AI review, slop detection, and visual regression
+- **Multi-language support** -- TypeScript, Python, Go, Rust with language-specific profiles
+- **Visual verification** -- Playwright screenshot regression testing
+- **Workflow context** -- rolling summary forwarded between lifecycle steps
+- **Background RL** -- async feedback recording at each workflow step with post-workflow analysis
+- **Interactive configuration** -- `maina configure` for constitution, conventions, tools, visual URLs
+- **Verification proof** -- `maina pr` includes verification artifacts in the PR body
+- **Host delegation** -- works inside Claude Code, Codex, and OpenCode via structured DelegationPrompt
+- **8 MCP tools** for IDE integration
+- **5 cross-platform skills** for Claude Code, Cursor, Codex, Gemini CLI
+- **990 tests**
+
+## v0.3.0 -- Enterprise Languages
+
+- **C# (.NET) support** -- `dotnet format` / Roslyn analyzers, `.sln`/`.csproj` detection
+- **Java/Kotlin support** -- Checkstyle, SpotBugs, PMD, `pom.xml`/`build.gradle` detection
+- **PHP support** -- PHPStan, Psalm
+- **Per-file language detection** in polyglot repos (currently uses primary language)
+
+## v0.4.0 -- Structured Output + CI
 
 - **`--json` flag** on all commands for machine-readable output
-- **Structured tool results** -- verification findings, context summaries, and review output as typed JSON
-- **CI integration** -- `maina verify --json` for GitHub Actions, GitLab CI, and other pipelines
-- **Exit codes** -- meaningful exit codes for scripting (0 = pass, 1 = findings, 2 = error)
-
-## v1.5 -- Extended Analysis
-
+- **CI integration** -- `maina verify --json` for GitHub Actions, GitLab CI
+- **Exit codes** -- meaningful exit codes for scripting
 - **DAST with ZAP** -- Dynamic Application Security Testing for web applications
-- **Lighthouse** -- Performance, accessibility, and SEO auditing for web projects
-- **Playwright MCP** -- Browser automation for end-to-end verification
-- **Custom tool plugins** -- Register your own analysis tools in the verification pipeline
+- **Lighthouse** -- Performance, accessibility, and SEO auditing
 
-## v2.0 -- Extensibility
+## v1.0.0 -- Team / Cloud
 
-- **Chrome extension** -- Review AI-generated code in GitHub PRs directly in the browser
-- **`transformContext` hooks** -- Programmatic context manipulation before it reaches the AI
-- **`maina extend`** -- Install community extensions from a registry
-- **Team sync** (Maina Cloud) -- Shared prompts, feedback, and learned preferences across team members via Turso
+- **Team sync (Maina Cloud)** -- Shared prompts, feedback, and learned preferences across team members via Turso
+- **Usage dashboard** -- Track verification metrics across the team
+- **SSO** -- Single sign-on for teams
+- **Shared visual baselines** -- S3/CDN storage for visual regression baselines
 
-## Future
+## v2.0.0 -- Enterprise
 
-- **File tracking** -- Know which files are AI-generated, which are human-written, and track the ratio over time
-- **Branch summarization** -- Automatic compressed summaries of branch activity for the episodic layer
+- **Air-gapped deployment** -- On-premise with audit logging, SOC 2 compliance
+- **Custom model fine-tuning** -- From your team's accepted reviews and feedback
+- **Chrome extension** -- Review AI-generated code in GitHub PRs
+- **`transformContext` hooks** -- Programmatic context manipulation
 - **Self-extending agent** -- Maina proposes its own extensions based on usage patterns
-- **Fine-tuned models** -- Custom model fine-tuning from your team's accepted reviews and feedback
-- **Air-gapped enterprise** -- On-premise deployment with audit logging, SSO, and SOC 2 compliance
 
 ## Contributing
 
@@ -66,12 +82,13 @@ bun run verify       # Full verification: check + typecheck + test
 
 ### Where to contribute
 
+- **New language profiles** -- Add a `LanguageProfile` in `packages/core/src/language/profile.ts`
 - **New analysis tools** -- Add a tool adapter in `packages/core/src/verify/`
+- **Linter parsers** -- Add output parsers in `packages/core/src/verify/linters/`
 - **Skills** -- Write new SKILL.md files in `packages/skills/`
-- **Custom Semgrep rules** -- Add rules in `rules/`
 - **Documentation** -- Improve these docs in `packages/docs/`
 - **Bug reports and feature requests** -- Open a GitHub Issue
 
 ### Dogfooding
 
-From Sprint 3 onward, every commit to Maina has gone through `maina commit`. If you contribute, use `maina commit` for your commits too. If a gate is noisy, fix the gate -- do not skip it.
+Every commit to Maina goes through `maina commit`. If you contribute, use `maina commit` for your commits too. If a gate is noisy, fix the gate -- do not skip it.
