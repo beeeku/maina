@@ -38,8 +38,11 @@ function hashContent(content: string): string {
 	return hasher.digest("hex");
 }
 
+// Bump this when detection logic changes to invalidate stale cache entries
+const SLOP_CACHE_VERSION = 2;
+
 function cacheKey(fileHash: string): string {
-	return `slop:${fileHash}`;
+	return `slop:v${SLOP_CACHE_VERSION}:${fileHash}`;
 }
 
 // ─── Individual Detectors ─────────────────────────────────────────────────
