@@ -1,45 +1,50 @@
-# Feature: [Name]
+# Feature 013: Fix Host Delegation for CLI AI Tasks
 
-## Problem Statement
+## Problem
 
-What specific problem does this solve? Who experiences it? What happens if we don't solve it?
-
-- [NEEDS CLARIFICATION] Define the problem clearly.
-
-## Target User
-
-Who benefits? What is their current workflow? What frustrates them about it?
-
-- Primary: [NEEDS CLARIFICATION]
-- Secondary: [NEEDS CLARIFICATION]
-
-## User Stories
-
-- As a [role], I want [capability] so that [benefit].
+When running `maina design --hld` inside Claude Code, the CLI subprocess detects `CLAUDECODE=1` and `CLAUDE_CODE_ENTRYPOINT=cli` env vars but has no API keys. `shouldDelegateToHost()` returns true, `generate()` returns `[HOST_DELEGATION]` text, but the subprocess has no way to send this back to the host. Result: `generateHldLld()` treats delegation as "AI unavailable" and silently returns null, producing ADRs with all `[NEEDS CLARIFICATION]` placeholders.
 
 ## Success Criteria
 
-How do we know this works? Every criterion must be testable — if you can't write
-an assertion for it, the requirement isn't clear enough.
+- **SC-1:** `tryAIGenerate()` in CLI mode (non-MCP) never returns `hostDelegation: true` — instead returns the delegation prompt as actual text for the caller to use
+- **SC-2:** `generateHldLld()` returns an explicit error when AI cannot generate, never silently returns null
+- **SC-3:** CLI `maina design --hld` either generates content or shows a clear error message
+- **SC-4:** MCP mode still delegates correctly (no regression)
+- **SC-5:** When ANTHROPIC_API_KEY is available in host mode, direct API call is used (already works)
 
-- [ ] [NEEDS CLARIFICATION] Define measurable, testable criteria.
+## Out of Scope
 
-## Scope
+- Making the CLI subprocess talk back to the host agent (would require IPC)
+- Changing the MCP delegation path
+- Adding new API key configuration flows
 
-### In Scope
+## Design
 
-- [NEEDS CLARIFICATION] What this feature does.
+The fix has two parts:
 
-### Out of Scope
+### Part 1: `tryAIGenerate` returns delegation text as content
 
-- [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
+In `packages/core/src/ai/try-generate.ts`, when `hostDelegation: true`, instead of returning `{ hostDelegation: true }`, return the text as `fromAI: true`. The delegation prompt IS the AI's contribution — it's a well-structured prompt that contains the system prompt + user prompt. Callers can use this directly.
 
-## Design Decisions
+This works because:
+- The delegation prompt contains `[HOST_DELEGATION] Task: design-hld-lld\n\nSystem: ...\n\nUser: ...`
+- We strip the `[HOST_DELEGATION]` prefix and return the user prompt portion
+- This gives the caller a structured prompt they can display or process
 
-Key choices made and WHY. Record tradeoffs — future you will thank you.
+### Part 2: `generateHldLld` returns error instead of null
 
-- [NEEDS CLARIFICATION] What alternatives were considered? Why was this one chosen?
+In `packages/core/src/design/index.ts`, change `generateHldLld` to return `{ ok: false, error: "..." }` when AI text is null, instead of `{ ok: true, value: null }`. The CLI can then show the error.
 
-## Open Questions
+### Part 3: CLI shows clear error
 
-- [NEEDS CLARIFICATION] List ambiguities. Every question here must be resolved before implementation.
+In `packages/cli/src/commands/design.ts`, when `hldResult.ok` is false, show the error message with `log.error()` instead of `log.warn("AI unavailable")`.
+
+## Files to Change
+
+| File | Change |
+|------|--------|
+| `packages/core/src/ai/try-generate.ts` | Strip [HOST_DELEGATION] prefix, return as fromAI content |
+| `packages/core/src/design/index.ts` | Return error Result when AI returns null |
+| `packages/cli/src/commands/design.ts` | Show error message, not silent warning |
+| `packages/core/src/ai/__tests__/ai.test.ts` | Test delegation text stripping |
+| `packages/core/src/design/__tests__/generate-hld-lld.test.ts` | Test error return |
