@@ -8,14 +8,14 @@ Maina is a CLI, MCP server, and skills package that proves AI-generated code is 
 ## Install
 
 ```bash
-bun add -g maina
+bun add -g @mainahq/cli
 ```
 
 Or try without installing:
 
 ```bash
-bunx maina init
-bunx maina commit
+bunx @mainahq/cli init
+bunx @mainahq/cli verify
 ```
 
 **Prerequisites:** [Git](https://git-scm.com/) and [Bun](https://bun.sh/) (v1.1+). That's it.
@@ -28,10 +28,9 @@ bunx maina commit
 maina init --install
 ```
 
-This creates the `.maina/` directory in your repo and installs missing verification tools:
+This creates the `.maina/` directory in your repo, detects your stack, and installs missing verification tools:
 - `constitution.md` -- your project's non-negotiable rules
 - `prompts/` -- custom AI prompt templates
-- `hooks/` -- lifecycle scripts
 - `AGENTS.md` -- cross-tool agent instructions
 
 Then configure your project settings:
@@ -50,23 +49,46 @@ git add .
 maina commit
 ```
 
-`maina commit` runs the full verification pipeline -- syntax guard, parallel analysis, diff-only filtering -- then commits if everything passes.
+`maina commit` runs the full 16-tool verification pipeline -- syntax guard, parallel analysis, diff-only filtering -- then commits if everything passes.
 
 ### 3. Run verification standalone
 
 ```bash
 maina verify
+maina verify --deep     # Add AI semantic review
+maina verify --visual   # Add Playwright screenshot regression
 ```
 
-Runs the Verify Engine pipeline on your staged or working changes without committing.
+### 4. Start a new feature
 
-### 4. Check your setup
+```bash
+maina brainstorm        # Explore the idea, create a ticket
+maina plan my-feature   # Create branch with structured spec/plan
+# ... implement ...
+maina commit            # Verify and commit
+maina pr                # Create PR with verification proof
+```
+
+### 5. Check your setup
 
 ```bash
 maina doctor
 ```
 
-Shows which tools are installed, which engines are healthy, and what optional tools you could add.
+Shows which of the 16 tools are installed, engine health, and install commands for missing tools.
+
+## Supported Languages
+
+Maina auto-detects your project language and adapts:
+
+| Language | Detected from | Linter |
+|----------|--------------|--------|
+| TypeScript | `tsconfig.json` | Biome |
+| Python | `pyproject.toml`, `requirements.txt` | ruff |
+| Go | `go.mod` | go vet |
+| Rust | `Cargo.toml` | clippy |
+| C# (.NET) | `.sln`, `.csproj` | dotnet format |
+| Java/Kotlin | `pom.xml`, `build.gradle` | Checkstyle |
 
 ## Zero-Friction Layers
 
@@ -83,16 +105,28 @@ No accounts. No Docker. No cloud. Everything runs locally in your terminal.
 
 ## What happens during `maina commit`
 
-1. **Syntax guard** -- Language-aware linting (Biome for TS, ruff for Python, go vet for Go, clippy for Rust). Under 500ms. Rejects immediately on failure.
-2. **Parallel analysis** -- 12 tools run in parallel: slop, Semgrep, Trivy, Secretlint, SonarQube, Stryker, diff-cover, AI review.
+1. **Syntax guard** -- Language-aware linting (Biome/ruff/go vet/clippy/dotnet format/Checkstyle). Under 500ms. Rejects immediately on failure.
+2. **Parallel analysis** -- 16 tools run in parallel: slop, Semgrep, Trivy, Secretlint, SonarQube, Stryker, diff-cover, AI review, and more.
 3. **Diff-only filter** -- Only findings on changed lines. No pre-existing noise.
 4. **AI fix** (if AI configured) -- Context-aware fix suggestions.
-5. **Git commit** -- If everything passes, your changes are committed with a conventional commit message.
+5. **Git commit** -- If everything passes, your changes are committed.
 6. **Workflow tracking** -- Step recorded in workflow context + async RL feedback for prompt evolution.
+
+## MCP Server
+
+Add Maina to Claude Code, Cursor, or any MCP-compatible editor:
+
+```json
+{
+  "mcpServers": {
+    "maina": { "command": "maina", "args": ["--mcp"] }
+  }
+}
+```
 
 ## Next Steps
 
-- [Commands](/maina/commands) -- All 24 commands across Define, Build, Verify, and Meta phases
+- [Commands](/maina/commands) -- All 25 commands across Brainstorm, Define, Build, Verify, and Meta phases
 - [Configuration](/maina/configuration) -- Model tiers, constitution, custom prompts
 - [MCP Server](/maina/mcp) -- Add Maina to your IDE
 - [Engines](/maina/engines/context) -- How Context, Prompt, and Verify engines work
