@@ -4,6 +4,7 @@
   "type": "module",
   "license": "Apache-2.0",
   "description": "Maina core engines — Context, Prompt, and Verify for verification-first development",
+  "homepage": "https://beeeku.github.io/maina/",
   "repository": {
     "type": "git",
     "url": "https://github.com/beeeku/maina.git",

@@ -4,6 +4,7 @@
   "type": "module",
   "license": "Apache-2.0",
   "description": "Maina skills — cross-platform integration for Claude Code, Cursor, Codex, and Gemini CLI",
+  "homepage": "https://beeeku.github.io/maina/",
   "repository": {
     "type": "git",
     "url": "https://github.com/beeeku/maina.git",
