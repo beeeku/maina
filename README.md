@@ -1,193 +1,187 @@
 # Maina
 
-**The verification-first developer operating system.**
+**Prove AI code is correct before it merges.**
 
 *Observe. Learn. Verify.*
 
+[Docs](https://beeeku.github.io/maina/) | [Getting Started](https://beeeku.github.io/maina/getting-started/) | [Commands](https://beeeku.github.io/maina/commands/) | [Roadmap](https://beeeku.github.io/maina/roadmap/)
+
 ---
 
-## What is Maina?
+## The Problem
 
-AI writes 41% of the world's code. That code ships with 1.7x more defects than human-written code. Maina is a CLI, MCP server, and skills package that **proves AI-generated code is correct before it merges**. Three engines -- Context, Prompt, Verify -- observe your codebase, learn your team's preferences, and verify every change with deterministic tools and targeted AI review.
+AI writes 41% of code today. That code ships with **1.7x more defects** than human-written code. Every team now faces the same question: *how do you trust what the machine wrote?*
 
-## Quick Start
+Copilot generates but doesn't verify. CodeRabbit reviews but doesn't learn your preferences. Semgrep scans but can't fix. Cursor edits but context is per-file. **None of these connect.**
+
+## What Maina Does
+
+Maina is a CLI + MCP server + skills package. One tool that:
+
+1. **Knows your codebase** -- 4-layer context engine with PageRank relevance
+2. **Learns your preferences** -- prompts evolve from your feedback via A/B testing
+3. **Proves every change** -- 12-tool verification pipeline, diff-only, before it merges
 
 ```bash
-bun add -g maina            # Install globally
-maina init                  # Bootstrap in any repo
-maina commit                # Verify and commit
-maina verify                # Run verification pipeline
+bunx maina init             # Zero config. Works immediately.
+maina commit                # Verify with 12 tools + commit.
+maina verify --visual       # Add screenshot regression.
+maina pr                    # PR with verification proof attached.
 ```
 
-Or try without installing:
+## How It Works
 
-```bash
-bunx maina init
-bunx maina commit
-```
-
-Zero config. No accounts. No Docker. No cloud. Works with nothing beyond Git and Bun.
-
-## Why Maina?
-
-Every AI coding tool generates code. None of them prove it is correct. Maina closes that gap with three engines that work together on every command:
-
-- **Context Engine** observes your codebase through 4-layer retrieval with PageRank scoring -- so AI sees exactly what matters, not everything.
-- **Prompt Engine** learns your team's conventions through versioned prompts that evolve from feedback -- so AI output matches how you actually work.
-- **Verify Engine** verifies every change through a deterministic pipeline -- syntax guard, parallel analysis tools, diff-only filtering, slop detection -- so nothing ships unchecked.
-
-### Measured results from building Maina with Maina
-
-| Metric | With Maina | Without Maina |
-|--------|-----------|---------------|
-| Tests passing | 802 | 0 |
-| Findings caught | 29 | 0 |
-| Semantic entities indexed | 742 | 0 |
-| Dependency edges mapped | 176 | 0 |
-| Avg verify time | 8.8s | -- |
-| Avg spec quality score | 67/100 | -- |
-| CLI commands | 20 | -- |
-| MCP tools | 8 | -- |
-| Skills | 5 | -- |
-
-Every commit to Maina has gone through `maina commit` since Sprint 3. The numbers above are from real usage, not benchmarks.
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `maina init` | Bootstrap Maina in any repo |
-| `maina commit` | Verify staged changes and commit |
-| `maina verify` | Run full verification pipeline |
-| `maina status` | Show current branch verification status |
-| `maina context` | Generate focused codebase context |
-| `maina context add <file>` | Add file to semantic custom context |
-| `maina context show` | Show context layers with token counts |
-| `maina plan` | Create feature branch with structured plan |
-| `maina spec` | Generate TDD test stubs from plan |
-| `maina ticket` | Create a GitHub Issue with module tagging |
-| `maina design` | Create an Architecture Decision Record |
-| `maina review design` | Review ADR against existing decisions and constitution |
-| `maina review` | Comprehensive two-stage code review |
-| `maina explain` | Visualize codebase structure with Mermaid diagrams |
-| `maina analyze` | Check spec / plan / tasks consistency |
-| `maina pr` | Create a PR with two-stage review |
-| `maina learn` | Analyse feedback and propose prompt improvements |
-| `maina prompt edit <task>` | Open prompt template in $EDITOR |
-| `maina prompt list` | Show all prompt tasks with version info |
-| `maina cache stats` | Show cache hit rate, entries, storage info |
-| `maina stats` | Show commit verification metrics and trends |
-| `maina doctor` | Check tool installation and engine health |
-
-## Three Engines
-
-### Context Engine -- Observes
-
-The brain. Knows your codebase, your team's history, and what matters right now.
-
-Four layers of retrieval, each loaded only when needed:
-
-| Layer | What | Budget |
-|-------|------|--------|
-| **Working** | Current branch, PLAN.md, touched files, last verification | ~15% |
-| **Episodic** | Compressed PR summaries, review feedback. Ebbinghaus decay -- fades if not reinforced. | ~15% |
-| **Semantic** | Module entities (tree-sitter AST), dependency graph (PageRank-scored), ADRs, constitution | ~20% |
-| **Retrieval** | Zoekt code search, on-demand only | ~10% |
-
-40% headroom reserved for AI reasoning and output. Never filled.
-
-**Dynamic budget:** expand to 80% during exploration (`maina context`), contract to 40% during focused work (`maina commit`). Each command declares its context needs via a selector -- no wasted tokens.
-
-**PageRank for relevance:** tree-sitter extracts cross-file references, builds a directed dependency graph, and runs PageRank with a personalization vector biased toward the current task.
-
-### Prompt Engine -- Learns
-
-Prompts are versioned software, not static text.
-
-- **Constitution** (`.maina/constitution.md`): Non-negotiable project rules. Injected as preamble into every AI call. Stable DNA -- not subject to A/B testing.
-- **Custom prompts** (`.maina/prompts/`): Markdown files that control AI behavior per task. `review.md` tells the AI what to focus on. `tests.md` tells it how your team writes tests.
-- **Prompt versioning:** Every prompt is hashed. Usage and accept rates tracked per version.
-- **Evolution loop:** Feedback drives A/B-tested prompt improvements. Accept or reject AI output, and the prompt evolves. `maina learn` analyses patterns and proposes improvements.
-
-### Verify Engine -- Verifies
-
-Deterministic tools find issues. AI generates fixes. Humans review. Feedback improves everything.
+Three engines. Every command draws from all three.
 
 ```
-Syntax Guard (Biome, <500ms)
-    |
-Parallel Deterministic Analysis
-    |  Biome (423+ rules)        Semgrep (2,000+ SAST rules)
-    |  SonarQube CE              Secretlint
-    |  Trivy (dependency CVEs)   diff-cover
-    |  Stryker (mutation)        Slop detector
-    |
-Diff-only filter (changed lines only -- no pre-existing noise)
-    |
-AI Fix Layer (context-aware, cache-checked)
-    |
-Two-stage Review
-    |  Stage 1: Spec compliance (matches PLAN.md?)
-    |  Stage 2: Code quality (clean, tested, safe?)
+        Context Engine          Prompt Engine         Verify Engine
+        (Observes)              (Learns)              (Verifies)
+        ─────────────           ──────────            ─────────────
+        4-layer retrieval       Constitution          12-tool pipeline
+        PageRank relevance      Custom prompts        Diff-only filter
+        Dynamic token budget    A/B testing           AI review
+        Zoekt code search       Feedback evolution    Visual regression
 ```
 
-Tools are auto-detected. Missing tools are skipped, not errors. Works with zero external tools installed.
+### Context Engine -- knows what matters
 
-## MCP Server
+Not "stuff everything in the context window." Smart retrieval:
 
-Add Maina to any MCP-compatible IDE with one config entry:
+- **Working layer** -- current branch, touched files, verification status
+- **Episodic layer** -- compressed PR summaries with Ebbinghaus decay
+- **Semantic layer** -- tree-sitter AST, PageRank dependency graph
+- **Retrieval layer** -- Zoekt/ripgrep code search, on-demand
+
+Each command declares what context it needs. `maina commit` gets working context only (fast). `maina pr` gets all four layers (thorough).
+
+### Prompt Engine -- learns how you work
+
+Your prompts evolve from your feedback:
+
+```
+You accept a review → feedback recorded → maina learn analyzes patterns
+→ improved prompt proposed → A/B tested (80/20 split)
+→ winner promoted automatically
+```
+
+Your team's constitution (`.maina/constitution.md`) is injected into every AI call. Non-negotiable rules that every AI respects.
+
+### Verify Engine -- proves it's correct
+
+12 tools run in parallel on every commit:
+
+| Tool | What it catches |
+|------|----------------|
+| **Biome / ruff / go vet / clippy** | Syntax + lint (language-aware) |
+| **Semgrep** | 2,000+ SAST rules |
+| **Trivy** | Dependency CVEs |
+| **Secretlint** | Leaked secrets |
+| **SonarQube** | Quality gates |
+| **Stryker** | Survived mutants (untested code) |
+| **diff-cover** | Changed lines without test coverage |
+| **AI review** | Cross-function consistency, missing edge cases |
+| **Slop detector** | Empty bodies, hallucinated imports, console.log, TODOs |
+| **Visual (Playwright)** | Screenshot regression |
+
+All tools auto-detected. Missing tools skipped, not errors. **Works with zero external tools installed.**
+
+## Multi-Language
+
+Detects your project and adapts:
+
+| Language | Detected from | Linter |
+|----------|--------------|--------|
+| TypeScript | `tsconfig.json` | Biome |
+| Python | `pyproject.toml`, `requirements.txt` | ruff |
+| Go | `go.mod` | go vet |
+| Rust | `Cargo.toml` | clippy |
+
+## Works Inside Your AI Tool
+
+Maina runs inside Claude Code, Cursor, Codex, and Gemini CLI via MCP:
 
 ```json
 {
   "mcpServers": {
-    "maina": {
-      "command": "maina",
-      "args": ["--mcp"]
-    }
+    "maina": { "command": "maina", "args": ["--mcp"] }
   }
 }
 ```
 
-### Tools
+8 MCP tools: `getContext`, `getConventions`, `verify`, `checkSlop`, `reviewCode`, `explainModule`, `suggestTests`, `analyzeFeature`.
 
-| Tool | Description |
-|------|-------------|
-| `getContext` | Get focused codebase context for a command |
-| `getConventions` | Get project constitution and conventions |
-| `verify` | Run verification pipeline on staged or specified files |
-| `checkSlop` | Check code for AI-generated slop patterns |
-| `reviewCode` | Run two-stage review on a diff |
-| `explainModule` | Get Mermaid dependency diagram for a directory |
-| `suggestTests` | Generate TDD test stubs from a plan.md file |
-| `analyzeFeature` | Check spec/plan/tasks consistency for a feature |
+5 cross-platform skills that work even without the CLI installed.
 
-Each tool delegates to the appropriate engine. All respect the cache.
+## The Workflow
 
-## Skills
+Every step feeds the next. Workflow context carries forward automatically.
 
-Maina ships a skills package that works cross-platform -- Claude Code, Cursor, Codex, Gemini CLI. Skills use progressive disclosure (~100 tokens for scanning, <5k when activated).
+```
+brainstorm → ticket → plan → design → spec → implement
+                                                  ↓
+                              pr ← commit ← review ← verify
+                              ↓
+                            merge → learn → improve
+```
 
-| Skill | Purpose |
-|-------|---------|
-| `verification-workflow` | End-to-end verification process |
-| `context-generation` | Focused codebase context assembly |
-| `plan-writing` | Structured feature planning |
-| `code-review` | Two-stage review methodology |
-| `tdd` | Test-driven development workflow |
+Each step records async RL feedback. `maina learn` shows per-step accept rates and proposes prompt improvements.
 
-Maina works even without the CLI installed. An AI agent with just the skills follows the verification workflow.
+## Benchmark
 
-## Spec Quality (Karpathy Principles)
+Validator library benchmark (95 hidden edge-case tests):
 
-`maina spec` generates TDD test stubs and scores them across 5 categories:
+| Tool | Validation Pass Rate |
+|------|---------------------|
+| SpecKit | 95/95 (100%) |
+| **Maina** | **95/95 (100%)** |
 
-- **Clarity** -- Are requirements unambiguous?
-- **Testability** -- Can each requirement be verified?
-- **Completeness** -- Are edge cases covered?
-- **Consistency** -- Do requirements contradict each other?
-- **Atomicity** -- Is each requirement independently implementable?
+Maina's 12-tool pipeline caught issues that ad-hoc implementation missed.
 
-Red-green enforcement: stubs must fail before implementation, pass after. Average spec quality score across Maina's own development: **67/100**.
+## 24 Commands
+
+### Define
+`init`, `init --install`, `configure`, `ticket`, `context`, `explain`, `design`, `review-design`
+
+### Build
+`plan`, `spec`, `commit`
+
+### Verify
+`verify`, `verify --deep`, `verify --visual`, `slop`, `review`, `analyze`, `pr`
+
+### Meta
+`learn`, `visual update`, `prompt edit`, `cache stats`, `stats`, `benchmark`, `doctor`
+
+[Full command reference](https://beeeku.github.io/maina/commands/)
+
+## Quick Start
+
+```bash
+bun add -g @maina/cli       # Install
+maina init --install         # Bootstrap + install verification tools
+maina configure              # Set conventions interactively
+maina doctor                 # Check what's available
+```
+
+Then develop:
+
+```bash
+maina plan my-feature        # Create feature branch with structure
+# ... write code ...
+maina commit                 # Verify (12 tools) + commit
+maina pr                     # PR with verification proof
+maina learn                  # Evolve prompts from feedback
+```
+
+## Zero-Friction Layers
+
+| Layer | Add | Get |
+|-------|-----|-----|
+| **L0** | Git + Bun | Core commands, deterministic verification, context engine |
+| **L1** | API key or Ollama | AI reviews, commit messages, explanations, fix suggestions |
+| **L2** | Semgrep, Trivy, etc. | SAST, CVE scanning, secret detection, quality gates |
+| **L3** | GitHub Issues | Sync to Linear, Huly, Plane, or any PM tool |
+
+No accounts. No Docker. No cloud.
 
 ## Configuration
 
@@ -195,84 +189,26 @@ Red-green enforcement: stubs must fail before implementation, pass after. Averag
 // maina.config.ts
 export default defineConfig({
   models: {
-    mechanical: 'google/gemini-2.5-flash',      // Tests, commit msgs, slop, compression
-    standard: 'anthropic/claude-sonnet-4',        // Reviews, plans, design docs
-    architectural: 'anthropic/claude-sonnet-4',   // Design review, architecture, prompt evolution
-    local: 'ollama/qwen3-coder-8b',              // Offline: slop, commit msgs
+    mechanical: 'google/gemini-2.5-flash',
+    standard: 'anthropic/claude-sonnet-4',
+    architectural: 'anthropic/claude-sonnet-4',
+    local: 'ollama/qwen3-coder-8b',
   },
   provider: 'openrouter',
-  budget: { daily: 5.00, perTask: 0.50, alertAt: 0.80 },
 });
-```
-
-### Model Tiers
-
-| Tier | Used for | Example |
-|------|----------|---------|
-| **mechanical** | Tests, commit messages, slop detection, compression | gemini-2.5-flash |
-| **standard** | Reviews, plans, design docs | claude-sonnet-4 |
-| **architectural** | Design review, architecture, prompt evolution | claude-sonnet-4 |
-| **local** | Offline use via Ollama | qwen3-coder-8b |
-
-### Zero-friction layers
-
-- **Layer 0 -- Git-native.** Core commands work with nothing beyond Git and Bun. No accounts, no Docker, no cloud.
-- **Layer 1 -- Add AI.** Set `MAINA_API_KEY` or point to Ollama. AI features activate. Without a key, deterministic verification still works.
-- **Layer 2 -- Add tools.** Semgrep, Trivy, Secretlint, SonarQube -- auto-detected, auto-skipped if missing.
-- **Layer 3 -- Add PM.** GitHub Issues sync to Huly, Linear, Plane, or any GitHub-syncing PM tool.
-
-## Stack
-
-| Component | Tool | Why |
-|-----------|------|-----|
-| Runtime | Bun | Fast, batteries-included, native SQLite |
-| Language | TypeScript (strict mode) | Type safety across the entire codebase |
-| CLI | Commander 13 + @clack/prompts | Industry standard + terminal UI |
-| Lint/Format | Biome 2.x | Single tool, 423+ rules, fast |
-| Tests | bun:test | Native, zero-config |
-| Build | bunup | Bun-native bundler |
-| AI | Vercel AI SDK v6 + OpenRouter | 300+ models, unified interface |
-| Database | bun:sqlite + Drizzle ORM | Zero-dep, embedded, type-safe |
-| AST | web-tree-sitter | 130+ languages, WASM |
-| Code search | Zoekt | Google's code search (optional) |
-| Git hooks | lefthook + commitlint | Fast, parallel, conventional commits |
-
-## Project Structure
-
-```
-maina/
-  packages/
-    cli/        # Commander entrypoint, commands, terminal UI
-    core/       # Three engines + cache + AI + git + DB + hooks
-    mcp/        # MCP server (delegates to engines)
-    skills/     # Cross-platform skills (5 SKILL.md files)
-  .maina/       # Per-repo state (gitignored)
-    constitution.md
-    context/
-    features/
-    prompts/
-    hooks/
-    cache/
-    feedback.db
 ```
 
 ## Development
 
 ```bash
-bun install              # Install dependencies
-bun run build            # Build all packages
-bun run dev              # Dev mode
-bun run check            # Biome lint + format check
-bun run typecheck        # tsc --noEmit
-bun run test             # Run all tests (802 passing)
-bun run verify           # Full verification: check + typecheck + test
+git clone https://github.com/beeeku/maina
+cd maina && bun install
+bun run build && bun run test    # 990 tests
 ```
 
 ## The Name
 
-**Maina** — named after the mynah bird. Observes its environment. Learns from what it hears. Communicates with precision.
-
-Context Engine observes. Prompt Engine learns. Verify Engine verifies.
+**Maina** -- named after the mynah bird. Observes its environment. Learns from what it hears. Communicates with precision.
 
 ## License
 
