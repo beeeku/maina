@@ -14,6 +14,7 @@
   },
   "files": ["src", "package.json", "README.md"],
   "keywords": ["maina", "mcp", "model-context-protocol", "verification", "ai-code-review"],
+  "main": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
   },

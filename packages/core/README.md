@@ -13,6 +13,10 @@ Three engines: **Context** (observes), **Prompt** (learns), **Verify** (verifies
 - **Workflow context** — rolling summary forwarded between lifecycle steps
 - **Background RL** — async feedback recording at each workflow step
 
+## Requirements
+
+**Runtime: Bun** (not Node.js). This package ships TypeScript source directly and requires a TypeScript-aware runtime.
+
 ## Usage
 
 ```typescript
