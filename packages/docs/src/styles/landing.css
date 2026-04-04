@@ -57,15 +57,21 @@ img {
 .nav-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  font-size: 1.125rem;
+  gap: 0.6rem;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
   color: var(--text);
 }
 
+.nav-brand .dot {
+  color: #f97316;
+}
+
 .nav-brand img {
-  width: 22px;
+  width: 30px;
   height: 28px;
+  margin-top: -1px;
 }
 
 .nav-links {
