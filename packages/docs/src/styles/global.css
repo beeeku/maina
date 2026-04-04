@@ -35,3 +35,15 @@
   --color-gray-900: #1c1917;
   --color-gray-950: #0c0a09;
 }
+
+/* Starlight site title — bold with orange dot */
+.site-title {
+  font-weight: 800 !important;
+  font-size: 1.4rem !important;
+  letter-spacing: -0.03em !important;
+}
+
+.site-title::after {
+  content: '.';
+  color: #f97316;
+}
