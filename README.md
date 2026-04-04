@@ -20,10 +20,10 @@ Maina is a CLI + MCP server + skills package. One tool that:
 
 1. **Knows your codebase** -- 4-layer context engine with PageRank relevance
 2. **Learns your preferences** -- prompts evolve from your feedback via A/B testing
-3. **Proves every change** -- 12-tool verification pipeline, diff-only, before it merges
+3. **Proves every change** -- 16-tool verification pipeline, diff-only, before it merges
 
 ```bash
-bunx maina init             # Zero config. Works immediately.
+bunx @mainahq/cli init      # Zero config. Works immediately.
 maina commit                # Verify with 12 tools + commit.
 maina verify --visual       # Add screenshot regression.
 maina pr                    # PR with verification proof attached.
@@ -37,7 +37,7 @@ Three engines. Every command draws from all three.
         Context Engine          Prompt Engine         Verify Engine
         (Observes)              (Learns)              (Verifies)
         ─────────────           ──────────            ─────────────
-        4-layer retrieval       Constitution          12-tool pipeline
+        4-layer retrieval       Constitution          16-tool pipeline
         PageRank relevance      Custom prompts        Diff-only filter
         Dynamic token budget    A/B testing           AI review
         Zoekt code search       Feedback evolution    Visual regression
@@ -135,7 +135,7 @@ Validator library benchmark (95 hidden edge-case tests):
 | SpecKit | 95/95 (100%) |
 | **Maina** | **95/95 (100%)** |
 
-Maina's 12-tool pipeline caught issues that ad-hoc implementation missed.
+Maina's 16-tool pipeline caught issues that ad-hoc implementation missed.
 
 ## 24 Commands
 
