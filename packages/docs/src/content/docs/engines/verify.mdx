@@ -29,6 +29,10 @@ Parallel Deterministic Analysis
     |   diff-cover (test coverage on changed code)
     |   Stryker (mutation testing)
     |   AI Slop Detector
+    |   typecheck (tsc --noEmit)
+    |   consistency (AST cross-function check)
+    |   ZAP (DAST)
+    |   Lighthouse (perf/a11y/SEO)
     |
     v
 Diff-only Filter --------------- Only findings on changed lines
@@ -94,6 +98,10 @@ Slop detection runs as part of the parallel analysis phase and uses the mechanic
 | **diff-cover** | Test coverage on changed lines only | Optional |
 | **Stryker** | Mutation testing -- are your tests actually testing? | Optional |
 | **AI Slop Detector** | AI-generated filler, hallucinations, dead code | Built-in |
+| **typecheck** | `tsc --noEmit` type checking with zero extra installs | Built-in (TS projects) |
+| **consistency** | AST-based cross-function consistency check | Built-in |
+| **ZAP** | Dynamic Application Security Testing (Docker-based) | Optional |
+| **Lighthouse** | Performance, accessibility, and SEO auditing | Optional |
 
 ## Commands
 
