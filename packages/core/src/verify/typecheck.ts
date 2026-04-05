@@ -61,6 +61,11 @@ const TYPECHECK_COMMANDS: Record<LanguageId, TypecheckCommand> = {
 		command: "javac",
 		args: ["-Xlint:all"],
 	},
+	php: {
+		tool: "phpstan",
+		command: "phpstan",
+		args: ["analyse", "--error-format=json", "--no-progress"],
+	},
 };
 
 export function getTypecheckCommand(language: LanguageId): TypecheckCommand {
