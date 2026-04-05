@@ -1276,11 +1276,426 @@ Use maina plan + maina spec to scaffold this sprint.
 
 ---
 
-## Sprint 11 — Launch
+## Sprint 11 — Hardening: Verify Gaps + RL Loop
 
-**T001** — Show HN, dev.to article
-**T002** — GitHub Discussions, issue templates, CONTRIBUTING.md
-**T003** — Post-launch iteration from community feedback
+**Goal:** Make `maina verify` effective without external tools. Close the gap exposed by the Tier 3 benchmark where SpecKit's self-review beat Maina's empty verify pipeline. Add full post-workflow RL trace analysis.
+
+### Context
+
+Tier 3 benchmark (2026-04-03): SpecKit achieved 100% on 95 hidden validation tests. Maina got 97.9% (2 bugs). SpecKit's 58s self-review caught 4 issues that Maina's verify missed because no external tools were installed. Verify returned "0 findings, passed" — false confidence.
+
+### Tasks
+
+**T001 — Built-in type checking in verify**
+```
+- [ ] packages/core/src/verify/typecheck.ts
+      Run `tsc --noEmit` (or `bun --typecheck` when available) as a built-in verify step
+      No external tool install required — uses project's own tsconfig.json
+      Parse tsc output into Finding[] with file, line, message
+      For non-TS projects: detect language, run equivalent (mypy for Python, go vet for Go)
+- [ ] Test: file with type error → finding; clean file → pass
+```
+
+**T002 — LLM self-review step (no external tools needed)**
+```
+- [ ] packages/core/src/verify/self-review.ts
+      Always-on mechanical-tier review that runs even when 0 external tools are installed
+      Input: git diff of staged changes + 3 most-referenced functions from context engine
+      Checks: cross-function consistency, edge cases, spec compliance
+      Uses existing AI delegation protocol (DelegationPrompt)
+      Returns Finding[] with tool="self-review"
+- [ ] Test: diff with obvious bug (off-by-one, missing null check) → finding
+```
+
+**T003 — "0 tools available" warning**
+```
+- [ ] packages/core/src/verify/pipeline.ts
+      When detectTools() returns 0 available external tools:
+      - Report as WARNING: "No external verification tools detected. Run maina init --install."
+      - Do NOT report "0 findings, passed" — that implies verification happened
+      - Still run built-in checks (typecheck, self-review, slop) regardless
+- [ ] Test: no tools installed → warning shown; findings from built-ins still reported
+```
+
+**T004 — Cross-function consistency check**
+```
+- [ ] packages/core/src/verify/consistency.ts
+      Deterministic check: if spec says "use isIP for IP hosts", verify that
+      functions calling isURL also call isIP where applicable
+      Uses tree-sitter AST to find call sites and cross-reference
+      Catches the exact class of bug that lost Maina 2 points in Tier 3 benchmark
+- [ ] Test: function calls isURL but not isIP on host param → flagged
+```
+
+**T005 — `maina init` auto-configures Biome**
+```
+- [ ] packages/core/src/init/biome-setup.ts
+      During `maina init`, detect if Biome is installed:
+      - If not: offer to install and configure with sensible defaults
+      - If yes: verify biome.json exists, suggest missing rules
+      Ensures every maina-initialized project has at least one real linter
+- [ ] Test: fresh project → maina init → biome.json created with rules
+```
+
+**T006 — `maina spec` and `maina design` --auto flags**
+```
+- [ ] Add --auto flag to maina spec and maina design
+      --auto: skip interactive prompts, use sensible defaults from context engine
+      Allows full workflow automation in CI or scripting
+      In Tier 3 benchmark, both commands were skipped because they required interaction
+- [ ] Test: maina spec --auto generates spec without prompts
+```
+
+**T007 — Post-workflow RL self-improvement loop**
+```
+- [ ] packages/core/src/feedback/trace-analysis.ts
+      After a full workflow completes (brainstorm → ... → pr):
+      1. Collect full trace: every step's context, prompt used, output, feedback
+      2. Analyze: which prompts led to accepted outputs? Which got rejected/modified?
+      3. Propose prompt improvements based on trace patterns
+      4. Feed into maina learn for A/B testing
+      Runs as background task after maina pr completes
+- [ ] Test: completed workflow trace → improvement proposals generated
+```
+
+### Delegation prompt
+```
+Read PRODUCT_SPEC.md and IMPLEMENTATION_PLAN.md Sprint 11.
+
+Close the verify gap exposed by the Tier 3 benchmark. Core problem:
+maina verify is a no-op without external tools — gives false confidence.
+
+Fix by adding built-in checks that work everywhere:
+1. Type checking (tsc --noEmit) — zero install required
+2. LLM self-review — mechanical tier, always-on, catches cross-function bugs
+3. "0 tools" warning — honest reporting, not false passes
+4. Cross-function consistency — deterministic AST check
+5. maina init auto-installs Biome
+6. --auto flags for CI/scripting
+7. Post-workflow RL trace analysis for continuous improvement
+
+Use maina workflow. 7 tasks, fresh subagent per task.
+```
+
+---
+
+## Sprint 12 — v0.4.0 Polish + CI (#41)
+
+**Goal:** Machine-readable output, CI-ready, 7 languages, DAST + Lighthouse.
+
+**T001** — PHP language profile (PHPStan, Psalm)
+**T002** — Per-file language detection for polyglot repos
+**T003** — `--json` flag on all commands
+**T004** — CI integration (`maina verify --json` for GH Actions, GitLab CI)
+**T005** — Meaningful exit codes for scripting
+**T006** — DAST with ZAP
+**T007** — Lighthouse (perf, a11y, SEO)
+
+---
+
+## Path to v1.0.0 — Maina Cloud (Sprints 13–19)
+
+**Powered by Workkit. Dogfooded by Workkit.**
+
+Every cloud feature is a Cloudflare Workers problem that Workkit solves. Org migration happens at v1.0.0 launch — one big moment.
+
+### Sprint 13 — Maina × Workkit Bootstrap
+
+**Goal:** `maina init` running in the Workkit repo. Maina Cloud API scaffolded as a Workers service using Workkit packages.
+
+**T001 — Maina in Workkit repo**
+```
+- [ ] Run `maina init` in workkit/ monorepo
+- [ ] Generate constitution capturing Workkit conventions:
+      zero runtime overhead, composable packages, full type coverage,
+      CF Workers runtime constraints (no Node APIs, execution limits)
+- [ ] Write CF-specific custom prompts in .maina/prompts/:
+      review.md (Workers anti-patterns, binding misuse)
+      tests.md (Workkit testing patterns, mock bindings)
+- [ ] Write CF-specific Semgrep rules in rules/:
+      no-blocking-event-loop, no-node-apis, binding-error-handling
+- [ ] Dogfood: every Workkit PR goes through `maina verify`
+```
+
+**T002 — Maina Cloud API scaffold**
+```
+- [ ] Create packages/cloud/ workspace (or separate mainahq/cloud repo)
+- [ ] Scaffold Workers service using:
+      @workkit/env (typed bindings: D1, KV, R2, Queue)
+      @workkit/api (OpenAPI route definitions)
+      @workkit/logger (structured request logging)
+      @workkit/auth (JWT for team auth)
+      @workkit/ratelimit (API protection)
+      @workkit/testing (mock bindings for tests)
+- [ ] wrangler.toml with D1 database, KV namespace, R2 bucket, Queue
+- [ ] Deploy skeleton to CF Workers: GET /health returns OK
+- [ ] Dogfood: Maina Cloud API development uses `maina commit`, `maina verify`
+```
+
+### Sprint 14 — Team Prompt Sync
+
+**Goal:** Teams share prompts, constitutions, and feedback across members via Maina Cloud.
+
+**T001 — Team registry API**
+```
+- [ ] D1 schema (@workkit/d1): teams, members, invites
+- [ ] Auth flow (@workkit/auth): GitHub OAuth → JWT
+- [ ] Endpoints: POST /teams, POST /teams/:id/join, GET /teams/:id
+- [ ] Rate limiting (@workkit/ratelimit): 100 req/min per team
+```
+
+**T002 — Prompt sync**
+```
+- [ ] D1 tables: shared_prompts, prompt_versions
+- [ ] Endpoints: push/pull prompts (content-hash dedup, same as local cache keys)
+- [ ] KV cache (@workkit/kv): hot prompt versions cached at edge
+- [ ] CLI: `maina prompt push` / `maina prompt pull` (push local → cloud, pull team → local)
+- [ ] Conflict resolution: team prompt wins unless local has uncommitted edits
+```
+
+**T003 — Shared feedback / RL sync**
+```
+- [ ] D1 tables: team_feedback (accept/reject per prompt version per member)
+- [ ] Endpoints: POST /feedback, GET /feedback/aggregate
+- [ ] `maina learn --team`: analyze team-wide feedback, not just local
+- [ ] A/B test coordination: Durable Object (@workkit/do) tracks which
+      members are on which prompt variant, ensures balanced allocation
+```
+
+### Sprint 15 — Hosted Verification
+
+**Goal:** Teams can trigger Maina's verification pipeline remotely via API.
+
+**T001 — Verification queue**
+```
+- [ ] Queue producer (@workkit/queue): POST /verify accepts diff + repo context
+- [ ] Queue consumer: Workers runs verification pipeline (syntax guard → tools → AI)
+- [ ] R2 storage (@workkit/r2): verification proof artifacts (reports, diffs)
+- [ ] D1: verification_runs table (status, duration, findings count)
+- [ ] Webhook: POST results to GitHub PR check / callback URL
+```
+
+**T002 — Distributed cache**
+```
+- [ ] Port Maina's 3-layer cache strategy to Workers:
+      L1: Workers in-memory (per-isolate, short-lived)
+      L2: KV (@workkit/kv) with same content-hash keys
+      L3: AI API call → cache in KV → return
+- [ ] Cache (@workkit/cache): SWR for context queries (stale-while-revalidate)
+- [ ] Same cache key formula: hash(prompt_version + context_hash + model + input)
+```
+
+**T003 — CI integration**
+```
+- [ ] GitHub Action: mainahq/verify-action
+      Posts diff to Maina Cloud API, waits for result, reports as PR check
+- [ ] Supports: GitHub Actions, GitLab CI, Buildkite (webhook-based)
+```
+
+### Sprint 16 — Usage Dashboard
+
+**Goal:** Teams see verification metrics, AI spend, prompt evolution, and team activity.
+
+**T001 — Metrics collection**
+```
+- [ ] D1 tables: usage_events (verification runs, AI calls, cache hits, tokens)
+- [ ] KV (@workkit/kv): real-time counters (daily active, verifications today)
+- [ ] Aggregation cron (@workkit/cron): daily rollup of usage_events → usage_daily
+```
+
+**T002 — Dashboard API + UI**
+```
+- [ ] Endpoints: GET /dashboard (aggregated stats), GET /dashboard/usage
+- [ ] CF Pages frontend: React dashboard (or ship as `maina dashboard --web`)
+      Verification pass rate, cache hit rate, tokens saved, cost saved,
+      prompt evolution timeline, team activity heatmap
+- [ ] OpenAPI spec (@workkit/api): full API docs at docs.mainahq.com/api
+```
+
+**T003 — Billing foundation**
+```
+- [ ] D1: billing_events, plans (free tier: 100 verifications/month)
+- [ ] Stripe integration for paid tiers (team, enterprise)
+- [ ] Rate limiting (@workkit/ratelimit): enforce plan limits
+```
+
+### Sprint 17 — CF Workers Maina Skill
+
+**Goal:** Ship a Maina skill that knows Cloudflare Workers projects. Learned from dogfooding Workkit.
+
+**T001 — CF Workers skill**
+```
+- [ ] packages/skills/cloudflare-workers/SKILL.md
+- [ ] Auto-detects wrangler.toml → loads CF-specific:
+      Verification rules (no Node APIs, binding error handling, CPU time)
+      Context patterns (bindings in env, Durable Object state)
+      Review prompts (Workers-specific anti-patterns)
+      Test patterns (miniflare mocks, @workkit/testing usage)
+- [ ] Custom slop detectors: missing waitUntil(), unhandled binding errors,
+      console.log in production Workers
+```
+
+**T002 — Workkit-specific context**
+```
+- [ ] Context Engine recognizes @workkit/* imports
+- [ ] PageRank weights: cross-package dependencies in Workkit monorepo
+- [ ] Prompt Engine CF prompts: learned from all the feedback collected
+      while dogfooding Workkit development with Maina
+```
+
+### Sprint 18 — Cross-Dogfooding Report
+
+**Goal:** Publish data from the Maina × Workkit flywheel. Marketing for both projects.
+
+**T001 — Metrics comparison**
+```
+- [ ] `maina stats` data from Workkit repo: defect rate before/after Maina
+- [ ] Maina Cloud performance data: cache hit rates, verification latency on Workers
+- [ ] Prompt evolution data: how CF-specific prompts improved from feedback
+```
+
+**T002 — Case study**
+```
+- [ ] Blog post: "Building Maina Cloud on Workkit: A Dogfooding Story"
+- [ ] Data: bugs caught by Maina in Workkit, Workkit edge cases found by Maina Cloud
+- [ ] Published on mainahq.com/blog and beeeku.github.io/workkit/blog
+```
+
+### Sprint 19 — Org Migration + v1.0.0 Launch (#46)
+
+**Goal:** Rebrand to @mainahq, launch Maina Cloud publicly.
+
+**T001 — Org setup**
+```
+- [ ] Register mainahq.com domain
+- [ ] Create @mainahq GitHub org (github.com/mainahq)
+- [ ] Transfer beeeku/maina → mainahq/maina
+- [ ] Update npm scope: @mainahq/cli, @mainahq/core, @mainahq/mcp, @mainahq/skills
+- [ ] Update all package.json, imports, docs, README badges
+- [ ] Set up GitHub org: teams (core, community), branch protection, CODEOWNERS
+- [ ] Redirect docs to docs.mainahq.com (CF Pages)
+```
+
+**T002 — Launch**
+```
+- [ ] Show HN post
+- [ ] dev.to article
+- [ ] GitHub Discussions, issue templates, CONTRIBUTING.md
+- [ ] Post-launch iteration from community feedback
+```
+
+---
+
+## Phase 3 — Maina Enterprise (Sprints 20–23)
+
+**Goal:** On-premise, air-gapped, SOC 2-ready Maina for enterprise teams.
+
+### Sprint 19 — Enterprise Auth + Encryption
+
+**T001 — SSO / SAML**
+```
+- [ ] @workkit/auth extended: SAML 2.0, OIDC for enterprise IdPs
+- [ ] D1: enterprise_orgs, sso_configs
+- [ ] Admin API: manage org settings, member roles, audit policies
+```
+
+**T002 — Encryption at rest**
+```
+- [ ] @workkit/crypto: AES-256-GCM for all stored data
+      Feedback DB, prompt versions, verification results, cached responses
+- [ ] Key management: per-org encryption keys, rotation support
+- [ ] R2: encrypted verification proof artifacts
+```
+
+### Sprint 20 — Air-Gapped Deployment
+
+**T001 — Self-hosted option**
+```
+- [ ] Docker compose: Maina Cloud stack without Cloudflare dependencies
+      Swap @workkit/d1 → SQLite/Postgres, @workkit/kv → Redis,
+      @workkit/r2 → S3/MinIO, @workkit/queue → BullMQ
+- [ ] @workkit/testing mocks: used in CI for Maina Enterprise tests
+- [ ] Ollama as default model provider (no external AI API calls)
+```
+
+**T002 — Audit logging**
+```
+- [ ] Every verification, prompt change, feedback event logged immutably
+- [ ] Export: CSV, JSON, SIEM integration (Splunk, Datadog)
+- [ ] Retention policies: configurable per enterprise org
+```
+
+### Sprint 21 — Custom Model Fine-Tuning
+
+**T001 — Fine-tuning pipeline**
+```
+- [ ] Export team feedback as training data: (prompt, context, output, accepted/rejected)
+- [ ] Fine-tune adapter for enterprise-specific patterns
+- [ ] @workkit/ai-gateway: route to fine-tuned model for enterprise orgs
+- [ ] Eval harness: compare fine-tuned vs base model on team's historical PRs
+```
+
+### Sprint 22 — SOC 2 + Enterprise Launch
+
+**T001 — Compliance**
+```
+- [ ] SOC 2 Type II controls documented
+- [ ] Penetration testing on Maina Cloud API
+- [ ] Data residency options (EU, US, APAC via CF regional services)
+```
+
+**T002 — Enterprise GTM**
+```
+- [ ] Enterprise sales page on mainahq.com
+- [ ] Pilot program with 3-5 design partners
+- [ ] Pricing: per-seat with volume discounts
+```
+
+---
+
+## Cross-Dogfooding Flywheel
+
+```
+Workkit development ──→ uses Maina for verification
+       │                        │
+       │                        ↓
+       │              Maina learns CF Workers patterns
+       │              (prompt evolution, Semgrep rules)
+       │                        │
+       │                        ↓
+       │              CF Workers skill ships
+       │              (benefits all CF developers)
+       │
+       ↓
+Maina Cloud ──→ built on Workkit packages
+       │                        │
+       │                        ↓
+       │              Workkit gets production consumer
+       │              (edge cases found → Workkit improves)
+       │                        │
+       │                        ↓
+       │              Better Workkit → better Maina Cloud
+       │              → more users → more feedback → better Maina
+       │
+       ↓
+Maina Enterprise ──→ @workkit/crypto, @workkit/auth, @workkit/testing
+                     (enterprise hardening benefits Workkit too)
+```
+
+---
+
+## Cross-Dogfooding Checkpoints
+
+| Sprint | Dogfood with | Key question |
+|--------|-------------|-------------|
+| 12 | `maina verify` on Workkit PRs | Do CF-specific Semgrep rules catch real issues? |
+| 12 | Maina Cloud API on @workkit packages | Does @workkit/env + @workkit/api eliminate CF boilerplate? |
+| 13 | `maina prompt push/pull` in 2-person team | Does prompt sync feel instant? Conflicts handled? |
+| 14 | GitHub Action on Workkit repo | Is hosted verification faster than local for CI? |
+| 15 | Maina dashboard for Workkit project | Do the metrics tell a useful story? |
+| 16 | CF Workers skill on a fresh wrangler project | Does auto-detection work? Are the rules helpful, not noisy? |
+| 18 | @workkit/crypto on Maina's own data | Is encryption transparent? Any performance hit? |
+| 19 | Docker self-hosted on a test server | Can someone deploy without CF account in <10 minutes? |
 
 ---
 

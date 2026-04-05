@@ -50,7 +50,8 @@ describe("runTypecheck", () => {
 		const result = await runTypecheck(["bad.ts"], testDir);
 
 		expect(result.findings.length).toBeGreaterThan(0);
-		const first = result.findings[0]!;
+		const first = result.findings[0];
+		if (!first) throw new Error("Expected at least one finding");
 		expect(first.tool).toBe("tsc");
 		expect(first.severity).toBe("error");
 		expect(first.file).toContain("bad.ts");

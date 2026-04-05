@@ -41,8 +41,8 @@ describe("analyzeWorkflowTrace", () => {
 		const result = await analyzeWorkflowTrace(mainaDir);
 
 		expect(result.steps).toHaveLength(2);
-		expect(result.steps[0]!.command).toBe("plan");
-		expect(result.steps[1]!.command).toBe("commit");
+		expect(result.steps[0]?.command).toBe("plan");
+		expect(result.steps[1]?.command).toBe("commit");
 	});
 
 	it("should return empty improvements when no workflow exists", async () => {
