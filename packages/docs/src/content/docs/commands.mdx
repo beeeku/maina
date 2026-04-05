@@ -1,9 +1,11 @@
 ---
 title: Commands
-description: All 25 Maina commands organized by workflow phase -- Brainstorm, Define, Build, Verify, and Meta.
+description: All 28+ Maina commands organized by workflow phase -- Brainstorm, Define, Build, Verify, Cloud, and Meta.
 ---
 
-Maina has 25 commands organized into five workflow phases. Every command draws from the three engines -- Context, Prompt, and Verify -- as needed.
+Maina has 28+ commands organized into six workflow phases. Every command draws from the three engines -- Context, Prompt, and Verify -- as needed.
+
+All commands support `--json` for machine-readable output (JSON envelope with `{ data, error, meta }`).
 
 ## Brainstorm Phase
 
@@ -22,10 +24,10 @@ Set up your project and define architecture.
 | `maina init` | Bootstrap Maina in any repo. Creates `.maina/` directory, constitution, AGENTS.md, default prompts. | None |
 | `maina init --install` | Auto-install missing verification tools after bootstrapping. | None |
 | `maina configure` | Interactive project settings -- update constitution, conventions, visual URLs, tool preferences. | None |
-| `maina ticket` | Create a GitHub Issue with automatic module tagging. | Semantic (module structure) |
+| `maina ticket` | Create a GitHub Issue with automatic module tagging. Use `--repo` for cross-repo issue creation with aliases from `.maina/config.json`. | Semantic (module structure) |
 | `maina context` | Generate focused codebase context. Loads all 4 layers in exploration mode (80% budget). | All 4 layers (exploration) |
 | `maina explain` | Visualize codebase structure with Mermaid dependency diagrams and module summaries. | Semantic (dependency graph) |
-| `maina design` | Create an Architecture Decision Record (ADR) with HLD/LLD sections. Use `--hld` for AI generation. | Semantic (existing ADRs) |
+| `maina design` | Create an Architecture Decision Record (ADR) with HLD/LLD sections. Use `--hld` for AI generation. Use `--auto` for fully automated ADR creation from plan context. | Semantic (existing ADRs) |
 | `maina review-design` | Review an ADR against existing decisions and the project constitution. Blocks empty ADRs. | Semantic (ADRs + constitution) |
 
 ## Build Phase
@@ -35,8 +37,8 @@ Plan, specify, and commit.
 | Command | Description | Context Needs |
 |---------|------------|---------------|
 | `maina plan` | Create a feature branch with auto-numbered directory and structured spec/plan/tasks. Resets workflow context. | Working + Semantic |
-| `maina spec` | Generate TDD test stubs from plan. Scores spec quality across clarity, testability, completeness. | Working + Episodic |
-| `maina commit` | Run syntax guard, parallel verification (12 tools), then git commit. Records stats + workflow step. | Working only (fast) |
+| `maina spec` | Generate TDD test stubs from plan. Scores spec quality across clarity, testability, completeness. Use `--auto` for fully automated spec generation without prompts. | Working + Episodic |
+| `maina commit` | Run syntax guard, parallel verification (18+ tools), then git commit. Records stats + workflow step. | Working only (fast) |
 
 ## Verify Phase
 
@@ -44,13 +46,26 @@ Prove correctness before merge.
 
 | Command | Description | Context Needs |
 |---------|------------|---------------|
-| `maina verify` | Full verification pipeline (12 tools). Diff-only by default. | Working + Semantic |
+| `maina verify` | Full verification pipeline (18+ tools). Diff-only by default. | Working + Semantic |
 | `maina verify --deep` | Add standard-tier AI semantic review (spec compliance, architecture). | Working + Semantic |
 | `maina verify --visual` | Add Playwright visual regression checks against baselines. | Working + Visual baselines |
 | `maina slop` | Standalone AI slop pattern detection. `--all` for all tracked files. | Working |
 | `maina review` | Comprehensive two-stage code review: spec compliance first, then code quality. | Working + Semantic |
 | `maina analyze` | Check cross-artifact consistency: spec, plan, tasks, and code must align. | Semantic (all artifacts) |
 | `maina pr` | Create a pull request with two-stage review + verification proof artifacts in the body. | All 4 layers |
+
+## Cloud Integration
+
+Authenticate, sync prompts, and manage teams.
+
+| Command | Description |
+|---------|------------|
+| `maina login` | GitHub OAuth device flow. Stores token in `~/.maina/auth.json`. |
+| `maina logout` | Clear stored credentials from `~/.maina/auth.json`. |
+| `maina sync push` | Upload local prompts and constitution to the Maina cloud. |
+| `maina sync pull` | Download team prompts and merge with local copies (conflict resolution included). |
+| `maina team` | Show team info, members, and roles. |
+| `maina team invite <email>` | Send an invite to join the team. |
 
 ## Meta
 
@@ -64,11 +79,12 @@ Tune, learn, and diagnose.
 | `maina cache stats` | Show cache hit rate, total entries, tokens saved. |
 | `maina stats` | Show commit verification metrics, trends, and quality evolution. |
 | `maina benchmark` | Run verification benchmarks comparing tools. |
-| `maina doctor` | Check tool installation status (12 tools) and engine health. |
+| `maina doctor` | Check tool installation status (18+ tools) and engine health. |
+| `maina status` | Show current workflow state, active feature branch, and verification summary. |
 
 ## Verification Pipeline
 
-Maina's verify pipeline runs 12 tools in parallel:
+Maina's verify pipeline runs 18+ tools in parallel:
 
 | Tool | Type | Language |
 |------|------|----------|
@@ -76,14 +92,20 @@ Maina's verify pipeline runs 12 tools in parallel:
 | ruff | Linter | Python |
 | go vet | Linter | Go |
 | clippy | Linter | Rust |
+| PHPStan/Psalm | Static analysis | PHP |
+| TypeScript (`tsc`) | Type checking | TypeScript |
 | Semgrep | SAST (2000+ rules) | All |
 | Trivy | Dependency CVEs | All |
 | Secretlint | Secret detection | All |
 | SonarQube | Quality gates | All |
 | Stryker | Mutation testing | TypeScript/JavaScript |
 | diff-cover | Coverage on changed lines | All |
+| Consistency check | Cross-artifact alignment | All |
+| ZAP | DAST / web security scanning | All |
+| Lighthouse | Performance and accessibility audits | Web |
 | AI review | Semantic code review | All |
 | Slop detector | AI-generated pattern detection | All |
+| Playwright | Visual regression testing | Web |
 
 Tools are auto-detected and auto-skipped if not installed. Run `maina doctor` to see status.
 
@@ -97,12 +119,24 @@ Maina detects your project language from marker files and adapts:
 | Python | `pyproject.toml`, `setup.py`, `requirements.txt` | ruff |
 | Go | `go.mod` | go vet |
 | Rust | `Cargo.toml` | clippy |
+| PHP | `composer.json` | PHPStan / Psalm |
 | C# (.NET) | `.sln`, `.csproj`, `global.json` | dotnet format |
 | Java/Kotlin | `pom.xml`, `build.gradle` | Checkstyle |
 
 ## Workflow Context
 
 Every command records its outcome to `.maina/workflow/current.md`. This rolling summary is forwarded between steps so each phase has context from prior phases. Background RL feedback records every step for prompt evolution.
+
+## Exit Codes
+
+All commands return structured exit codes for CI integration:
+
+| Code | Meaning | Description |
+|------|---------|-------------|
+| `0` | Passed | No error-severity findings |
+| `1` | Findings | Error-severity findings found |
+| `2` | Tool failure | A verification tool crashed |
+| `3` | Config error | Missing config, bad arguments |
 
 ## Common Workflows
 
@@ -120,7 +154,7 @@ maina doctor            # Verify tool health
 maina plan my-feature   # Start feature with structured planning
 maina spec              # Generate TDD test stubs
 # ... write code ...
-maina commit            # Verify (12 tools) and commit
+maina commit            # Verify (18+ tools) and commit
 maina pr                # Create PR with verification proof
 ```
 

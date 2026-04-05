@@ -49,7 +49,7 @@ git add .
 maina commit
 ```
 
-`maina commit` runs the full 16-tool verification pipeline -- syntax guard, parallel analysis, diff-only filtering -- then commits if everything passes.
+`maina commit` runs the full 18-tool verification pipeline -- syntax guard, parallel analysis, diff-only filtering -- then commits if everything passes.
 
 ### 3. Run verification standalone
 
@@ -75,7 +75,7 @@ maina pr                # Create PR with verification proof
 maina doctor
 ```
 
-Shows which of the 16 tools are installed, engine health, and install commands for missing tools.
+Shows which of the 18+ tools are installed, engine health, and install commands for missing tools.
 
 ## Supported Languages
 
@@ -89,6 +89,7 @@ Maina auto-detects your project language and adapts:
 | Rust | `Cargo.toml` | clippy |
 | C# (.NET) | `.sln`, `.csproj` | dotnet format |
 | Java/Kotlin | `pom.xml`, `build.gradle` | Checkstyle |
+| PHP | `composer.json` | PHPStan, Psalm |
 
 ## Zero-Friction Layers
 
@@ -105,8 +106,8 @@ No accounts. No Docker. No cloud. Everything runs locally in your terminal.
 
 ## What happens during `maina commit`
 
-1. **Syntax guard** -- Language-aware linting (Biome/ruff/go vet/clippy/dotnet format/Checkstyle). Under 500ms. Rejects immediately on failure.
-2. **Parallel analysis** -- 16 tools run in parallel: slop, Semgrep, Trivy, Secretlint, SonarQube, Stryker, diff-cover, AI review, and more.
+1. **Syntax guard** -- Language-aware linting (Biome/ruff/go vet/clippy/dotnet format/Checkstyle/PHPStan). Under 500ms. Rejects immediately on failure.
+2. **Parallel analysis** -- 18+ tools run in parallel: slop, Semgrep, Trivy, Secretlint, SonarQube, Stryker, diff-cover, typecheck, consistency, ZAP, Lighthouse, AI review, and more.
 3. **Diff-only filter** -- Only findings on changed lines. No pre-existing noise.
 4. **AI fix** (if AI configured) -- Context-aware fix suggestions.
 5. **Git commit** -- If everything passes, your changes are committed.
@@ -124,9 +125,33 @@ Add Maina to Claude Code, Cursor, or any MCP-compatible editor:
 }
 ```
 
+## CI Integration
+
+Add Maina verification to your GitHub Actions workflow:
+
+```yaml
+- uses: mainahq/maina/.github/actions/verify@main
+  with:
+    base: main
+```
+
+This runs the full verification pipeline on every PR, posting findings as inline review comments. Exit codes: `0` (passed), `1` (findings), `2` (tool failure), `3` (config error).
+
+## Cloud Sync
+
+Share prompts and feedback across your team with Maina Cloud:
+
+```bash
+maina login          # authenticate with Maina Cloud
+maina sync pull      # get team prompts
+maina sync push      # share your prompts
+```
+
+Team prompts, constitution updates, and A/B test results sync automatically. No self-hosting required.
+
 ## Next Steps
 
-- [Commands](/maina/commands) -- All 25 commands across Brainstorm, Define, Build, Verify, and Meta phases
+- [Commands](/maina/commands) -- All 28+ commands across Brainstorm, Define, Build, Verify, and Meta phases
 - [Configuration](/maina/configuration) -- Model tiers, constitution, custom prompts
 - [MCP Server](/maina/mcp) -- Add Maina to your IDE
 - [Engines](/maina/engines/context) -- How Context, Prompt, and Verify engines work
