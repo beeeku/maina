@@ -1713,3 +1713,102 @@ Maina Enterprise ──→ @workkit/crypto, @workkit/auth, @workkit/testing
 | 8 | `maina learn` after 8 weeks | Do evolved prompts outperform originals? |
 | 9 | `maina stats --specs` after 5+ features | Are spec quality scores trending up? Is skip rate below 10%? |
 | 10 | `bunx maina` on a fresh repo | Can a new user go from zero to verified commit in 2 minutes? |
+
+---
+
+## Sprint 12 — v0.4.0 Polish + CI (#41)
+
+**Goal:** Machine-readable output, CI-ready, 7 languages, DAST + Lighthouse.
+
+**T001** — `--json` flag on all commands + exit codes (0/1/2/3)
+**T002** — `mainahq/verify-action` GitHub Action
+**T003** — PHP language profile (PHPStan, Psalm)
+**T004** — Per-file language detection for polyglot repos
+**T005** — ZAP DAST integration (Docker)
+**T006** — Lighthouse integration (perf, a11y, SEO)
+
+---
+
+## Path to v1.0.0 — Maina Cloud (Sprints 13–19)
+
+**Powered by Workkit. Dogfooded by Workkit.**
+
+Every cloud feature is a Cloudflare Workers problem that Workkit solves. Org migration happens at v1.0.0 launch — one big moment.
+
+### Sprint 13 — v0.5.0 Workkit Bootstrap + Team Sync (#42)
+
+**Goal:** Workkit dogfooding started, team prompt sync working.
+
+**T001** — Run `maina init` in Workkit repo, CF Workers constitution + Semgrep rules
+**T002** — Scaffold Maina Cloud API as Workers service using @workkit packages
+**T003** — Team prompt registry: push/pull prompts via @workkit/d1 + @workkit/kv
+**T004** — A/B test coordination via @workkit/do (Durable Objects)
+**T005** — GitHub OAuth via @workkit/auth
+
+### Sprint 14 — v0.6.0 Hosted Verification + Autonomous Workflow (#43)
+
+**Goal:** Diffs verified via API. Issues become PRs automatically.
+
+**T001** — Hosted verification: submit diffs via API, Workers Queue processes jobs
+**T002** — Proof artifacts stored in R2 (@workkit/r2)
+**T003** — Distributed cache on KV with SWR (@workkit/cache)
+**T004** — Rate limiting (@workkit/ratelimit) + structured logging (@workkit/logger)
+**T005** — `mainahq/workflow-action` — Autonomous coding Action
+
+```
+Trigger: GitHub Issue created with "maina" label
+Pipeline:
+  1. Parse issue into structured spec (brainstorm)
+  2. Scaffold feature branch (plan)
+  3. Generate ADR + HLD/LLD (design)
+  4. Generate test stubs (spec)
+  5. Implement code via AI (Claude API + maina context)
+  6. Run full verify pipeline (--json)
+  7. Two-stage review (spec compliance + code quality)
+  8. Commit verified code
+  9. Open PR with verification proof
+Output: PR ready for human review
+Feedback: PR merge/reject recorded for self-improvement
+```
+
+### Sprint 15 — v0.7.0 Dashboard + Billing + Self-Improvement Loop (#44)
+
+**Goal:** Usage visibility, monetization, autonomous prompt evolution.
+
+**T001** — Metrics API: pass rate, cache hit rate, tokens saved, prompt evolution timeline
+**T002** — Dashboard UI on CF Pages (app.mainahq.com)
+**T003** — Stripe billing: free tier (100 verifications/month), paid tiers
+**T004** — OpenAPI docs via @workkit/api
+**T005** — SSO for teams
+**T006** — `mainahq/self-improve-action` — Autonomous RL loop
+
+```
+Trigger: Scheduled cron (daily or weekly)
+Pipeline:
+  1. Collect all workflow traces since last run
+  2. For each trace: which prompts led to accepted PRs? Which were rejected?
+  3. Score prompt effectiveness per task (commit, review, verify, etc.)
+  4. Generate candidate improvements for low-performing prompts
+  5. Backtest candidates against historical traces
+  6. If candidate shows >5% improvement: commit as A/B test variant
+  7. If active variant shows <-5% regression: auto-rollback
+  8. Publish evolution report to dashboard
+Output: Improved prompts committed to repo, metrics on dashboard
+The RL loop closes: use → observe → improve → deploy → repeat
+```
+
+### Sprint 16 — v0.8.0 CF Workers Skill + Cross-Dogfooding (#45)
+
+**Goal:** Workers-specific skill, quantified dogfooding results.
+
+**T001** — CF Workers Maina skill: detects `wrangler.toml`, loads Workers rules + prompts
+**T002** — Cross-dogfooding report: bugs found, prompts evolved, patterns learned
+
+### Sprint 17 — v1.0.0 Org Migration + Launch (#46)
+
+**Goal:** Rebrand to @mainahq, launch Maina Cloud publicly.
+
+**T001** — Register mainahq.com, create GitHub org, transfer repo
+**T002** — Update npm scope: @mainahq/cli, @mainahq/core, @mainahq/mcp, @mainahq/skills
+**T003** — Org structure: teams, branch protection, CODEOWNERS
+**T004** — Show HN, dev.to article, CONTRIBUTING.md, GitHub Discussions
