@@ -33,6 +33,11 @@ let mockStagedFiles: string[] = ["src/app.ts"];
 let callOrder: string[] = [];
 
 // Mock the modules
+// NOTE: These mocks are intentionally minimal — they only export what pipeline.ts
+// needs. Tests MUST be run via `bun run test` (scripts/test-isolated.ts) which
+// runs each test file in its own subprocess, preventing mock.module() bleed.
+// Running `bun test` directly (single process) will cause cross-file mock leaks.
+
 mock.module("../syntax-guard", () => ({
 	syntaxGuard: async (..._args: unknown[]) => {
 		callOrder.push("syntaxGuard");
