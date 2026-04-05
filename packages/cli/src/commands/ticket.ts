@@ -94,16 +94,26 @@ export async function ticketAction(
 	const userLabels = options.label ?? [];
 	const allLabels = [...new Set([...userLabels, ...autoModules])];
 
-	// ── Step 4b: Resolve repo alias ──────────────────────────────────────
-	const REPO_ALIASES: Record<string, string> = {
-		"maina-cloud": "mainahq/maina-cloud",
-		cloud: "mainahq/maina-cloud",
-		workkit: "beeeku/workkit",
-		maina: "beeeku/maina",
-	};
-	const repo = options.repo
-		? (REPO_ALIASES[options.repo] ?? options.repo)
-		: undefined;
+	// ── Step 4b: Resolve repo alias from .maina/config.json ─────────────
+	let repo = options.repo;
+	if (repo && !repo.includes("/")) {
+		// Short alias — resolve from project config
+		try {
+			const configPath = join(mainaDir, "config.json");
+			const { existsSync, readFileSync } = await import("node:fs");
+			if (existsSync(configPath)) {
+				const config = JSON.parse(readFileSync(configPath, "utf-8"));
+				const aliases = config.repoAliases as
+					| Record<string, string>
+					| undefined;
+				if (aliases?.[repo]) {
+					repo = aliases[repo];
+				}
+			}
+		} catch {
+			// Config read failure — use repo as-is
+		}
+	}
 
 	// ── Step 5: Create the ticket ────────────────────────────────────────
 	const result = await deps.createTicket({
