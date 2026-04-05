@@ -1,5 +1,34 @@
 # @mainahq/skills
 
+## 0.4.0
+
+### Minor Changes
+
+- v0.5.0 — Cloud client, built-in verify, PHP, ZAP, Lighthouse, --json, GitHub Action
+
+  **v0.3.x Hardening:**
+
+  - Built-in typecheck (tsc --noEmit) and cross-function consistency check in verify
+  - 0-tools warning, Biome auto-config in maina init
+  - --auto flags for maina spec and maina design
+  - Post-workflow RL trace analysis
+
+  **v0.4.0 Polish + CI:**
+
+  - --json flag on all commands with exit codes (0/1/2/3)
+  - mainahq/verify-action GitHub Action
+  - PHP language profile (PHPStan, Psalm)
+  - Per-file language detection for polyglot repos
+  - ZAP DAST and Lighthouse integration
+
+  **v0.5.0 Cloud Client:**
+
+  - Cloud API client with auth, retries, Result<T, E>
+  - maina login/logout (GitHub OAuth device flow)
+  - maina sync push/pull (team prompt sync)
+  - maina team (team management)
+  - Cross-repo ticketing with maina ticket --repo
+
 ## 0.3.0
 
 ### Minor Changes
