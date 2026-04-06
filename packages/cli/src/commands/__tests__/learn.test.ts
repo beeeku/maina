@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { analyseFeedback, getPromptStats, recordOutcome } from "@mainahq/core";
+import {
+	analyseFeedback,
+	exportFeedbackForCloud,
+	getPromptStats,
+	recordOutcome,
+} from "@mainahq/core";
 
 let tmpDir: string;
 
@@ -67,5 +72,65 @@ describe("maina learn", () => {
 
 		const analysis = analyseFeedback(tmpDir, "commit");
 		expect(analysis.needsImprovement).toBe(false);
+	});
+});
+
+describe("learn --cloud integration", () => {
+	test("exportFeedbackForCloud produces events matching learn analysis", () => {
+		// Record mixed feedback
+		for (let i = 0; i < 10; i++) {
+			recordOutcome(tmpDir, "commit-v1", {
+				accepted: true,
+				command: "commit",
+			});
+		}
+		for (let i = 0; i < 5; i++) {
+			recordOutcome(tmpDir, "commit-v1", {
+				accepted: false,
+				command: "commit",
+			});
+		}
+
+		const events = exportFeedbackForCloud(tmpDir);
+		const analysis = analyseFeedback(tmpDir, "commit");
+
+		// Event count should match analysis total
+		expect(events.length).toBe(analysis.totalSamples);
+
+		// Accept counts should match
+		const acceptedEvents = events.filter((e) => e.accepted);
+		expect(acceptedEvents.length).toBe(10);
+
+		const rejectedEvents = events.filter((e) => !e.accepted);
+		expect(rejectedEvents.length).toBe(5);
+	});
+
+	test("exported events have correct shape for cloud upload", () => {
+		recordOutcome(tmpDir, "hash-xyz", {
+			accepted: true,
+			command: "review",
+			context: "looks good",
+		});
+
+		const events = exportFeedbackForCloud(tmpDir);
+		expect(events).toHaveLength(1);
+
+		const event = events[0];
+		expect(event).toBeDefined();
+		if (!event) return;
+
+		// Required fields
+		expect(typeof event.promptHash).toBe("string");
+		expect(typeof event.command).toBe("string");
+		expect(typeof event.accepted).toBe("boolean");
+
+		// Optional fields
+		expect(event.context).toBe("looks good");
+		expect(event.timestamp).toBeDefined();
+
+		// Should not have snake_case keys
+		expect(
+			(event as unknown as Record<string, unknown>).prompt_hash,
+		).toBeUndefined();
 	});
 });
