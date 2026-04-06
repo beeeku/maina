@@ -8,7 +8,7 @@
 // ── Configuration ───────────────────────────────────────────────────────────
 
 export interface CloudConfig {
-	/** Base URL of the maina cloud API (e.g. "https://api.maina.dev"). */
+	/** Base URL of the maina cloud API (e.g. "https://api.mainahq.com"). */
 	baseUrl: string;
 	/** Bearer token for authenticated requests. */
 	token?: string;
