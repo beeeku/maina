@@ -493,4 +493,172 @@ describe("createCloudClient", () => {
 			expect(result.error).toBe("Job not found");
 		}
 	});
+
+	// ── postFeedbackBatch ─────────────────────────────────────────────────
+
+	test("postFeedbackBatch sends events in snake_case", async () => {
+		mockFetch.mockImplementation(() =>
+			Promise.resolve(jsonResponse({ data: { received: 3 } })),
+		);
+
+		const client = setupClient();
+		const result = await client.postFeedbackBatch([
+			{
+				promptHash: "hash-1",
+				command: "commit",
+				accepted: true,
+				timestamp: "2026-01-01T00:00:00Z",
+			},
+			{
+				promptHash: "hash-2",
+				command: "review",
+				accepted: false,
+				context: "user edited",
+				diffHash: "diff-abc",
+			},
+			{
+				promptHash: "hash-3",
+				command: "fix",
+				accepted: true,
+			},
+		]);
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value.received).toBe(3);
+		}
+
+		const call = mockFetch.mock.calls[0] as unknown[];
+		const url = call[0] as string;
+		expect(url).toBe("https://api.test.maina.dev/feedback/batch");
+
+		const requestInit = call[1] as RequestInit;
+		expect(requestInit.method).toBe("POST");
+
+		const body = JSON.parse(requestInit.body as string);
+		expect(body.events).toHaveLength(3);
+		// Verify snake_case mapping
+		expect(body.events[0].prompt_hash).toBe("hash-1");
+		expect(body.events[0].command).toBe("commit");
+		expect(body.events[0].accepted).toBe(true);
+		expect(body.events[0].timestamp).toBe("2026-01-01T00:00:00Z");
+		expect(body.events[1].diff_hash).toBe("diff-abc");
+		expect(body.events[1].context).toBe("user edited");
+	});
+
+	test("postFeedbackBatch returns error on failure", async () => {
+		mockFetch.mockImplementation(() =>
+			Promise.resolve(jsonResponse({ error: "Unauthorized" }, 401)),
+		);
+
+		const client = setupClient();
+		const result = await client.postFeedbackBatch([]);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error).toBe("Unauthorized");
+		}
+	});
+
+	// ── getFeedbackImprovements ──────────────────────────────────────────
+
+	test("getFeedbackImprovements returns improvements with camelCase mapping", async () => {
+		mockFetch.mockImplementation(() =>
+			Promise.resolve(
+				jsonResponse({
+					data: {
+						improvements: [
+							{
+								command: "commit",
+								prompt_hash: "hash-abc",
+								samples: 50,
+								accept_rate: 0.85,
+								status: "healthy",
+							},
+							{
+								command: "review",
+								prompt_hash: "hash-def",
+								samples: 30,
+								accept_rate: 0.4,
+								status: "needs_improvement",
+							},
+						],
+						team_totals: {
+							total_events: 200,
+							accept_rate: 0.72,
+						},
+					},
+				}),
+			),
+		);
+
+		const client = setupClient();
+		const result = await client.getFeedbackImprovements();
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value.improvements).toHaveLength(2);
+			expect(result.value.improvements[0]?.command).toBe("commit");
+			expect(result.value.improvements[0]?.promptHash).toBe("hash-abc");
+			expect(result.value.improvements[0]?.samples).toBe(50);
+			expect(result.value.improvements[0]?.acceptRate).toBe(0.85);
+			expect(result.value.improvements[0]?.status).toBe("healthy");
+			expect(result.value.improvements[1]?.status).toBe("needs_improvement");
+			expect(result.value.teamTotals.totalEvents).toBe(200);
+			expect(result.value.teamTotals.acceptRate).toBe(0.72);
+		}
+
+		const call = mockFetch.mock.calls[0] as unknown[];
+		const url = call[0] as string;
+		expect(url).toBe("https://api.test.maina.dev/feedback/improvements");
+	});
+
+	test("getFeedbackImprovements handles camelCase response", async () => {
+		mockFetch.mockImplementation(() =>
+			Promise.resolve(
+				jsonResponse({
+					data: {
+						improvements: [
+							{
+								command: "fix",
+								promptHash: "hash-ghi",
+								samples: 10,
+								acceptRate: 0.95,
+								status: "excellent",
+							},
+						],
+						teamTotals: {
+							totalEvents: 100,
+							acceptRate: 0.9,
+						},
+					},
+				}),
+			),
+		);
+
+		const client = setupClient();
+		const result = await client.getFeedbackImprovements();
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value.improvements[0]?.promptHash).toBe("hash-ghi");
+			expect(result.value.improvements[0]?.acceptRate).toBe(0.95);
+			expect(result.value.teamTotals.totalEvents).toBe(100);
+			expect(result.value.teamTotals.acceptRate).toBe(0.9);
+		}
+	});
+
+	test("getFeedbackImprovements returns error on failure", async () => {
+		mockFetch.mockImplementation(() =>
+			Promise.resolve(jsonResponse({ error: "Forbidden" }, 403)),
+		);
+
+		const client = setupClient();
+		const result = await client.getFeedbackImprovements();
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error).toBe("Forbidden");
+		}
+	});
 });

@@ -5,6 +5,9 @@ import {
 	analyseWorkflowFeedback,
 	analyseWorkflowRuns,
 	createCandidate,
+	createCloudClient,
+	exportFeedbackForCloud,
+	loadAuthConfig,
 	type PromptTask,
 	resolveABTests,
 } from "@mainahq/core";
@@ -23,17 +26,29 @@ const TASKS: PromptTask[] = [
 /** Minimum feedback samples before suggesting improvements */
 const MIN_SAMPLES_FOR_LEARNING = 30;
 
+const DEFAULT_CLOUD_URL =
+	process.env.MAINA_CLOUD_URL ?? "https://api.mainahq.com";
+
 export function learnCommand(): Command {
 	return new Command("learn")
 		.description("Analyse feedback and propose prompt improvements")
 		.option("--no-interactive", "Skip interactive prompts (report only)")
+		.option("--cloud", "Sync feedback with maina cloud and fetch improvements")
 		.action(async (options) => {
 			const interactive = options.interactive !== false;
+			const cloud = options.cloud === true;
 			intro("maina learn");
 
 			const repoRoot = process.cwd();
 			const mainaDir = join(repoRoot, ".maina");
 
+			// ── Cloud mode ──────────────────────────────────────────────────
+			if (cloud) {
+				await runCloudLearn(mainaDir);
+				return;
+			}
+
+			// ── Local mode (existing behaviour) ─────────────────────────────
 			const s = spinner();
 			s.start("Analysing feedback across all tasks…");
 
@@ -187,4 +202,92 @@ export function learnCommand(): Command {
 
 			outro("Done.");
 		});
+}
+
+// ── Cloud Learn ─────────────────────────────────────────────────────────────
+
+async function runCloudLearn(mainaDir: string): Promise<void> {
+	// 1. Load auth
+	const authResult = loadAuthConfig();
+	if (!authResult.ok) {
+		log.error(authResult.error);
+		outro("Not logged in. Run `maina login` first.");
+		return;
+	}
+
+	const client = createCloudClient({
+		baseUrl: DEFAULT_CLOUD_URL,
+		token: authResult.value.accessToken,
+	});
+
+	const s = spinner();
+
+	// 2. Export local feedback
+	s.start("Exporting local feedback…");
+	const events = exportFeedbackForCloud(mainaDir);
+	s.stop(`Found ${events.length} local feedback event(s).`);
+
+	// 3. Upload if any
+	if (events.length > 0) {
+		s.start(`Uploading ${events.length} event(s) to cloud…`);
+		const uploadResult = await client.postFeedbackBatch(events);
+		if (!uploadResult.ok) {
+			s.stop("Upload failed.");
+			log.error(uploadResult.error);
+			outro("Cloud sync failed.");
+			return;
+		}
+		s.stop(`Uploaded ${uploadResult.value.received} event(s).`);
+	} else {
+		log.info("No local feedback to upload.");
+	}
+
+	// 4. Fetch improvements
+	s.start("Fetching improvement suggestions…");
+	const improvementsResult = await client.getFeedbackImprovements();
+	if (!improvementsResult.ok) {
+		s.stop("Failed to fetch improvements.");
+		log.error(improvementsResult.error);
+		outro("Cloud sync failed.");
+		return;
+	}
+	s.stop("Improvements received.");
+
+	const { improvements, teamTotals } = improvementsResult.value;
+
+	// 5. Display team totals
+	log.step("Team Feedback Summary:");
+	log.message(
+		`  Total events: ${teamTotals.totalEvents}  Accept rate: ${(teamTotals.acceptRate * 100).toFixed(0)}%`,
+	);
+
+	// 6. Display improvements table
+	if (improvements.length === 0) {
+		log.info("No improvement suggestions from cloud.");
+		outro("Done.");
+		return;
+	}
+
+	const header = `  ${"Command".padEnd(14)} ${"Samples".padStart(8)}  ${"Accept".padStart(8)}  Status`;
+	const separator = `  ${"─".repeat(14)} ${"─".repeat(8)}  ${"─".repeat(8)}  ${"─".repeat(18)}`;
+
+	const rows = improvements.map((imp) => {
+		const rate = `${(imp.acceptRate * 100).toFixed(0)}%`;
+		return `  ${imp.command.padEnd(14)} ${String(imp.samples).padStart(8)}  ${rate.padStart(8)}  ${imp.status}`;
+	});
+
+	log.step("Cloud Improvements:");
+	log.message([header, separator, ...rows].join("\n"));
+
+	// 7. Highlight items needing improvement
+	const needsWork = improvements.filter(
+		(i) => i.status === "needs_improvement",
+	);
+	if (needsWork.length > 0) {
+		log.warning(
+			`${needsWork.length} command(s) need improvement based on team feedback.`,
+		);
+	}
+
+	outro("Done.");
 }
