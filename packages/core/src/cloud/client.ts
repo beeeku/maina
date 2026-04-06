@@ -10,6 +10,9 @@ import type {
 	ApiResponse,
 	CloudConfig,
 	CloudFeedbackPayload,
+	CloudPromptImprovement,
+	FeedbackEvent,
+	FeedbackImprovementsResponse,
 	PromptRecord,
 	SubmitVerifyPayload,
 	TeamInfo,
@@ -73,6 +76,16 @@ export interface CloudClient {
 	postFeedback(
 		payload: CloudFeedbackPayload,
 	): Promise<Result<{ recorded: boolean }, string>>;
+
+	/** Upload a batch of feedback events to the cloud. */
+	postFeedbackBatch(
+		events: FeedbackEvent[],
+	): Promise<Result<{ received: number }, string>>;
+
+	/** Fetch feedback-based improvement suggestions from the cloud. */
+	getFeedbackImprovements(): Promise<
+		Result<FeedbackImprovementsResponse, string>
+	>;
 
 	/** Submit a diff for cloud verification. */
 	submitVerify(
@@ -200,6 +213,47 @@ export function createCloudClient(config: CloudConfig): CloudClient {
 
 		postFeedback: (payload) =>
 			request<{ recorded: boolean }>("POST", "/feedback", payload),
+
+		postFeedbackBatch: async (events) => {
+			// Map camelCase → snake_case for cloud API
+			const snakeEvents = events.map((e) => ({
+				prompt_hash: e.promptHash,
+				command: e.command,
+				accepted: e.accepted,
+				context: e.context,
+				diff_hash: e.diffHash,
+				timestamp: e.timestamp,
+			}));
+			return request<{ received: number }>("POST", "/feedback/batch", {
+				events: snakeEvents,
+			});
+		},
+
+		getFeedbackImprovements: async () => {
+			// biome-ignore lint/suspicious/noExplicitAny: snake_case API mapping
+			const result = await request<any>("GET", "/feedback/improvements");
+			if (!result.ok) return result;
+			const d = result.value;
+			const rawImprovements = d.improvements ?? [];
+			const improvements: CloudPromptImprovement[] = rawImprovements.map(
+				// biome-ignore lint/suspicious/noExplicitAny: snake_case API mapping
+				(i: any) => ({
+					command: i.command,
+					promptHash: i.promptHash ?? i.prompt_hash,
+					samples: i.samples,
+					acceptRate: i.acceptRate ?? i.accept_rate,
+					status: i.status,
+				}),
+			);
+			const totals = d.teamTotals ?? d.team_totals ?? {};
+			return ok({
+				improvements,
+				teamTotals: {
+					totalEvents: totals.totalEvents ?? totals.total_events ?? 0,
+					acceptRate: totals.acceptRate ?? totals.accept_rate ?? 0,
+				},
+			});
+		},
 
 		submitVerify: async (payload) => {
 			// biome-ignore lint/suspicious/noExplicitAny: snake_case API mapping

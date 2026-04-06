@@ -64,7 +64,11 @@ export type {
 	ApiResponse,
 	CloudConfig,
 	CloudFeedbackPayload,
+	CloudPromptImprovement,
 	DeviceCodeResponse,
+	FeedbackBatchPayload,
+	FeedbackEvent,
+	FeedbackImprovementsResponse,
 	PromptRecord,
 	SubmitVerifyPayload,
 	TeamInfo,
@@ -168,6 +172,7 @@ export {
 	type RulePreference,
 	savePreferences,
 } from "./feedback/preferences";
+export { exportFeedbackForCloud } from "./feedback/sync";
 export {
 	analyzeWorkflowTrace,
 	type PromptImprovement,
