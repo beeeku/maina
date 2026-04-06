@@ -96,7 +96,7 @@ function formatFixSuggestions(suggestions: FixSuggestion[]): string {
 // ── Cloud Verify ────────────────────────────────────────────────────────────
 
 const DEFAULT_CLOUD_URL =
-	process.env.MAINA_CLOUD_URL ?? "https://api.maina.dev";
+	process.env.MAINA_CLOUD_URL ?? "https://api.mainahq.com";
 
 const CLOUD_POLL_INTERVAL_MS = 2_000;
 const CLOUD_TIMEOUT_MS = 5 * 60 * 1_000; // 5 minutes
