@@ -11,8 +11,11 @@ import type {
 	CloudConfig,
 	CloudFeedbackPayload,
 	PromptRecord,
+	SubmitVerifyPayload,
 	TeamInfo,
 	TeamMember,
+	VerifyResultResponse,
+	VerifyStatusResponse,
 } from "./types";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -70,6 +73,17 @@ export interface CloudClient {
 	postFeedback(
 		payload: CloudFeedbackPayload,
 	): Promise<Result<{ recorded: boolean }, string>>;
+
+	/** Submit a diff for cloud verification. */
+	submitVerify(
+		payload: SubmitVerifyPayload,
+	): Promise<Result<{ jobId: string }, string>>;
+
+	/** Poll the status of a verification job. */
+	getVerifyStatus(jobId: string): Promise<Result<VerifyStatusResponse, string>>;
+
+	/** Retrieve the full result of a completed verification job. */
+	getVerifyResult(jobId: string): Promise<Result<VerifyResultResponse, string>>;
 }
 
 /**
@@ -186,5 +200,18 @@ export function createCloudClient(config: CloudConfig): CloudClient {
 
 		postFeedback: (payload) =>
 			request<{ recorded: boolean }>("POST", "/feedback", payload),
+
+		submitVerify: (payload) =>
+			request<{ jobId: string }>("POST", "/verify", {
+				diff: payload.diff,
+				repo: payload.repo,
+				base_branch: payload.baseBranch,
+			}),
+
+		getVerifyStatus: (jobId) =>
+			request<VerifyStatusResponse>("GET", `/verify/${jobId}/status`),
+
+		getVerifyResult: (jobId) =>
+			request<VerifyResultResponse>("GET", `/verify/${jobId}`),
 	};
 }

@@ -90,6 +90,58 @@ export interface ApiResponse<T> {
 	meta?: Record<string, unknown>;
 }
 
+// ── Verify ─────────────────────────────────────────────────────────────────
+
+export interface SubmitVerifyPayload {
+	/** Diff content to verify. */
+	diff: string;
+	/** Repository identifier (e.g. "owner/repo"). */
+	repo: string;
+	/** Base branch to compare against. */
+	baseBranch?: string;
+}
+
+export interface VerifyStatusResponse {
+	/** Current job status. */
+	status: "queued" | "running" | "done" | "failed";
+	/** Human-readable description of the current step. */
+	currentStep: string;
+}
+
+export interface VerifyFinding {
+	/** Tool that produced the finding (e.g. "biome", "semgrep"). */
+	tool: string;
+	/** File path relative to repository root. */
+	file: string;
+	/** Line number in the file. */
+	line: number;
+	/** Finding description. */
+	message: string;
+	/** Severity level. */
+	severity: "error" | "warning" | "info";
+	/** Optional rule identifier. */
+	ruleId?: string;
+}
+
+export interface VerifyResultResponse {
+	/** Job identifier. */
+	id: string;
+	/** Final job status. */
+	status: "done" | "failed";
+	/** Whether all checks passed. */
+	passed: boolean;
+	/** Array of individual findings from verification tools. */
+	findings: VerifyFinding[];
+	/** Count of error-level findings. */
+	findingsErrors: number;
+	/** Count of warning-level findings. */
+	findingsWarnings: number;
+	/** Proof key for passing verification (null when failed). */
+	proofKey: string | null;
+	/** Total verification duration in milliseconds. */
+	durationMs: number;
+}
+
 // ── Feedback ────────────────────────────────────────────────────────────────
 
 export interface CloudFeedbackPayload {
