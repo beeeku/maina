@@ -156,3 +156,45 @@ export interface CloudFeedbackPayload {
 	/** Optional context about the feedback. */
 	context?: string;
 }
+
+// ── Feedback Batch (learn --cloud) ─────────────────────────────────────────
+
+export interface FeedbackEvent {
+	/** Prompt hash the feedback refers to. */
+	promptHash: string;
+	/** Command that generated the output. */
+	command: string;
+	/** Whether the user accepted the output. */
+	accepted: boolean;
+	/** Optional context about the feedback. */
+	context?: string;
+	/** Optional diff hash for traceability. */
+	diffHash?: string;
+	/** ISO-8601 timestamp. */
+	timestamp?: string;
+}
+
+export interface FeedbackBatchPayload {
+	/** Array of feedback events to upload. */
+	events: FeedbackEvent[];
+}
+
+export interface CloudPromptImprovement {
+	/** Command the improvement applies to. */
+	command: string;
+	/** Prompt hash that was analysed. */
+	promptHash: string;
+	/** Number of feedback samples analysed. */
+	samples: number;
+	/** Accept rate (0–1). */
+	acceptRate: number;
+	/** Health status based on accept rate. */
+	status: "needs_improvement" | "healthy" | "excellent";
+}
+
+export interface FeedbackImprovementsResponse {
+	/** Per-command improvement assessments. */
+	improvements: CloudPromptImprovement[];
+	/** Aggregated team-wide feedback totals. */
+	teamTotals: { totalEvents: number; acceptRate: number };
+}
