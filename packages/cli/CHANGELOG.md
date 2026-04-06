@@ -1,5 +1,11 @@
 # @mainahq/cli
 
+## 1.0.0
+
+### Major Changes
+
+- v1.0.0: Production release. Org migration to mainahq, community infrastructure (CONTRIBUTING.md, issue templates, CODEOWNERS), brainstorm --no-interactive fix, Show HN launch.
+
 ## 0.7.0
 
 ### Minor Changes

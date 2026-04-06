@@ -1,5 +1,16 @@
 # @mainahq/mcp
 
+## 1.0.0
+
+### Major Changes
+
+- v1.0.0: Production release. Org migration to mainahq, community infrastructure (CONTRIBUTING.md, issue templates, CODEOWNERS), brainstorm --no-interactive fix, Show HN launch.
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @mainahq/core@1.0.0
+
 ## 0.7.0
 
 ### Patch Changes
