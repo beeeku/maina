@@ -154,6 +154,12 @@ export type {
 	TraceDeps,
 } from "./features/traceability";
 export { traceFeature } from "./features/traceability";
+export {
+	buildToolCacheKey,
+	type CaptureInput,
+	captureResult,
+	getCachedResult,
+} from "./feedback/capture";
 // Feedback
 export {
 	type FeedbackRecord,
@@ -176,6 +182,7 @@ export {
 	type RulePreference,
 	savePreferences,
 } from "./feedback/preferences";
+export { emitAcceptSignal, emitRejectSignal } from "./feedback/signals";
 export {
 	exportEpisodicForCloud,
 	exportFeedbackForCloud,
@@ -287,12 +294,16 @@ export {
 	getLatest,
 	getSkipRate,
 	getStats,
+	getToolUsageStats,
 	getTrends,
 	recordSnapshot,
 	type SnapshotInput,
 	type StatsReport,
+	type ToolUsageInput,
+	type ToolUsageStats,
 	type TrendDirection,
 	type TrendsReport,
+	trackToolUsage,
 } from "./stats/tracker";
 // Ticket
 export {
