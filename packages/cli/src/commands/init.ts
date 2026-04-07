@@ -319,6 +319,11 @@ async function defaultPromptApiKey(): Promise<{
 	action: string;
 	key?: string;
 } | null> {
+	// When piped (curl | bash), stdin isn't a TTY — skip interactive prompts
+	if (!process.stdin.isTTY) {
+		return { action: "skip" };
+	}
+
 	const result = await select({
 		message: "AI features need an API key. Choose an option:",
 		options: [
