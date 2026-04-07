@@ -113,6 +113,45 @@ describe("captureResult", () => {
 		expect(rows[0]?.cache_hit).toBe(0);
 	});
 
+	test("rejects previous result on re-run with workflowId", () => {
+		const { getFeedbackDb } = require("../../db/index");
+		const { recordFeedback } = require("../collector");
+
+		// Simulate a prior tool call with workflow context
+		recordFeedback(tmpDir, {
+			promptHash: "reviewCode-mcp",
+			task: "reviewCode",
+			accepted: true,
+			timestamp: new Date().toISOString(),
+		});
+		// Set workflow_id on the row
+		const dbResult = getFeedbackDb(tmpDir);
+		if (!dbResult.ok) return;
+		const { db } = dbResult.value;
+		db.prepare(
+			"UPDATE feedback SET workflow_id = ? WHERE id = (SELECT id FROM feedback ORDER BY rowid DESC LIMIT 1)",
+		).run("wf-test");
+
+		// Re-run the tool (different input) — should reject previous
+		captureResult({
+			tool: "reviewCode",
+			input: { diff: "new-diff" },
+			output: "new-result",
+			durationMs: 100,
+			mainaDir: tmpDir,
+			workflowId: "wf-test",
+		});
+
+		const rows = db
+			.query(
+				"SELECT accepted FROM feedback WHERE command = ? AND workflow_id = ? ORDER BY created_at ASC",
+			)
+			.all("reviewCode", "wf-test") as Array<{ accepted: number }>;
+
+		// First entry should be rejected (0), new entry recorded via microtask
+		expect(rows[0]?.accepted).toBe(0);
+	});
+
 	test("does not throw on any failure", () => {
 		expect(() => {
 			captureResult({
