@@ -7,6 +7,7 @@ import { hashContent } from "../cache/keys";
 import { createCacheManager } from "../cache/manager";
 import { trackToolUsage } from "../stats/tracker";
 import { recordFeedback } from "./collector";
+import { emitRejectSignal } from "./signals";
 
 export interface CaptureInput {
 	tool: string;
@@ -63,7 +64,16 @@ export function captureResult(input: CaptureInput): void {
 		// Cache failure is non-fatal
 	}
 
-	// 2. Feedback (fire-and-forget via microtask)
+	// 2. Reject previous result for same tool+workflow (re-run implies rejection)
+	if (input.workflowId) {
+		try {
+			emitRejectSignal(input.mainaDir, input.tool, input.workflowId);
+		} catch {
+			// Reject failure is non-fatal
+		}
+	}
+
+	// 3. Feedback (fire-and-forget via microtask)
 	queueMicrotask(() => {
 		try {
 			recordFeedback(input.mainaDir, {
@@ -77,7 +87,7 @@ export function captureResult(input: CaptureInput): void {
 		}
 	});
 
-	// 3. Stats (synchronous — fast SQLite write)
+	// 4. Stats (synchronous — fast SQLite write)
 	try {
 		trackToolUsage(input.mainaDir, {
 			tool: input.tool,
