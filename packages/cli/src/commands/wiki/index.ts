@@ -1,12 +1,14 @@
 /**
  * Wiki subcommand registration — `maina wiki <subcommand>`.
  *
- * Groups init, compile, query, and status under the wiki parent command.
+ * Groups init, compile, query, status, ingest, and lint under the wiki parent command.
  */
 
 import { Command } from "commander";
 import { wikiCompileCommand } from "./compile";
+import { wikiIngestCommand } from "./ingest";
 import { wikiInitCommand } from "./init";
+import { wikiLintCommand } from "./lint";
 import { wikiQueryCommand } from "./query";
 import { wikiStatusCommand } from "./status";
 
@@ -17,6 +19,8 @@ export function wikiCommand(): Command {
 	wikiCompileCommand(wiki);
 	wikiQueryCommand(wiki);
 	wikiStatusCommand(wiki);
+	wikiIngestCommand(wiki);
+	wikiLintCommand(wiki);
 
 	return wiki;
 }

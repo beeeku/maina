@@ -20,6 +20,9 @@ import type { DecisionStatus, ExtractedDecision } from "../types";
 /**
  * Extract sections from an ADR markdown file.
  * Returns a map of lowercase section name → content.
+ *
+ * Handles nested subsections (### Positive, ### Negative) by merging
+ * them into the parent ## section rather than creating separate entries.
  */
 function parseSections(content: string): Map<string, string> {
 	const sections = new Map<string, string>();
@@ -35,12 +38,14 @@ function parseSections(content: string): Map<string, string> {
 	}
 
 	for (const line of lines) {
-		const headingMatch = line.match(/^##\s+(.+)/);
-		if (headingMatch) {
+		// Match ## headings (h2) but NOT ### headings (h3)
+		const h2Match = line.match(/^##\s+(?!#)(.+)/);
+		if (h2Match) {
 			flushSection();
-			currentSection = (headingMatch[1] ?? "").trim().toLowerCase();
+			currentSection = (h2Match[1] ?? "").trim().toLowerCase();
 			continue;
 		}
+		// ### subsections get merged into the current parent section
 		if (currentSection) {
 			currentLines.push(line);
 		}
@@ -75,9 +80,18 @@ function extractTitle(content: string): string {
 
 /**
  * Normalize status string to DecisionStatus.
+ * The status section may contain the status on its own line,
+ * possibly with additional text (e.g. "Superseded by ADR-0005").
+ * Extract the first meaningful line and match against known statuses.
  */
 function normalizeStatus(raw: string): DecisionStatus {
-	const lower = raw.toLowerCase().trim();
+	// Take the first non-empty line from the status section
+	const firstLine =
+		raw
+			.split("\n")
+			.map((l) => l.trim())
+			.find((l) => l.length > 0) ?? "";
+	const lower = firstLine.toLowerCase();
 	if (lower.startsWith("accepted")) return "accepted";
 	if (lower.startsWith("proposed")) return "proposed";
 	if (lower.startsWith("deprecated")) return "deprecated";
@@ -147,19 +161,18 @@ export function extractSingleDecision(
 		sections.get("positive") ??
 		"";
 
-	// Alternatives under various headings
+	// Alternatives under various headings — gracefully return empty if missing
 	const altSection =
 		sections.get("alternatives considered") ??
 		sections.get("alternatives") ??
 		"";
 	const alternativesRejected = extractBulletItems(altSection);
 
-	// Entity mentions from "entities" section or full content
+	// Entity mentions: check "entities" section first, then always fall back to full content scan
 	const entitiesSection = sections.get("entities") ?? "";
-	let entityMentions = extractBulletItems(entitiesSection);
-	if (entityMentions.length === 0) {
-		entityMentions = extractEntityMentions(content);
-	}
+	const entityBullets = extractBulletItems(entitiesSection);
+	const entityMentions =
+		entityBullets.length > 0 ? entityBullets : extractEntityMentions(content);
 
 	return {
 		ok: true,

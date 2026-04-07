@@ -1,31 +1,31 @@
 /**
  * `maina wiki compile` — incremental (or full) wiki compilation.
  *
- * Detects which source files changed since last compile, re-extracts
- * entities, and regenerates affected articles. Falls back to full
- * compilation when --full is passed or no state exists.
+ * Delegates to the core wiki compiler which handles extraction, knowledge graph,
+ * Louvain community detection, PageRank, template-based articles, wikilinks,
+ * indexing, state management, and writing to disk.
+ *
+ * - Default: incremental compilation (full: false)
+ * - --full: force full recompilation
+ * - --dry-run: show what would change without writing
  */
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { intro, log, outro, spinner } from "@clack/prompts";
-import {
-	createEmptyState,
-	getWikiChangedFiles,
-	hashContent,
-	loadWikiState,
-} from "@mainahq/core";
+import { compileWiki } from "@mainahq/core";
 import type { Command } from "commander";
 import { EXIT_PASSED, outputJson } from "../../json";
-import { runInitialCompilation } from "./init";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface CompilationResult {
-	articlesUpdated: number;
-	articlesCreated: number;
 	articlesTotal: number;
-	changedFiles: number;
+	modules: number;
+	entities: number;
+	features: number;
+	decisions: number;
+	architecture: number;
 	duration: number;
 	mode: "full" | "incremental";
 	dryRun: boolean;
@@ -38,182 +38,66 @@ export interface WikiCompileOptions {
 	cwd?: string;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Count all .md files in wiki subdirectories.
- */
-function countArticles(wikiDir: string): number {
-	let count = 0;
-	const subdirs = [
-		"modules",
-		"entities",
-		"features",
-		"decisions",
-		"architecture",
-		"raw",
-	];
-	for (const subdir of subdirs) {
-		const dir = join(wikiDir, subdir);
-		if (!existsSync(dir)) continue;
-		try {
-			const entries = readdirSync(dir);
-			count += entries.filter((e) => e.endsWith(".md")).length;
-		} catch {
-			// skip
-		}
-	}
-	return count;
-}
-
-/**
- * Collect current file hashes from source files.
- */
-function collectCurrentHashes(repoRoot: string): Record<string, string> {
-	const hashes: Record<string, string> = {};
-
-	function walk(dir: string): void {
-		let entries: string[];
-		try {
-			entries = readdirSync(dir);
-		} catch {
-			return;
-		}
-		for (const entry of entries) {
-			if (
-				entry === "node_modules" ||
-				entry === "dist" ||
-				entry === ".maina" ||
-				entry === ".git"
-			) {
-				continue;
-			}
-			const fullPath = join(dir, entry);
-			try {
-				readdirSync(fullPath);
-				// It's a directory, recurse
-				walk(fullPath);
-			} catch {
-				// Not a directory — check if it's a .ts file
-				if (
-					entry.endsWith(".ts") &&
-					!entry.endsWith(".test.ts") &&
-					!entry.endsWith(".d.ts")
-				) {
-					try {
-						const content = readFileSync(fullPath, "utf-8");
-						hashes[relative(repoRoot, fullPath)] = hashContent(content);
-					} catch {
-						// skip
-					}
-				}
-			}
-		}
-	}
-
-	const packagesDir = join(repoRoot, "packages");
-	const srcDir = join(repoRoot, "src");
-
-	if (existsSync(packagesDir)) {
-		walk(packagesDir);
-	} else if (existsSync(srcDir)) {
-		walk(srcDir);
-	}
-
-	return hashes;
-}
-
 // ── Core Action (testable) ──────────────────────────────────────────────────
 
 export async function wikiCompileAction(
 	options: WikiCompileOptions = {},
 ): Promise<CompilationResult> {
 	const cwd = options.cwd ?? process.cwd();
-	const wikiDir = join(cwd, ".maina", "wiki");
-	const startTime = Date.now();
+	const mainaDir = join(cwd, ".maina");
+	const wikiDir = join(mainaDir, "wiki");
 	const dryRun = options.dryRun ?? false;
+	const full = options.full ?? false;
 
-	// If wiki not initialized or --full requested, run full compilation
-	if (!existsSync(wikiDir) || options.full) {
+	// If wiki not initialized, force full compilation
+	const wikiExists = existsSync(wikiDir);
+	const mode: "full" | "incremental" =
+		full || !wikiExists ? "full" : "incremental";
+
+	if (!options.json && !wikiExists) {
+		log.info("Wiki not initialized, running full compilation...");
+	} else if (!options.json && full) {
+		log.info("Running full compilation...");
+	}
+
+	const result = await compileWiki({
+		repoRoot: cwd,
+		mainaDir,
+		wikiDir,
+		full: mode === "full",
+		dryRun,
+	});
+
+	if (!result.ok) {
+		const errorMsg = result.error ?? "Unknown compilation error";
 		if (!options.json) {
-			log.info(
-				options.full
-					? "Running full compilation..."
-					: "Wiki not initialized, running full compilation...",
-			);
+			log.error(`Compilation failed: ${errorMsg}`);
 		}
-
-		const initResult = await runInitialCompilation(cwd, wikiDir);
-
 		return {
-			articlesUpdated: 0,
-			articlesCreated: initResult.articlesCreated,
-			articlesTotal: initResult.articlesCreated,
-			changedFiles: 0,
-			duration: Date.now() - startTime,
-			mode: "full",
+			articlesTotal: 0,
+			modules: 0,
+			entities: 0,
+			features: 0,
+			decisions: 0,
+			architecture: 0,
+			duration: 0,
+			mode,
 			dryRun,
 		};
 	}
 
-	// ── Incremental compilation ──────────────────────────────────────
-	const previousState = loadWikiState(wikiDir) ?? createEmptyState();
-	const currentHashes = collectCurrentHashes(cwd);
-	const changedFiles = getWikiChangedFiles(
-		previousState.fileHashes,
-		currentHashes,
-	);
-
-	if (changedFiles.length === 0) {
-		if (!options.json) {
-			log.info("No files changed since last compilation.");
-		}
-
-		return {
-			articlesUpdated: 0,
-			articlesCreated: 0,
-			articlesTotal: countArticles(wikiDir),
-			changedFiles: 0,
-			duration: Date.now() - startTime,
-			mode: "incremental",
-			dryRun,
-		};
-	}
-
-	if (!options.json) {
-		log.info(`${changedFiles.length} file(s) changed since last compilation.`);
-	}
-
-	if (dryRun) {
-		if (!options.json) {
-			for (const file of changedFiles) {
-				log.message(`  would recompile: ${file}`);
-			}
-		}
-
-		return {
-			articlesUpdated: 0,
-			articlesCreated: 0,
-			articlesTotal: countArticles(wikiDir),
-			changedFiles: changedFiles.length,
-			duration: Date.now() - startTime,
-			mode: "incremental",
-			dryRun: true,
-		};
-	}
-
-	// For now, incremental recompilation runs a full compile
-	// (Sprint 1+2 compiler will provide true incremental support)
-	const initResult = await runInitialCompilation(cwd, wikiDir);
+	const compilation = result.value;
 
 	return {
-		articlesUpdated: initResult.articlesCreated,
-		articlesCreated: 0,
-		articlesTotal: initResult.articlesCreated,
-		changedFiles: changedFiles.length,
-		duration: Date.now() - startTime,
-		mode: "incremental",
-		dryRun: false,
+		articlesTotal: compilation.articles.length,
+		modules: compilation.stats.modules,
+		entities: compilation.stats.entities,
+		features: compilation.stats.features,
+		decisions: compilation.stats.decisions,
+		architecture: compilation.stats.architecture,
+		duration: compilation.duration,
+		mode,
+		dryRun,
 	};
 }
 
@@ -247,7 +131,10 @@ export function wikiCompileCommand(parent: Command): void {
 			if (!jsonMode) {
 				s.stop("Compilation complete.");
 				log.success(
-					`${result.mode} compilation: ${result.articlesUpdated + result.articlesCreated} articles, ${result.duration}ms`,
+					`${result.mode} compilation: ${result.articlesTotal} articles in ${result.duration}ms`,
+				);
+				log.info(
+					`  Modules: ${result.modules}  Entities: ${result.entities}  Features: ${result.features}  Decisions: ${result.decisions}`,
 				);
 				outro("Done.");
 			} else {
