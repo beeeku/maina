@@ -170,6 +170,12 @@ function generateModuleArticle(
 	if (memberEntities.length === 0) {
 		lines.push("_No entities detected._");
 	} else {
+		// Detect duplicate entity names to enable disambiguation
+		const nameCounts = new Map<string, number>();
+		for (const entity of memberEntities) {
+			nameCounts.set(entity.name, (nameCounts.get(entity.name) ?? 0) + 1);
+		}
+
 		const sorted = [...memberEntities].sort((a, b) => {
 			const prA = pageRankScores.get(`entity:${a.name}`) ?? 0;
 			const prB = pageRankScores.get(`entity:${b.name}`) ?? 0;
@@ -177,8 +183,13 @@ function generateModuleArticle(
 		});
 		for (const entity of sorted) {
 			const pr = pageRankScores.get(`entity:${entity.name}`) ?? 0;
+			// Disambiguate duplicate names by appending the package/top-level directory
+			const isDuplicate = (nameCounts.get(entity.name) ?? 0) > 1;
+			const displayName = isDuplicate
+				? `${entity.name} (${entity.file.replace(/\\/g, "/").split("/")[0] ?? entity.file})`
+				: entity.name;
 			lines.push(
-				`- **${entity.name}** (${entity.kind}) — \`${entity.file}:${entity.line}\` [PR: ${pr.toFixed(4)}]`,
+				`- **${displayName}** (${entity.kind}) — \`${entity.file}:${entity.line}\` [PR: ${pr.toFixed(4)}]`,
 			);
 		}
 	}
@@ -198,14 +209,22 @@ function generateModuleArticle(
 		lines.push("");
 	}
 
-	// Related decisions
-	if (decisions.length > 0) {
-		lines.push("## Related Decisions");
-		lines.push("");
-		for (const d of decisions) {
-			lines.push(`- [[decision:${d.id}]] — ${d.title} [${d.status}]`);
+	// Related decisions — only include when the module has entities and at least one
+	// decision references an entity in this module
+	if (memberEntities.length > 0) {
+		const relatedDecisions = decisions.filter((d) =>
+			d.entityMentions.some((m) =>
+				memberEntities.some((e) => m.includes(e.name) || m.includes(e.file)),
+			),
+		);
+		if (relatedDecisions.length > 0) {
+			lines.push("## Related Decisions");
+			lines.push("");
+			for (const d of relatedDecisions) {
+				lines.push(`- [[decision:${d.id}]] — ${d.title} [${d.status}]`);
+			}
+			lines.push("");
 		}
-		lines.push("");
 	}
 
 	return lines.join("\n");
@@ -304,10 +323,25 @@ function generateFeatureArticle(feature: ExtractedFeature): string {
 	lines.push("");
 
 	if (feature.scope) {
-		lines.push("## Scope");
-		lines.push("");
-		lines.push(feature.scope);
-		lines.push("");
+		// Only emit the Scope section if the content has real information
+		// (not just unresolved [NEEDS CLARIFICATION] placeholders)
+		const cleanScope = feature.scope
+			.replace(/\[NEEDS CLARIFICATION\][^.]*\./gi, "")
+			.trim();
+		if (cleanScope.length > 0) {
+			lines.push("## Scope");
+			lines.push("");
+			lines.push(cleanScope);
+			lines.push("");
+		} else {
+			lines.push("## Scope");
+			lines.push("");
+			lines.push("- TODO(scope): Define what this feature does.");
+			lines.push(
+				"- TODO(scope): Define what this feature explicitly does not do to prevent over-building.",
+			);
+			lines.push("");
+		}
 	}
 
 	// Spec assertions
