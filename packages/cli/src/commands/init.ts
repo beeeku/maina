@@ -1,7 +1,12 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { intro, log, outro } from "@clack/prompts";
-import { bootstrap, type InitReport, type Result } from "@mainahq/core";
+import {
+	bootstrap,
+	getToolsForLanguages,
+	type InitReport,
+	type Result,
+} from "@mainahq/core";
 import { Command } from "commander";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -77,6 +82,7 @@ export async function initAction(
 	deps.log.info("Detected stack:");
 	deps.log.message(`  Runtime:    ${s.runtime}`);
 	deps.log.message(`  Language:   ${s.language}`);
+	deps.log.message(`  Languages:  ${s.languages.join(", ")}`);
 	deps.log.message(`  Test:       ${s.testRunner}`);
 	deps.log.message(`  Linter:     ${s.linter}`);
 	if (s.framework !== "none") {
@@ -94,37 +100,49 @@ export async function initAction(
 	}
 
 	if (missing.length > 0) {
-		deps.log.warning(`Missing tools: ${missing.map((t) => t.name).join(", ")}`);
-		deps.log.message("  Install for deeper verification:");
-		for (const t of missing) {
-			const cmd = INSTALL_HINTS[t.name];
-			if (cmd) {
-				deps.log.message(`    ${t.name}: ${cmd}`);
-			}
-		}
+		// Filter install hints to only show tools relevant to detected languages
+		const relevantToolNames = new Set<string>(
+			getToolsForLanguages(s.languages).map((t) => t.name),
+		);
+		const relevantMissing = missing.filter((t) =>
+			relevantToolNames.has(t.name),
+		);
 
-		// Auto-install if --install flag is set
-		if (options.install) {
-			deps.log.step("Installing missing tools...");
-			for (const t of missing) {
+		if (relevantMissing.length > 0) {
+			deps.log.warning(
+				`Missing tools: ${relevantMissing.map((t) => t.name).join(", ")}`,
+			);
+			deps.log.message("  Install for deeper verification:");
+			for (const t of relevantMissing) {
 				const cmd = INSTALL_HINTS[t.name];
-				if (!cmd || cmd.startsWith("http")) continue;
-				deps.log.message(`  Installing ${t.name}...`);
-				try {
-					const args = cmd.split(" ");
-					const proc = Bun.spawn(args, {
-						cwd,
-						stdout: "pipe",
-						stderr: "pipe",
-					});
-					await proc.exited;
-					if (proc.exitCode === 0) {
-						deps.log.success(`    ${t.name} installed`);
-					} else {
-						deps.log.warning(`    ${t.name} install failed (non-zero exit)`);
+				if (cmd) {
+					deps.log.message(`    ${t.name}: ${cmd}`);
+				}
+			}
+
+			// Auto-install if --install flag is set
+			if (options.install) {
+				deps.log.step("Installing missing tools...");
+				for (const t of relevantMissing) {
+					const cmd = INSTALL_HINTS[t.name];
+					if (!cmd || cmd.startsWith("http")) continue;
+					deps.log.message(`  Installing ${t.name}...`);
+					try {
+						const args = cmd.split(" ");
+						const proc = Bun.spawn(args, {
+							cwd,
+							stdout: "pipe",
+							stderr: "pipe",
+						});
+						await proc.exited;
+						if (proc.exitCode === 0) {
+							deps.log.success(`    ${t.name} installed`);
+						} else {
+							deps.log.warning(`    ${t.name} install failed (non-zero exit)`);
+						}
+					} catch {
+						deps.log.warning(`    ${t.name} install failed`);
 					}
-				} catch {
-					deps.log.warning(`    ${t.name} install failed`);
 				}
 			}
 		}
