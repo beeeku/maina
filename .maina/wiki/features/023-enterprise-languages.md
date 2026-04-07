@@ -2,7 +2,8 @@
 
 ## Scope
 
-### In Scope - [NEEDS CLARIFICATION] What this feature does. ### Out of Scope - [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
+- TODO(scope): Define what this feature does.
+- TODO(scope): Define what this feature explicitly does not do to prevent over-building.
 
 ## Status
 

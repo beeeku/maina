@@ -1,4 +1,4 @@
-# 0010. v0.5.0 Cloud Client + maina-cloud
+# 0012. v0.5.0 Cloud Client + maina-cloud
 
 Date: 2026-04-05
 
@@ -12,7 +12,7 @@ Maina is local-only. Teams need shared prompts, feedback, and A/B testing coordi
 
 ## Decision
 
-Split into two repos: open-source CLI client in mainahq/maina, private Workers service at /Users/Bikash/try/maina-cloud. Shared types ensure API contract consistency. GitHub OAuth device flow for auth. Workkit packages power the cloud service.
+Split into two repos: open-source CLI client in mainahq/maina, private Workers service repo (mainahq/maina-cloud). Shared types ensure API contract consistency. GitHub OAuth device flow for auth. Workkit packages power the cloud service.
 
 ## Consequences
 
