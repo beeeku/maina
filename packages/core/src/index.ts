@@ -438,6 +438,12 @@ export {
 	type ZapOptions,
 	type ZapResult,
 } from "./verify/zap";
+// Wiki — Compiler
+export {
+	type CompilationResult as WikiCompilationResult,
+	type CompileOptions as WikiCompileOptions,
+	compile as compileWiki,
+} from "./wiki/compiler";
 export { type CodeEntity, extractCodeEntities } from "./wiki/extractors/code";
 export {
 	extractDecisions,
@@ -448,6 +454,25 @@ export {
 	extractSingleFeature,
 } from "./wiki/extractors/feature";
 export { extractWorkflowTrace } from "./wiki/extractors/workflow";
+// Wiki — Graph
+export {
+	buildKnowledgeGraph,
+	computePageRank,
+	type GraphEdge,
+	type GraphNode,
+	type KnowledgeGraph,
+	mapToArticles,
+} from "./wiki/graph";
+// Wiki — Indexer
+export { generateIndex } from "./wiki/indexer";
+// Wiki — Linker
+export { generateLinks, type LinkResult } from "./wiki/linker";
+// Wiki — Louvain
+export {
+	detectCommunities,
+	type LouvainNode,
+	type LouvainResult,
+} from "./wiki/louvain";
 export {
 	DEFAULT_SCHEMA,
 	getArticleMaxLength,
@@ -455,6 +480,14 @@ export {
 	validateArticleStructure,
 	type WikiSchema,
 } from "./wiki/schema";
+// Wiki — Signals
+export {
+	type CompilationPromptSignal,
+	calculateEbbinghausScore,
+	getPromptEffectiveness,
+	recordWikiUsage,
+	type WikiEffectivenessSignal,
+} from "./wiki/signals";
 export {
 	createEmptyState,
 	getChangedFiles as getWikiChangedFiles,

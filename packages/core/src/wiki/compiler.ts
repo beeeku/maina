@@ -379,6 +379,331 @@ function generateDecisionArticle(decision: ExtractedDecision): string {
 	return lines.join("\n");
 }
 
+// ─── Architecture Article Generation ───────────────────────────────────
+
+interface ArchitectureArticle {
+	slug: string;
+	title: string;
+	content: string;
+}
+
+/**
+ * Detect the Three Engines pattern (context/, prompts/, verify/) under
+ * packages/core/src and generate a descriptive article.
+ */
+function generateThreeEnginesArticle(
+	repoRoot: string,
+): ArchitectureArticle | null {
+	const coreEnginesDir = join(repoRoot, "packages", "core", "src");
+	const engines = ["context", "prompts", "verify"];
+	const detected: string[] = [];
+
+	for (const engine of engines) {
+		try {
+			const stat = statSync(join(coreEnginesDir, engine));
+			if (stat.isDirectory()) {
+				detected.push(engine);
+			}
+		} catch {
+			// directory doesn't exist
+		}
+	}
+
+	if (detected.length < 2) return null;
+
+	const engineFiles: Record<string, string[]> = {};
+	for (const engine of detected) {
+		try {
+			engineFiles[engine] = readdirSync(join(coreEnginesDir, engine))
+				.filter(
+					(f) =>
+						f.endsWith(".ts") &&
+						!f.endsWith(".test.ts") &&
+						!f.endsWith(".d.ts"),
+				)
+				.sort();
+		} catch {
+			engineFiles[engine] = [];
+		}
+	}
+
+	const lines: string[] = [];
+	lines.push("# Architecture: Three Engines");
+	lines.push("");
+	lines.push(
+		"> Auto-generated architecture article describing the three-engine pattern.",
+	);
+	lines.push("");
+	lines.push(
+		"Maina's core is organized around three engines that work together:",
+	);
+	lines.push("");
+	lines.push(
+		"1. **Context Engine** (`context/`) — Observes the codebase via 4-layer retrieval (Working, Episodic, Semantic, Retrieval), PageRank scoring, and dynamic token budgets.",
+	);
+	lines.push(
+		"2. **Prompt Engine** (`prompts/`) — Learns from project conventions via constitution loading, custom prompts, versioning, and A/B-tested evolution.",
+	);
+	lines.push(
+		"3. **Verify Engine** (`verify/`) — Verifies AI-generated code via a multi-stage pipeline: syntax guard, parallel tools, diff filter, AI fix, and two-stage review.",
+	);
+	lines.push("");
+
+	for (const engine of detected) {
+		const files = engineFiles[engine] ?? [];
+		lines.push(`## ${engine.charAt(0).toUpperCase() + engine.slice(1)} Engine`);
+		lines.push("");
+		if (files.length > 0) {
+			lines.push(`Source files (\`packages/core/src/${engine}/\`):`);
+			lines.push("");
+			for (const file of files) {
+				lines.push(`- \`${file}\``);
+			}
+		} else {
+			lines.push("_No source files detected._");
+		}
+		lines.push("");
+	}
+
+	return {
+		slug: "three-engines",
+		title: "Three Engines",
+		content: lines.join("\n"),
+	};
+}
+
+/**
+ * Describe the monorepo structure by inspecting packages/ layout.
+ */
+function generateMonorepoArticle(repoRoot: string): ArchitectureArticle | null {
+	const packagesDir = join(repoRoot, "packages");
+	let packageNames: string[];
+	try {
+		packageNames = readdirSync(packagesDir).filter((name) => {
+			try {
+				return statSync(join(packagesDir, name)).isDirectory();
+			} catch {
+				return false;
+			}
+		});
+	} catch {
+		return null;
+	}
+
+	if (packageNames.length === 0) return null;
+
+	const descriptions: Record<string, string> = {
+		cli: "Commander entrypoint, commands (thin wrappers over engines), terminal UI",
+		core: "Three engines + cache + AI + git + DB + hooks",
+		mcp: "MCP server (delegates to engines)",
+		skills: "Cross-platform skills (Claude Code, Cursor, Codex, Gemini CLI)",
+		docs: "Documentation site",
+	};
+
+	const lines: string[] = [];
+	lines.push("# Architecture: Monorepo Structure");
+	lines.push("");
+	lines.push(
+		"> Auto-generated architecture article describing the monorepo layout.",
+	);
+	lines.push("");
+	lines.push("Maina is organized as a monorepo under `packages/`.");
+	lines.push("");
+	lines.push("## Packages");
+	lines.push("");
+
+	for (const name of packageNames.sort()) {
+		const desc = descriptions[name] ?? "_No description available._";
+		lines.push(`### ${name}`);
+		lines.push("");
+		lines.push(`- **Path:** \`packages/${name}/\``);
+		lines.push(`- **Description:** ${desc}`);
+
+		// List top-level src files if present
+		const srcDir = join(packagesDir, name, "src");
+		try {
+			const srcEntries = readdirSync(srcDir).filter((e) => {
+				try {
+					return statSync(join(srcDir, e)).isDirectory();
+				} catch {
+					return false;
+				}
+			});
+			if (srcEntries.length > 0) {
+				lines.push(`- **Modules:** ${srcEntries.sort().join(", ")}`);
+			}
+		} catch {
+			// no src directory
+		}
+		lines.push("");
+	}
+
+	return {
+		slug: "monorepo-structure",
+		title: "Monorepo Structure",
+		content: lines.join("\n"),
+	};
+}
+
+/**
+ * List all verify tools detected from the verify/ directory.
+ */
+function generateVerifyPipelineArticle(
+	repoRoot: string,
+): ArchitectureArticle | null {
+	const verifyDir = join(repoRoot, "packages", "core", "src", "verify");
+	let verifyFiles: string[];
+	try {
+		verifyFiles = readdirSync(verifyDir).filter(
+			(f) =>
+				f.endsWith(".ts") && !f.endsWith(".test.ts") && !f.endsWith(".d.ts"),
+		);
+	} catch {
+		return null;
+	}
+
+	if (verifyFiles.length === 0) return null;
+
+	// Also check for linters subdirectory
+	let linterFiles: string[] = [];
+	try {
+		linterFiles = readdirSync(join(verifyDir, "linters")).filter(
+			(f) =>
+				f.endsWith(".ts") && !f.endsWith(".test.ts") && !f.endsWith(".d.ts"),
+		);
+	} catch {
+		// no linters directory
+	}
+
+	// Also check for tools subdirectory
+	let toolFiles: string[] = [];
+	try {
+		toolFiles = readdirSync(join(verifyDir, "tools")).filter(
+			(f) =>
+				f.endsWith(".ts") && !f.endsWith(".test.ts") && !f.endsWith(".d.ts"),
+		);
+	} catch {
+		// no tools directory
+	}
+
+	const toolDescriptions: Record<string, string> = {
+		"syntax-guard.ts":
+			"Fast syntax checking (<500ms) via language-specific linters",
+		"slop.ts": "AI slop detection — catches lazy/generic AI output patterns",
+		"semgrep.ts": "Static analysis via Semgrep rules",
+		"trivy.ts": "Container and dependency vulnerability scanning",
+		"secretlint.ts": "Secret detection in code and config files",
+		"sonar.ts": "SonarQube code quality analysis",
+		"coverage.ts": "Code coverage tracking via diff-cover",
+		"mutation.ts": "Mutation testing via Stryker",
+		"ai-review.ts": "Two-stage AI review (spec compliance + code quality)",
+		"diff-filter.ts":
+			"Diff-only filter — only report findings on changed lines",
+		"fix.ts": "AI-powered automatic fix suggestions",
+		"pipeline.ts": "Verification pipeline orchestrator",
+		"builtin.ts": "Built-in verification checks",
+		"consistency.ts": "Code consistency analysis",
+		"typecheck.ts": "TypeScript type checking",
+		"detect.ts": "Language and tool detection",
+		"proof.ts": "Verification proof generation for PR bodies",
+		"visual.ts": "Visual verification with Playwright",
+		"lighthouse.ts": "Lighthouse performance audits",
+		"zap.ts": "OWASP ZAP security scanning",
+	};
+
+	const lines: string[] = [];
+	lines.push("# Architecture: Verification Pipeline");
+	lines.push("");
+	lines.push("> Auto-generated architecture article listing all verify tools.");
+	lines.push("");
+	lines.push(
+		"The verification pipeline runs a multi-stage process to prove AI-generated code is correct before it merges.",
+	);
+	lines.push("");
+	lines.push("## Pipeline Stages");
+	lines.push("");
+	lines.push("1. **Syntax Guard** — Fast linting (<500ms)");
+	lines.push(
+		"2. **Parallel Deterministic Tools** — Semgrep, Trivy, Secretlint, SonarQube, coverage, mutation",
+	);
+	lines.push("3. **Diff-Only Filter** — Only report findings on changed lines");
+	lines.push("4. **AI Fix** — Automatic fix suggestions");
+	lines.push("5. **Two-Stage AI Review** — Spec compliance, then code quality");
+	lines.push("");
+	lines.push("## Verify Tools");
+	lines.push("");
+
+	for (const file of verifyFiles.sort()) {
+		const name = file.replace(/\.ts$/, "");
+		const desc = toolDescriptions[file] ?? "";
+		if (desc) {
+			lines.push(`- **${name}** — ${desc}`);
+		} else {
+			lines.push(`- **${name}** — \`verify/${file}\``);
+		}
+	}
+	lines.push("");
+
+	if (linterFiles.length > 0) {
+		lines.push("## Language-Specific Linters");
+		lines.push("");
+		for (const file of linterFiles.sort()) {
+			const name = file.replace(/\.ts$/, "");
+			lines.push(`- **${name}** — \`verify/linters/${file}\``);
+		}
+		lines.push("");
+	}
+
+	if (toolFiles.length > 0) {
+		lines.push("## Additional Tools");
+		lines.push("");
+		for (const file of toolFiles.sort()) {
+			const name = file.replace(/\.ts$/, "");
+			lines.push(`- **${name}** — \`verify/tools/${file}\``);
+		}
+		lines.push("");
+	}
+
+	return {
+		slug: "verification-pipeline",
+		title: "Verification Pipeline",
+		content: lines.join("\n"),
+	};
+}
+
+/**
+ * Generate architecture articles by detecting cross-cutting patterns
+ * from the codebase structure.
+ */
+function generateArchitectureArticles(repoRoot: string): WikiArticle[] {
+	const articles: WikiArticle[] = [];
+	const generators = [
+		generateThreeEnginesArticle,
+		generateMonorepoArticle,
+		generateVerifyPipelineArticle,
+	];
+
+	for (const generator of generators) {
+		const result = generator(repoRoot);
+		if (result) {
+			const articlePath = `wiki/architecture/${result.slug}.md`;
+			articles.push(
+				makeArticle(
+					articlePath,
+					"architecture",
+					result.title,
+					result.content,
+					0.5,
+					[],
+					[],
+				),
+			);
+		}
+	}
+
+	return articles;
+}
+
 // ─── Article Factory ────────────────────────────────────────────────────
 
 function makeArticle(
@@ -575,6 +900,10 @@ export async function compile(
 				),
 			);
 		}
+
+		// Architecture articles (from directory structure analysis)
+		const archArticles = generateArchitectureArticles(repoRoot);
+		articles.push(...archArticles);
 
 		// ── Step 7: Generate wikilinks ─────────────────────────────────
 		const linkResult = generateLinks(graph, articleMap);

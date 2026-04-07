@@ -166,19 +166,158 @@ describe("Decision Extractor", () => {
 		});
 	});
 
+	describe("maina ADR format: # NNNN. Title", () => {
+		it("should parse maina-style ADR with nested consequences", () => {
+			const adrPath = join(tmpDir, "0001-karpathy-spec.md");
+			writeFileSync(
+				adrPath,
+				[
+					"# 0001. Karpathy-Principled Spec Quality System",
+					"",
+					"Date: 2026-04-03",
+					"",
+					"## Status",
+					"",
+					"Proposed",
+					"",
+					"## Context",
+					"",
+					"After 8 sprints and 769 tests, maina has a complete verification pipeline.",
+					"",
+					"## Decision",
+					"",
+					"Build a spec quality scoring system that scores specs 0-100.",
+					"",
+					"## Consequences",
+					"",
+					"### Positive",
+					"",
+					"- Specs become measurably better over time",
+					"- Developers can't rationalize skipping verification",
+					"",
+					"### Negative",
+					"",
+					"- Additional overhead on each commit",
+					"- False positives from measurability heuristics",
+					"",
+					"### Neutral",
+					"",
+					"- Requires cultural shift",
+				].join("\n"),
+			);
+
+			const result = extractSingleDecision(adrPath);
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+
+			expect(result.value.id).toBe("0001-karpathy-spec");
+			expect(result.value.title).toBe(
+				"Karpathy-Principled Spec Quality System",
+			);
+			expect(result.value.status).toBe("proposed");
+			expect(result.value.context).toContain("769 tests");
+			expect(result.value.decision).toContain("spec quality scoring");
+			// Consequences should be merged into rationale
+			expect(result.value.rationale).toContain("Positive");
+			expect(result.value.rationale).toContain("measurably better");
+			expect(result.value.rationale).toContain("Negative");
+			expect(result.value.rationale).toContain("overhead");
+			// No alternatives section in maina ADRs
+			expect(result.value.alternativesRejected).toHaveLength(0);
+		});
+
+		it("should parse ADR with HLD/LLD and code paths", () => {
+			const adrPath = join(tmpDir, "0002-multi-lang.md");
+			writeFileSync(
+				adrPath,
+				[
+					"# 0002. Multi-language verify pipeline",
+					"",
+					"Date: 2026-04-03",
+					"",
+					"## Status",
+					"",
+					"Accepted",
+					"",
+					"## Context",
+					"",
+					"Verify pipeline was hardcoded for TypeScript.",
+					"",
+					"## Decision",
+					"",
+					"Introduce a LanguageProfile abstraction.",
+					"Uses src/verify/syntax-guard.ts and packages/core/src/context/semantic.ts.",
+					"",
+					"## Consequences",
+					"",
+					"### Positive",
+					"",
+					"- Maina works with Python, Go, and Rust projects",
+					"",
+					"### Negative",
+					"",
+					"- More tools to maintain",
+				].join("\n"),
+			);
+
+			const result = extractSingleDecision(adrPath);
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+
+			expect(result.value.id).toBe("0002-multi-lang");
+			expect(result.value.title).toBe("Multi-language verify pipeline");
+			expect(result.value.status).toBe("accepted");
+			// Entity mentions extracted from full content
+			expect(result.value.entityMentions.length).toBeGreaterThan(0);
+			expect(result.value.entityMentions).toContain(
+				"src/verify/syntax-guard.ts",
+			);
+		});
+	});
+
 	describe("dogfood: extract from maina's own ADRs", () => {
-		it("should extract decisions from maina's adr/ directory", () => {
+		it("should extract all 12 ADRs from maina's adr/ directory", () => {
 			const adrDir = join(process.cwd(), "adr");
 
 			const result = extractDecisions(adrDir);
 			expect(result.ok).toBe(true);
 			if (!result.ok) return;
 
-			expect(result.value.length).toBeGreaterThan(0);
+			expect(result.value).toHaveLength(12);
 			for (const d of result.value) {
 				expect(d.id).toBeTruthy();
 				expect(d.title).toBeTruthy();
+				expect(d.title).not.toMatch(/^\d+\./);
+				expect(["proposed", "accepted", "deprecated", "superseded"]).toContain(
+					d.status,
+				);
+				expect(d.context.length).toBeGreaterThan(0);
+				expect(d.decision.length).toBeGreaterThan(0);
+				// All maina ADRs have Consequences sections
+				expect(d.rationale.length).toBeGreaterThan(0);
 			}
+		});
+
+		it("should extract correct titles from maina ADRs", () => {
+			const adrDir = join(process.cwd(), "adr");
+			const result = extractDecisions(adrDir);
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+
+			const titles = result.value.map((d) => d.title);
+			expect(titles).toContain("Karpathy-Principled Spec Quality System");
+			expect(titles).toContain("Multi-language verify pipeline");
+			expect(titles).toContain("Visual verification with Playwright");
+		});
+
+		it("should detect accepted status on maina ADRs", () => {
+			const adrDir = join(process.cwd(), "adr");
+			const result = extractDecisions(adrDir);
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+
+			const accepted = result.value.filter((d) => d.status === "accepted");
+			expect(accepted.length).toBeGreaterThanOrEqual(3);
 		});
 	});
 });
