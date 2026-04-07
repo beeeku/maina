@@ -1,5 +1,11 @@
 # @mainahq/cli
 
+## 1.0.1
+
+### Patch Changes
+
+- [`f96460e`](https://github.com/mainahq/maina/commit/f96460ecf95ca9ac84038c0713d65604956e82a2) Thanks [@beeeku](https://github.com/beeeku)! - AI-driven interactive init with API key setup, project-aware tool detection, MCP/agent file generation, landing page light mode, and Mermaid workflow diagrams.
+
 ## 1.0.0
 
 ### Major Changes
