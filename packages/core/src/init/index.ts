@@ -6,7 +6,13 @@
  * Never overwrites existing files unless `force: true`.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import type { Result } from "../db/index";
 import type { DetectedTool } from "../verify/detect";
@@ -29,6 +35,7 @@ export interface InitReport {
 export interface DetectedStack {
 	runtime: "bun" | "node" | "deno" | "unknown";
 	language: "typescript" | "javascript" | "unknown";
+	languages: string[];
 	testRunner: string;
 	linter: string;
 	framework: string;
@@ -40,85 +47,148 @@ function detectStack(repoRoot: string): DetectedStack {
 	const stack: DetectedStack = {
 		runtime: "unknown",
 		language: "unknown",
+		languages: [],
 		testRunner: "unknown",
 		linter: "unknown",
 		framework: "none",
 	};
 
-	// Try reading package.json
-	const pkgPath = join(repoRoot, "package.json");
-	if (!existsSync(pkgPath)) return stack;
+	// ── Multi-language detection (file-marker based) ─────────────────────
+	const languages: string[] = [];
 
-	let pkg: Record<string, unknown>;
-	try {
-		pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-	} catch {
-		return stack;
+	// Go
+	if (existsSync(join(repoRoot, "go.mod"))) {
+		languages.push("go");
 	}
 
-	const allDeps = {
-		...(pkg.dependencies as Record<string, string> | undefined),
-		...(pkg.devDependencies as Record<string, string> | undefined),
-		...(pkg.peerDependencies as Record<string, string> | undefined),
-	};
+	// Rust
+	if (existsSync(join(repoRoot, "Cargo.toml"))) {
+		languages.push("rust");
+	}
 
-	// Runtime detection
+	// Python
 	if (
-		allDeps["@types/bun"] ||
-		allDeps["bun-types"] ||
-		existsSync(join(repoRoot, "bun.lock"))
+		existsSync(join(repoRoot, "pyproject.toml")) ||
+		existsSync(join(repoRoot, "requirements.txt")) ||
+		existsSync(join(repoRoot, "setup.py"))
 	) {
-		stack.runtime = "bun";
-	} else if (
-		existsSync(join(repoRoot, "deno.json")) ||
-		existsSync(join(repoRoot, "deno.jsonc"))
+		languages.push("python");
+	}
+
+	// Java
+	if (
+		existsSync(join(repoRoot, "pom.xml")) ||
+		existsSync(join(repoRoot, "build.gradle")) ||
+		existsSync(join(repoRoot, "build.gradle.kts"))
 	) {
-		stack.runtime = "deno";
-	} else {
-		stack.runtime = "node";
+		languages.push("java");
 	}
 
-	// Language detection
-	if (existsSync(join(repoRoot, "tsconfig.json")) || allDeps.typescript) {
-		stack.language = "typescript";
-	} else {
-		stack.language = "javascript";
+	// .NET (C#/F#) — check for .csproj, .fsproj, .sln files
+	try {
+		const entries = readdirSync(repoRoot);
+		if (
+			entries.some(
+				(e: string) =>
+					e.endsWith(".csproj") || e.endsWith(".sln") || e.endsWith(".fsproj"),
+			)
+		) {
+			languages.push("dotnet");
+		}
+	} catch {
+		// Directory not readable — skip
 	}
 
-	// Test runner detection
-	if (stack.runtime === "bun") {
-		stack.testRunner = "bun:test";
-	} else if (allDeps.vitest) {
-		stack.testRunner = "vitest";
-	} else if (allDeps.jest || allDeps["@jest/core"]) {
-		stack.testRunner = "jest";
-	} else if (allDeps.mocha) {
-		stack.testRunner = "mocha";
+	// ── JS/TS detection from package.json ───────────────────────────────
+	const pkgPath = join(repoRoot, "package.json");
+	let hasPkgJson = false;
+	let allDeps: Record<string, string> = {};
+
+	if (existsSync(pkgPath)) {
+		try {
+			const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as Record<
+				string,
+				unknown
+			>;
+			hasPkgJson = true;
+			allDeps = {
+				...(pkg.dependencies as Record<string, string> | undefined),
+				...(pkg.devDependencies as Record<string, string> | undefined),
+				...(pkg.peerDependencies as Record<string, string> | undefined),
+			};
+		} catch {
+			// Malformed package.json — skip
+		}
 	}
 
-	// Linter detection
-	if (allDeps["@biomejs/biome"]) {
-		stack.linter = "biome";
-	} else if (allDeps.eslint) {
-		stack.linter = "eslint";
-	} else if (allDeps.prettier) {
-		stack.linter = "prettier";
+	if (hasPkgJson) {
+		// Runtime detection
+		if (
+			allDeps["@types/bun"] ||
+			allDeps["bun-types"] ||
+			existsSync(join(repoRoot, "bun.lock"))
+		) {
+			stack.runtime = "bun";
+		} else if (
+			existsSync(join(repoRoot, "deno.json")) ||
+			existsSync(join(repoRoot, "deno.jsonc"))
+		) {
+			stack.runtime = "deno";
+		} else {
+			stack.runtime = "node";
+		}
+
+		// Language detection (single primary)
+		if (existsSync(join(repoRoot, "tsconfig.json")) || allDeps.typescript) {
+			stack.language = "typescript";
+			if (!languages.includes("typescript")) {
+				languages.push("typescript");
+			}
+		} else {
+			stack.language = "javascript";
+			if (!languages.includes("javascript")) {
+				languages.push("javascript");
+			}
+		}
+
+		// Test runner detection
+		if (stack.runtime === "bun") {
+			stack.testRunner = "bun:test";
+		} else if (allDeps.vitest) {
+			stack.testRunner = "vitest";
+		} else if (allDeps.jest || allDeps["@jest/core"]) {
+			stack.testRunner = "jest";
+		} else if (allDeps.mocha) {
+			stack.testRunner = "mocha";
+		}
+
+		// Linter detection
+		if (allDeps["@biomejs/biome"]) {
+			stack.linter = "biome";
+		} else if (allDeps.eslint) {
+			stack.linter = "eslint";
+		} else if (allDeps.prettier) {
+			stack.linter = "prettier";
+		}
+
+		// Framework detection
+		if (allDeps.next) {
+			stack.framework = "next.js";
+		} else if (allDeps.express) {
+			stack.framework = "express";
+		} else if (allDeps.hono) {
+			stack.framework = "hono";
+		} else if (allDeps.react && !allDeps.next) {
+			stack.framework = "react";
+		} else if (allDeps.vue) {
+			stack.framework = "vue";
+		} else if (allDeps.svelte) {
+			stack.framework = "svelte";
+		}
 	}
 
-	// Framework detection
-	if (allDeps.next) {
-		stack.framework = "next.js";
-	} else if (allDeps.express) {
-		stack.framework = "express";
-	} else if (allDeps.hono) {
-		stack.framework = "hono";
-	} else if (allDeps.react && !allDeps.next) {
-		stack.framework = "react";
-	} else if (allDeps.vue) {
-		stack.framework = "vue";
-	} else if (allDeps.svelte) {
-		stack.framework = "svelte";
-	}
+	// If no languages detected, mark as unknown
+	stack.languages = languages.length > 0 ? languages : ["unknown"];
 
 	return stack;
 }
@@ -393,8 +463,8 @@ export async function bootstrap(
 		// Detect project stack from package.json
 		const detectedStack = detectStack(repoRoot);
 
-		// Detect available verification tools on PATH
-		const detectedToolsList = await detectTools();
+		// Detect available verification tools on PATH (filtered by project languages)
+		const detectedToolsList = await detectTools(detectedStack.languages);
 
 		// Ensure .maina/ exists
 		mkdirSync(mainaDir, { recursive: true });
