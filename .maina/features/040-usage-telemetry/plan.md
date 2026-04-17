@@ -4,51 +4,19 @@
 
 ## Architecture
 
-What is the technical approach? How does it fit into existing architecture?
-Where are the integration points with existing code?
-
-- Pattern: [NEEDS CLARIFICATION]
-- Integration points: [NEEDS CLARIFICATION]
-
-## Key Technical Decisions
-
-What libraries, patterns, or approaches? WHY these and not alternatives?
-
-- [NEEDS CLARIFICATION]
+New module `packages/core/src/telemetry/usage.ts`. Pure functions with consent gating. Events are plain objects — no external SDK. Reads `telemetry: true` from `~/.maina/config.yml` (separate key from `errors`).
 
 ## Files
 
 | File | Purpose | New/Modified |
 |------|---------|-------------|
-| [NEEDS CLARIFICATION] | | |
+| `packages/core/src/telemetry/usage.ts` | Usage event tracking | New |
+| `packages/core/src/telemetry/__tests__/usage.test.ts` | Tests | New |
 
 ## Tasks
 
-TDD: every implementation task must have a preceding test task.
-
-- [ ] [NEEDS CLARIFICATION] Break down into small, testable tasks.
-
-## Failure Modes
-
-What can go wrong? How do we handle it gracefully?
-
-- [NEEDS CLARIFICATION]
-
-## Testing Strategy
-
-Unit tests, integration tests, or both? What mocks are needed?
-
-- [NEEDS CLARIFICATION]
-
-
-## Wiki Context
-
-### Similar Features
-
-- 001-stats-tracker: Implementation Plan
-- 026-v07-rl-flywheel: Implementation Plan
-
-### Suggestions
-
-- Feature 001-stats-tracker did something similar — check wiki/features/001-stats-tracker.md
-- Feature 026-v07-rl-flywheel did something similar — check wiki/features/026-v07-rl-flywheel.md
+- [x] T1: Implement `isTelemetryEnabled()` — reads config
+- [x] T2: Implement `buildUsageEvent()` — formats usage event
+- [x] T3: Implement `trackUsageEvent()` — consent-gated
+- [x] T4: Define event schema types
+- [x] T5: Write tests

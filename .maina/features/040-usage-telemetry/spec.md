@@ -1,45 +1,25 @@
-# Feature: [Name]
+# Feature: Opt-in usage telemetry (distinct from error reporting)
 
 ## Problem Statement
 
-What specific problem does this solve? Who experiences it? What happens if we don't solve it?
-
-- [NEEDS CLARIFICATION] Define the problem clearly.
-
-## Target User
-
-Who benefits? What is their current workflow? What frustrates them about it?
-
-- Primary: [NEEDS CLARIFICATION]
-- Secondary: [NEEDS CLARIFICATION]
-
-## User Stories
-
-- As a [role], I want [capability] so that [benefit].
+We have no data on how people use Maina — which commands, how often, what fails. Usage telemetry (separate from crash reporting) enables data-driven onboarding improvements and feature prioritization.
 
 ## Success Criteria
 
-How do we know this works? Every criterion must be testable — if you can't write
-an assertion for it, the requirement isn't clear enough.
-
-- [ ] [NEEDS CLARIFICATION] Define measurable, testable criteria.
+- [x] `trackUsageEvent(name, properties)` function with consent gating
+- [x] `isTelemetryEnabled()` reads from config (separate from error reporting consent)
+- [x] Events are plain objects — no PostHog SDK dependency yet
+- [x] Event schema: maina.install, maina.verify.started/.completed, maina.learn.ran, maina.commit
+- [x] Zero PII in any event
 
 ## Scope
 
 ### In Scope
-
-- [NEEDS CLARIFICATION] What this feature does.
+- Usage event tracking functions
+- Separate consent check from error reporting
+- Event schema definition
 
 ### Out of Scope
-
-- [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
-
-## Design Decisions
-
-Key choices made and WHY. Record tradeoffs — future you will thank you.
-
-- [NEEDS CLARIFICATION] What alternatives were considered? Why was this one chosen?
-
-## Open Questions
-
-- [NEEDS CLARIFICATION] List ambiguities. Every question here must be resolved before implementation.
+- PostHog SDK integration (future)
+- `maina telemetry off` command (future)
+- Consent prompt UI (future)
