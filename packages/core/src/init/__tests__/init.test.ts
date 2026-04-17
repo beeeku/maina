@@ -70,7 +70,7 @@ describe("bootstrap", () => {
 		expect(content).toContain("constitution.md");
 	});
 
-	test("creates CI workflow", async () => {
+	test("creates CI workflow with maina verify and fallback", async () => {
 		const result = await bootstrap(tmpDir);
 		expect(result.ok).toBe(true);
 
@@ -80,7 +80,13 @@ describe("bootstrap", () => {
 		const content = readFileSync(ciPath, "utf-8");
 		expect(content).toContain("name: Maina CI");
 		expect(content).toContain("actions/checkout@v4");
-	});
+		// Primary job uses maina verify (#82)
+		expect(content).toContain("maina verify");
+		// Cloud option is commented out for user to enable
+		expect(content).toContain("mainahq/verify-action@v1");
+		// Fallback raw commands are present but disabled
+		expect(content).toContain("verify-fallback");
+	}, 30_000);
 
 	test("detects bun stack from package.json", async () => {
 		// Create a Bun project

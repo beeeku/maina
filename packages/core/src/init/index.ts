@@ -1144,12 +1144,36 @@ function buildCiWorkflow(stack: DetectedStack): string {
 			? `      - run: ${isBun ? "bun run typecheck" : "npx tsc --noEmit"}\n`
 			: "";
 	const test = isBun ? "bun test" : "npm test";
+	const installMaina = isBun
+		? "bun add -d @mainahq/cli"
+		: "npm install --save-dev @mainahq/cli";
+	const mainaVerify = isBun ? "bunx maina verify" : "npx maina verify";
 
 	return `name: Maina CI
 on: [push, pull_request]
 jobs:
   verify:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+${setup}
+      - run: ${install}
+      # Maina verification pipeline — lint, typecheck, test, security, slop detection (#82)
+      - run: ${installMaina}
+      - run: ${mainaVerify}
+  # Uncomment below to use Maina Cloud verification with mainahq/verify-action:
+  # verify-cloud:
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'pull_request'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: mainahq/verify-action@v1
+  #       with:
+  #         token: \${{ secrets.MAINA_TOKEN }}
+  # Fallback: raw commands (if maina is not installed)
+  verify-fallback:
+    runs-on: ubuntu-latest
+    if: false  # Enable by setting to true if maina verify is unavailable
     steps:
       - uses: actions/checkout@v4
 ${setup}
