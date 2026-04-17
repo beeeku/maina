@@ -48,11 +48,56 @@ export interface DetectedStack {
 	buildTool: string;
 	/** Whether this is a monorepo (workspaces detected) */
 	monorepo: boolean;
+	/** Workspace glob patterns (e.g. ["packages/*", "apps/*"]) */
+	workspacePatterns: string[];
+	/** Resolved workspace package names (e.g. ["@org/auth", "@org/cache"]) */
+	workspacePackages: string[];
+	/** Project description from root package.json */
+	description: string;
 	/** Inferred conventions from project context */
 	conventions: string[];
 }
 
 // ── Project Detection ───────────────────────────────────────────────────────
+
+/**
+ * Resolve workspace patterns to actual package names by reading each
+ * workspace directory's package.json. Patterns like "packages/*" are
+ * expanded by listing the parent directory.
+ */
+function resolveWorkspacePackages(
+	repoRoot: string,
+	patterns: string[],
+): string[] {
+	const names: string[] = [];
+	for (const pattern of patterns) {
+		// Strip trailing glob star (e.g. "packages/*" → "packages")
+		const base = pattern.replace(/\/?\*$/, "");
+		const dir = join(repoRoot, base);
+		try {
+			const entries = readdirSync(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				if (!entry.isDirectory()) continue;
+				const pkgPath = join(dir, entry.name, "package.json");
+				if (existsSync(pkgPath)) {
+					try {
+						const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+						if (typeof pkg.name === "string") {
+							names.push(pkg.name);
+						} else {
+							names.push(entry.name);
+						}
+					} catch {
+						names.push(entry.name);
+					}
+				}
+			}
+		} catch {
+			// Directory doesn't exist — skip
+		}
+	}
+	return names;
+}
 
 function detectStack(repoRoot: string): DetectedStack {
 	const stack: DetectedStack = {
@@ -65,6 +110,9 @@ function detectStack(repoRoot: string): DetectedStack {
 		scripts: {},
 		buildTool: "unknown",
 		monorepo: false,
+		workspacePatterns: [],
+		workspacePackages: [],
+		description: "",
 		conventions: [],
 	};
 
@@ -137,9 +185,21 @@ function detectStack(repoRoot: string): DetectedStack {
 				stack.scripts = pkg.scripts as Record<string, string>;
 			}
 
-			// Detect monorepo (workspaces)
+			// Detect monorepo (workspaces) and resolve workspace info (#83)
 			if (pkg.workspaces) {
 				stack.monorepo = true;
+				const patterns: string[] = Array.isArray(pkg.workspaces)
+					? (pkg.workspaces as string[])
+					: Array.isArray((pkg.workspaces as Record<string, unknown>).packages)
+						? ((pkg.workspaces as Record<string, unknown>).packages as string[])
+						: [];
+				stack.workspacePatterns = patterns;
+				stack.workspacePackages = resolveWorkspacePackages(repoRoot, patterns);
+			}
+
+			// Project description
+			if (typeof pkg.description === "string") {
+				stack.description = pkg.description;
 			}
 		} catch {
 			// Malformed package.json — skip
@@ -367,10 +427,24 @@ function buildConstitution(stack: DetectedStack): string {
 
 	const monorepoLine = stack.monorepo ? "- Monorepo: yes (workspaces)\n" : "";
 
-	// Build architecture section from context
+	// Build architecture section from context (#83)
 	const archLines: string[] = [];
 	if (stack.monorepo) {
-		archLines.push("- Monorepo with shared packages");
+		if (stack.workspacePatterns.length > 0) {
+			archLines.push(
+				`- Monorepo layout: \`${stack.workspacePatterns.join("`, `")}\``,
+			);
+		} else {
+			archLines.push("- Monorepo with shared packages");
+		}
+		if (stack.workspacePackages.length > 0) {
+			archLines.push(
+				`- ${stack.workspacePackages.length} packages: ${stack.workspacePackages.join(", ")}`,
+			);
+		}
+	}
+	if (stack.description) {
+		archLines.push(`- Purpose: ${stack.description}`);
 	}
 	if (stack.framework !== "none") {
 		archLines.push(`- ${stack.framework} application`);

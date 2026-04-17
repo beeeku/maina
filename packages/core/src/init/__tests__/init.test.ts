@@ -562,6 +562,89 @@ describe("bootstrap", () => {
 		expect(content).toContain("analyzeFeature");
 	});
 
+	// ── Constitution architecture for monorepos (#83) ───────────────────
+
+	test("constitution includes workspace layout and package names for monorepos", async () => {
+		// Create a monorepo with workspace packages
+		mkdirSync(join(tmpDir, "packages", "auth"), { recursive: true });
+		mkdirSync(join(tmpDir, "packages", "cache"), { recursive: true });
+		mkdirSync(join(tmpDir, "apps", "web"), { recursive: true });
+		writeFileSync(
+			join(tmpDir, "package.json"),
+			JSON.stringify({
+				name: "my-toolkit",
+				description: "Cloudflare Workers toolkit",
+				workspaces: ["packages/*", "apps/*"],
+				devDependencies: { "@types/bun": "latest" },
+			}),
+		);
+		writeFileSync(
+			join(tmpDir, "packages", "auth", "package.json"),
+			JSON.stringify({ name: "@toolkit/auth" }),
+		);
+		writeFileSync(
+			join(tmpDir, "packages", "cache", "package.json"),
+			JSON.stringify({ name: "@toolkit/cache" }),
+		);
+		writeFileSync(
+			join(tmpDir, "apps", "web", "package.json"),
+			JSON.stringify({ name: "@toolkit/web" }),
+		);
+
+		const result = await bootstrap(tmpDir);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value.detectedStack.monorepo).toBe(true);
+			expect(result.value.detectedStack.workspacePatterns).toEqual([
+				"packages/*",
+				"apps/*",
+			]);
+			expect(result.value.detectedStack.workspacePackages).toContain(
+				"@toolkit/auth",
+			);
+			expect(result.value.detectedStack.workspacePackages).toContain(
+				"@toolkit/cache",
+			);
+			expect(result.value.detectedStack.workspacePackages).toContain(
+				"@toolkit/web",
+			);
+
+			const constitution = readFileSync(
+				join(tmpDir, ".maina", "constitution.md"),
+				"utf-8",
+			);
+			expect(constitution).toContain("packages/*");
+			expect(constitution).toContain("apps/*");
+			expect(constitution).toContain("@toolkit/auth");
+			expect(constitution).toContain("Cloudflare Workers toolkit");
+		}
+	}, 30_000);
+
+	test("constitution works for non-monorepo projects", async () => {
+		writeFileSync(
+			join(tmpDir, "package.json"),
+			JSON.stringify({
+				name: "my-app",
+				description: "My cool app",
+				dependencies: { express: "^4" },
+			}),
+		);
+
+		const result = await bootstrap(tmpDir);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.value.detectedStack.monorepo).toBe(false);
+			expect(result.value.detectedStack.workspacePatterns).toEqual([]);
+
+			const constitution = readFileSync(
+				join(tmpDir, ".maina", "constitution.md"),
+				"utf-8",
+			);
+			expect(constitution).toContain("My cool app");
+			expect(constitution).not.toContain("Monorepo layout");
+		}
+	}, 30_000);
+
 	// ── aiGenerate option ─────────────────────────────────────────────────
 
 	test("aiGenerate defaults to false (backward compatible)", async () => {
