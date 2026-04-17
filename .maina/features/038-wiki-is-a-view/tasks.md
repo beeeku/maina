@@ -2,22 +2,17 @@
 
 ## Tasks
 
-Each task should be completable in one commit. Test tasks precede implementation tasks.
-
-- [ ] [NEEDS CLARIFICATION] Define tasks.
+- [x] T1: Write ADR 0022 documenting wiki-as-view positioning
+- [x] T2: Update wiki.mdx with Context engine framing (4 layers, wiki renders the graph)
+- [x] T3: Fix layer count to match existing Context engine docs (4 layers, not 5)
 
 ## Dependencies
 
-Which tasks block which? Draw the critical path.
-
-- [NEEDS CLARIFICATION]
+None — docs-only change.
 
 ## Definition of Done
 
-How do we know this feature is complete?
-
-- [ ] All tests pass
-- [ ] Biome lint clean
-- [ ] TypeScript compiles
-- [ ] maina analyze shows no errors
-- [ ] [NEEDS CLARIFICATION] Feature-specific criteria
+- [x] `bun run build` passes
+- [x] `maina verify` passes
+- [x] `maina slop` clean
+- [x] ADR and wiki page are consistent with Context engine docs (4 layers)

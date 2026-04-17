@@ -6,9 +6,9 @@ Current messaging treats the wiki as a separate product surface. But the wiki is
 
 ## Success Criteria
 
-- [ ] README rewritten: wiki under "Context engine → views"
-- [ ] `docs/decisions/0010-wiki-is-a-view.md` ADR written
-- [ ] Glossary: Context engine (core) → wiki (view), blast radius (view), symbol graph (view)
+- [x] Wiki docs page updated with Context engine framing
+- [x] `adr/0022-wiki-is-a-view.md` ADR written
+- [x] Glossary: Context engine (core, 4 layers) → wiki (view of knowledge graph)
 
 ## Scope
 

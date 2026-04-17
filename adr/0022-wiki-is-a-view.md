@@ -10,7 +10,7 @@ Accepted
 
 The wiki was initially presented as a standalone feature: "codebase knowledge compiler." This creates confusion — users think Maina has two products (verification + wiki) instead of one system with multiple views.
 
-The Context engine is the core. It has 5 layers (Working, Episodic, Semantic, Retrieval, Wiki). The wiki is Layer 5 — a persistent, human-readable *view* of the knowledge graph. Same engine, same data, different rendering.
+The Context engine is the core. It has 4 layers (Working, Episodic, Semantic, Retrieval) that gather codebase context. The wiki is not a layer — it's a *view* that renders the knowledge graph built from those layers as persistent, human-readable articles. Same engine, same data, different rendering.
 
 ## Decision
 
