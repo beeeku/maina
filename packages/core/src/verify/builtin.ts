@@ -211,7 +211,7 @@ export function checkSecrets(filePath: string, content: string): Finding[] {
 
 	for (const [i, line] of lines.entries()) {
 		const match = line.match(secretPattern);
-		if (match && match[2] && !testValuePattern.test(match[2])) {
+		if (match?.[2] && !testValuePattern.test(match[2])) {
 			findings.push({
 				tool: "builtin",
 				file: filePath,
