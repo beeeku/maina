@@ -1,0 +1,30 @@
+---
+title: Why Maina has no SDK
+description: MCP is our polyglot surface. Here's why we chose not to build multi-language SDKs.
+---
+
+**tl;dr** — Maina has no REST API to wrap. MCP is the polyglot interface. Our peers ship zero SDKs. We're not special enough to need one.
+
+## The temptation
+
+Every developer tool eventually faces the SDK question: "Should we auto-generate client libraries in Python, Go, Ruby, Java...?" Tools like Fern make this easy — point at an API spec, get SDKs in 10 languages.
+
+We evaluated Fern. Here's why we passed.
+
+## No REST API to wrap
+
+Maina's integration surface is MCP (Model Context Protocol). Claude Code, Cursor, Windsurf, Copilot — they all speak MCP natively. There's no REST API for an SDK to wrap.
+
+## Our peers don't do it
+
+Ruff, uv, Biome, Bun, Vitest, Astro — none of them ship SDKs. They ship CLIs and let users call them. Maina works the same way: `maina verify` or the MCP `verify` tool. Done.
+
+## The math doesn't work
+
+Fern costs ~$600/month per language. For N languages with no REST API, that's $600N/month for wrapping... nothing. The ROI is negative.
+
+## When we'd reconsider
+
+If Maina ever ships a hosted REST API (2027 Q2 earliest), we'd evaluate Speakeasy (not Fern) for SDK generation. But not before there's an API to wrap.
+
+**Decision record:** [ADR 0019 — No Fern, no SDKs](/adr/0019-no-fern-no-sdk)

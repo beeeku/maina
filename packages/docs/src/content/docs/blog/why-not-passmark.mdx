@@ -1,0 +1,24 @@
+---
+title: Why we're not adopting Passmark
+description: Passmark wraps Playwright. Stagehand does the same under MIT. Here's our evaluation.
+---
+
+**tl;dr** — Passmark is a Playwright wrapper with an FSL license and 185 stars. Stagehand does the same thing under MIT with a larger community. We're evaluating Stagehand instead.
+
+## What Passmark offers
+
+Passmark promises AI-driven browser testing by wrapping Playwright with natural language selectors. Sounds great for verification — let AI describe what to check instead of writing CSS selectors.
+
+## Why we passed
+
+**It wraps Playwright.** Passmark isn't a Playwright replacement — it's a layer on top. If we're already going to depend on Playwright, the wrapper needs to justify its existence.
+
+**FSL license.** The "Competing Use" clause is a non-starter for a verification tool. If someone uses Maina to verify Passmark's competitors, we'd be in legal gray area.
+
+**185 stars.** Not battle-tested. For a tool that gates whether code merges, we need reliability data.
+
+## What we're doing instead
+
+Stagehand (MIT, larger community) does the same thing — AI-driven browser automation on top of Playwright. We're running a feature-flagged evaluation with hard go/no-go criteria: pass rate, token cost, cache hit rate.
+
+**Decision record:** [ADR 0018 — No Passmark](/adr/0018-no-passmark)
