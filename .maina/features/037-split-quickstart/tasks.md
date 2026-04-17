@@ -2,22 +2,8 @@
 
 ## Tasks
 
-Each task should be completable in one commit. Test tasks precede implementation tasks.
-
-- [ ] [NEEDS CLARIFICATION] Define tasks.
-
-## Dependencies
-
-Which tasks block which? Draw the critical path.
-
-- [NEEDS CLARIFICATION]
-
-## Definition of Done
-
-How do we know this feature is complete?
-
-- [ ] All tests pass
-- [ ] Biome lint clean
-- [ ] TypeScript compiles
-- [ ] maina analyze shows no errors
-- [ ] [NEEDS CLARIFICATION] Feature-specific criteria
+- [x] T1: Create quickstart.mdx with 3 commands (curl, init, commit)
+- [x] T2: Rename getting-started.mdx to full-setup.mdx, update frontmatter
+- [x] T3: Update astro.config.mjs sidebar (Quickstart > Commands > Full Setup)
+- [x] T4: Update all internal links (Hero, nav, Features, cloud)
+- [x] T5: Verify build passes

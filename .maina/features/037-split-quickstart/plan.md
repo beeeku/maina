@@ -4,54 +4,24 @@
 
 ## Architecture
 
-What is the technical approach? How does it fit into existing architecture?
-Where are the integration points with existing code?
-
-- Pattern: [NEEDS CLARIFICATION]
-- Integration points: [NEEDS CLARIFICATION]
-
-## Key Technical Decisions
-
-What libraries, patterns, or approaches? WHY these and not alternatives?
-
-- [NEEDS CLARIFICATION]
+Docs-only change. Create a new quickstart.mdx, rename getting-started.mdx to full-setup.mdx, update astro.config.mjs sidebar, update all internal links in Hero, Features, nav, and cloud pages.
 
 ## Files
 
 | File | Purpose | New/Modified |
 |------|---------|-------------|
-| [NEEDS CLARIFICATION] | | |
+| `packages/docs/src/content/docs/quickstart.mdx` | New quickstart page | New |
+| `packages/docs/src/content/docs/full-setup.mdx` | Renamed from getting-started.mdx | Modified |
+| `packages/docs/astro.config.mjs` | Updated sidebar | Modified |
+| `packages/docs/src/pages/index.astro` | Nav links → /quickstart | Modified |
+| `packages/docs/src/components/Hero.astro` | CTA → /quickstart | Modified |
+| `packages/docs/src/components/Features.astro` | Link → /quickstart | Modified |
+| `packages/docs/src/content/docs/cloud.mdx` | Link → /quickstart | Modified |
 
 ## Tasks
 
-TDD: every implementation task must have a preceding test task.
-
-- [ ] [NEEDS CLARIFICATION] Break down into small, testable tasks.
-
-## Failure Modes
-
-What can go wrong? How do we handle it gracefully?
-
-- [NEEDS CLARIFICATION]
-
-## Testing Strategy
-
-Unit tests, integration tests, or both? What mocks are needed?
-
-- [NEEDS CLARIFICATION]
-
-
-## Wiki Context
-
-### Related Decisions
-
-- 0012-v050-cloud-client-maina-cloud: v0.5.0 Cloud Client + maina-cloud [accepted]
-
-### Similar Features
-
-- 033-v103-quick-wins: Feature 033: v1.0.3 Quick Wins
-
-### Suggestions
-
-- Feature 033-v103-quick-wins did something similar — check wiki/features/033-v103-quick-wins.md
-- ADR 0012-v050-cloud-client-maina-cloud (v0.5.0 Cloud Client + maina-cloud) is accepted — ensure compatibility
+- [x] Create /quickstart with 3 commands
+- [x] Rename /getting-started to /full-setup
+- [x] Update sidebar order
+- [x] Update all internal links
+- [x] Build passes with no broken links
