@@ -4,76 +4,18 @@
 
 ## Architecture
 
-What is the technical approach? How does it fit into existing architecture?
-Where are the integration points with existing code?
-
-- Pattern: [NEEDS CLARIFICATION]
-- Integration points: [NEEDS CLARIFICATION]
-
-## Key Technical Decisions
-
-What libraries, patterns, or approaches? WHY these and not alternatives?
-
-- [NEEDS CLARIFICATION]
+New module `packages/core/src/telemetry/reporter.ts`. Uses the PII scrubber from `scrubber.ts` and formats events for PostHog. No actual PostHog SDK dependency yet — events are formatted as plain objects that a future PostHog client will send.
 
 ## Files
 
 | File | Purpose | New/Modified |
 |------|---------|-------------|
-| [NEEDS CLARIFICATION] | | |
+| `packages/core/src/telemetry/reporter.ts` | Error reporting with consent gating | New |
+| `packages/core/src/telemetry/__tests__/reporter.test.ts` | Tests | New |
 
 ## Tasks
 
-TDD: every implementation task must have a preceding test task.
-
-- [ ] [NEEDS CLARIFICATION] Break down into small, testable tasks.
-
-## Failure Modes
-
-What can go wrong? How do we handle it gracefully?
-
-- [NEEDS CLARIFICATION]
-
-## Testing Strategy
-
-Unit tests, integration tests, or both? What mocks are needed?
-
-- [NEEDS CLARIFICATION]
-
-
-## Wiki Context
-
-### Related Modules
-
-- **src** (9 entities) — `modules/src.md`
-- **cluster-109** (6 entities) — `modules/cluster-109.md`
-- **cluster-130** (3 entities) — `modules/cluster-130.md`
-
-### Related Decisions
-
-- 0012-v050-cloud-client-maina-cloud: v0.5.0 Cloud Client + maina-cloud [accepted]
-- 0007-visual-verification-with-playwright: Visual verification with Playwright [proposed]
-- 0002-multi-language-verify-pipeline: Multi-language verify pipeline [accepted]
-- 0003-fix-host-delegation-for-cli-ai-tasks: Fix host delegation for CLI AI tasks [proposed]
-
-### Similar Features
-
-- 027-v10-launch: Implementation Plan
-- 025-v06-hosted-verification: Implementation Plan
-- 002-ticket: Implementation Plan
-- 007-todo-api-crud: Implementation Plan
-- 024-v05-cloud-client: Implementation Plan — v0.5.0 Cloud Client + maina-cloud
-- 010-benchmark-harness: Implementation Plan
-
-### Suggestions
-
-- Module 'src' already has 9 entities — consider extending it
-- Module 'cluster-109' already has 6 entities — consider extending it
-- Feature 027-v10-launch did something similar — check wiki/features/027-v10-launch.md
-- Feature 025-v06-hosted-verification did something similar — check wiki/features/025-v06-hosted-verification.md
-- Feature 002-ticket did something similar — check wiki/features/002-ticket.md
-- Feature 007-todo-api-crud did something similar — check wiki/features/007-todo-api-crud.md
-- Feature 024-v05-cloud-client did something similar — check wiki/features/024-v05-cloud-client.md
-- Feature 010-benchmark-harness did something similar — check wiki/features/010-benchmark-harness.md
-- ADR 0012-v050-cloud-client-maina-cloud (v0.5.0 Cloud Client + maina-cloud) is accepted — ensure compatibility
-- ADR 0002-multi-language-verify-pipeline (Multi-language verify pipeline) is accepted — ensure compatibility
+- [x] T1: Implement `isErrorReportingEnabled()` — reads config
+- [x] T2: Implement `buildErrorEvent()` — formats error with context + scrubbing
+- [x] T3: Implement `reportError()` — consent check + scrub + format
+- [x] T4: Write tests for consent gating, event building, scrubbing
