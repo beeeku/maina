@@ -949,6 +949,77 @@ function makeArticle(
 	};
 }
 
+// ─── Community Naming (#80) ─────────────────────────────────────────────
+
+/**
+ * Derive a meaningful name for a Louvain community instead of "cluster-N".
+ *
+ * Strategy:
+ * 1. If there's a module node in the community, use its label
+ * 2. Otherwise, find the most common directory among member entities' files
+ * 3. Last resort: use the highest PageRank entity's name
+ */
+function deriveCommunityName(
+	commId: number,
+	moduleNodes: string[],
+	members: string[],
+	graph: KnowledgeGraph,
+	codeEntities: CodeEntity[],
+): string {
+	// 1. Try module node label
+	if (moduleNodes.length > 0) {
+		const label = graph.nodes.get(moduleNodes[0] ?? "")?.label;
+		if (label) return label;
+	}
+
+	// 2. Find the most common directory from member entity files
+	const memberEntities = codeEntities.filter((e) =>
+		members.some((m) => m === `entity:${e.name}`),
+	);
+
+	if (memberEntities.length > 0) {
+		const dirCounts = new Map<string, number>();
+		for (const entity of memberEntities) {
+			const parts = entity.file.replace(/\\/g, "/").split("/");
+			// Use the deepest non-generic directory
+			const genericDirs = new Set([
+				"src",
+				"lib",
+				"dist",
+				"build",
+				"test",
+				"tests",
+				"__tests__",
+			]);
+			for (let i = parts.length - 2; i >= 0; i--) {
+				const dir = parts[i];
+				if (dir && !genericDirs.has(dir)) {
+					dirCounts.set(dir, (dirCounts.get(dir) ?? 0) + 1);
+					break;
+				}
+			}
+		}
+
+		if (dirCounts.size > 0) {
+			// Pick the most frequent directory
+			let bestDir = "";
+			let bestCount = 0;
+			for (const [dir, count] of dirCounts) {
+				if (count > bestCount) {
+					bestDir = dir;
+					bestCount = count;
+				}
+			}
+			if (bestDir) return bestDir;
+		}
+
+		// 3. Use the first entity's name as last resort
+		return memberEntities[0]?.name ?? `cluster-${commId}`;
+	}
+
+	return `cluster-${commId}`;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────
 
 /**
@@ -1012,11 +1083,13 @@ export async function compile(
 			const moduleNodes = members.filter(
 				(m) => graph.nodes.get(m)?.type === "module",
 			);
-			const moduleName =
-				moduleNodes.length > 0
-					? (graph.nodes.get(moduleNodes[0] ?? "")?.label ??
-						`cluster-${commId}`)
-					: `cluster-${commId}`;
+			const moduleName = deriveCommunityName(
+				commId,
+				moduleNodes,
+				members,
+				graph,
+				codeEntities,
+			);
 
 			const memberEntities = codeEntities.filter((e) =>
 				members.some((m) => m === `entity:${e.name}`),
