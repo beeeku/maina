@@ -2,22 +2,22 @@
 
 ## Tasks
 
-Each task should be completable in one commit. Test tasks precede implementation tasks.
-
-- [ ] [NEEDS CLARIFICATION] Define tasks.
+- [x] T1: Write TDD test stubs from spec (25 red, confirmed failing)
+- [x] T2: Implement `sampleFiles()` — deterministic file sampling
+- [x] T3: Implement `detectAsyncStyle()` — async/await vs .then
+- [x] T4: Implement `detectFunctionStyle()` — arrow vs declaration
+- [x] T5: Implement `detectImportStyle()` — named vs default
+- [x] T6: Implement `detectErrorHandling()` — try/catch vs .catch
+- [x] T7: Implement `samplePatterns()` — combined runner (17 tests green)
+- [x] T8: `maina verify` + `maina review` (READY) + `maina analyze` — all pass
 
 ## Dependencies
 
-Which tasks block which? Draw the critical path.
-
-- [NEEDS CLARIFICATION]
+- Reuses `ConstitutionRule` type from `packages/core/src/constitution/git-analyzer.ts`
 
 ## Definition of Done
 
-How do we know this feature is complete?
-
-- [ ] All tests pass
-- [ ] Biome lint clean
-- [ ] TypeScript compiles
-- [ ] maina analyze shows no errors
-- [ ] [NEEDS CLARIFICATION] Feature-specific criteria
+- [ ] All tests pass (red → green confirmed)
+- [ ] Biome lint clean + TypeScript compiles
+- [ ] maina verify + slop + review + analyze pass
+- [ ] Runs in <10s on maina repo

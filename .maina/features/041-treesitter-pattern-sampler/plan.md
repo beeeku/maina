@@ -4,62 +4,34 @@
 
 ## Architecture
 
-What is the technical approach? How does it fit into existing architecture?
-Where are the integration points with existing code?
-
-- Pattern: [NEEDS CLARIFICATION]
-- Integration points: [NEEDS CLARIFICATION]
+New module `packages/core/src/constitution/pattern-sampler.ts`. Uses regex-based pattern detection on file content (not tree-sitter AST — simpler and sufficient for these patterns). Samples files deterministically using sorted directory listing. Reuses `ConstitutionRule` type from `git-analyzer.ts`.
 
 ## Key Technical Decisions
 
-What libraries, patterns, or approaches? WHY these and not alternatives?
-
-- [NEEDS CLARIFICATION]
+- Regex over tree-sitter for V1: async/await, arrow functions, import style are reliably detectable with regex. Tree-sitter adds complexity for marginal accuracy gain at this stage.
+- Deterministic sampling: sort files alphabetically, take first 100. Same repo → same sample → same output.
+- Confidence = prevalence ratio × 0.7 (capped). 90% async/await → confidence 0.63.
 
 ## Files
 
 | File | Purpose | New/Modified |
 |------|---------|-------------|
-| [NEEDS CLARIFICATION] | | |
+| `packages/core/src/constitution/pattern-sampler.ts` | Pattern detection + sampling | New |
+| `packages/core/src/constitution/__tests__/pattern-sampler.test.ts` | TDD tests | New |
 
 ## Tasks
 
-TDD: every implementation task must have a preceding test task.
-
-- [ ] [NEEDS CLARIFICATION] Break down into small, testable tasks.
-
-## Failure Modes
-
-What can go wrong? How do we handle it gracefully?
-
-- [NEEDS CLARIFICATION]
+- [ ] T1: Write TDD test stubs from spec (red phase)
+- [ ] T2: Implement `sampleFiles()` — deterministic file sampling
+- [ ] T3: Implement `detectAsyncStyle()` — async/await vs .then
+- [ ] T4: Implement `detectFunctionStyle()` — arrow vs declaration
+- [ ] T5: Implement `detectImportStyle()` — named vs default
+- [ ] T6: Implement `detectErrorHandling()` — try/catch vs .catch
+- [ ] T7: Implement `samplePatterns()` — combined runner
+- [ ] T8: `maina verify` + `maina review` + `maina analyze`
 
 ## Testing Strategy
 
-Unit tests, integration tests, or both? What mocks are needed?
-
-- [NEEDS CLARIFICATION]
-
-
-## Wiki Context
-
-### Related Modules
-
-- **context** (8 entities) — `modules/context.md`
-
-### Related Decisions
-
-- 0012-v050-cloud-client-maina-cloud: v0.5.0 Cloud Client + maina-cloud [accepted]
-- 0004-workflow-context-forwarding: Workflow context forwarding [proposed]
-- 0002-multi-language-verify-pipeline: Multi-language verify pipeline [accepted]
-
-### Similar Features
-
-- 026-v07-rl-flywheel: Implementation Plan
-
-### Suggestions
-
-- Module 'context' already has 8 entities — consider extending it
-- Feature 026-v07-rl-flywheel did something similar — check wiki/features/026-v07-rl-flywheel.md
-- ADR 0012-v050-cloud-client-maina-cloud (v0.5.0 Cloud Client + maina-cloud) is accepted — ensure compatibility
-- ADR 0002-multi-language-verify-pipeline (Multi-language verify pipeline) is accepted — ensure compatibility
+- Use the maina repo itself as a real-world test fixture
+- Create temp dirs with known patterns for deterministic tests
+- Verify confidence scores match expected prevalence

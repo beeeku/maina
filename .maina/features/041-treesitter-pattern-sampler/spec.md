@@ -1,45 +1,40 @@
-# Feature: [Name]
+# Feature: Tree-sitter pattern sampler (TS, Python)
 
 ## Problem Statement
 
-What specific problem does this solve? Who experiences it? What happens if we don't solve it?
-
-- [NEEDS CLARIFICATION] Define the problem clearly.
+Constitution rules about coding style (async/await vs .then, arrow vs declaration, named vs default imports) can't be detected from config files. They need AST analysis. Sampling <=100 files per language with tree-sitter detects these patterns and proposes them as medium-confidence rules.
 
 ## Target User
 
-Who benefits? What is their current workflow? What frustrates them about it?
-
-- Primary: [NEEDS CLARIFICATION]
-- Secondary: [NEEDS CLARIFICATION]
+- Primary: Teams running `maina learn` to auto-detect coding conventions
+- Secondary: Constitution builders wanting evidence-based rules
 
 ## User Stories
 
-- As a [role], I want [capability] so that [benefit].
+- As a developer, I want `maina learn` to detect that my team uses async/await (not .then) so the constitution reflects actual practice.
+- As a team lead, I want auto-detected patterns with confidence scores so I can accept/reject them.
 
 ## Success Criteria
 
-How do we know this works? Every criterion must be testable — if you can't write
-an assertion for it, the requirement isn't clear enough.
-
-- [ ] [NEEDS CLARIFICATION] Define measurable, testable criteria.
+- [ ] Detects async style (async/await vs .then) in TypeScript files
+- [ ] Detects function style (arrow vs declaration) in TypeScript files
+- [ ] Detects import style (named vs default) in TypeScript files
+- [ ] Detects error handling pattern (try/catch vs .catch) in TypeScript files
+- [ ] Samples <=100 files per language
+- [ ] Emits rules with confidence 0.4–0.7 based on pattern prevalence
+- [ ] Runs in under 10 seconds on a 1000-file repo
+- [ ] Output deterministic across runs
 
 ## Scope
 
 ### In Scope
 
-- [NEEDS CLARIFICATION] What this feature does.
+- TypeScript pattern detection via tree-sitter queries
+- Sampling logic (<=100 files, deterministic selection)
+- Constitution rule emission with confidence scores
 
 ### Out of Scope
 
-- [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
-
-## Design Decisions
-
-Key choices made and WHY. Record tradeoffs — future you will thank you.
-
-- [NEEDS CLARIFICATION] What alternatives were considered? Why was this one chosen?
-
-## Open Questions
-
-- [NEEDS CLARIFICATION] List ambiguities. Every question here must be resolved before implementation.
+- Python patterns (stubbed but gated behind flag)
+- Go, Rust, Java, C#, PHP (future)
+- Interactive propose/accept (separate issue #117)
