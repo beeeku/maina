@@ -1,45 +1,37 @@
-# Feature: [Name]
+# Feature: Glob-scoped constitution rules via constitution.d/*.md
 
 ## Problem Statement
 
-What specific problem does this solve? Who experiences it? What happens if we don't solve it?
-
-- [NEEDS CLARIFICATION] Define the problem clearly.
+Monorepos and mixed-stack repos need per-path rules. A React frontend and a Go API in the same repo have different conventions. Today, constitution.md is a flat file with no way to scope rules to specific paths.
 
 ## Target User
 
-Who benefits? What is their current workflow? What frustrates them about it?
-
-- Primary: [NEEDS CLARIFICATION]
-- Secondary: [NEEDS CLARIFICATION]
-
-## User Stories
-
-- As a [role], I want [capability] so that [benefit].
+- Primary: Monorepo teams with multiple stacks (e.g. `apps/web/**` is React, `apps/api/**` is Go)
+- Secondary: Any team wanting path-specific conventions
 
 ## Success Criteria
 
-How do we know this works? Every criterion must be testable — if you can't write
-an assertion for it, the requirement isn't clear enough.
-
-- [ ] [NEEDS CLARIFICATION] Define measurable, testable criteria.
+- [ ] Loader merges root `constitution.md` + `constitution.d/*.md` in deterministic order
+- [ ] `applies_to:` frontmatter globs filter rules per file path
+- [ ] Backward compatible: absent `constitution.d/` behaves as today
+- [ ] Unit tests cover merge, glob filtering, and backward compat
 
 ## Scope
 
 ### In Scope
 
-- [NEEDS CLARIFICATION] What this feature does.
+- `constitution.d/` directory support with per-file `applies_to:` globs
+- Loader that merges root + shards deterministically
+- Glob matching for filtering rules per file path
+- Backward compatibility when directory is absent
 
 ### Out of Scope
 
-- [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
+- AI-powered rule assignment to shards (manual for now)
+- Cookbook docs (separate issue)
 
 ## Design Decisions
 
-Key choices made and WHY. Record tradeoffs — future you will thank you.
-
-- [NEEDS CLARIFICATION] What alternatives were considered? Why was this one chosen?
-
-## Open Questions
-
-- [NEEDS CLARIFICATION] List ambiguities. Every question here must be resolved before implementation.
+- Frontmatter format: `applies_to: ["apps/web/**", "packages/ui/**"]`
+- Merge order: root first, then shards sorted alphabetically by filename
+- Shards augment root (additive), not replace
