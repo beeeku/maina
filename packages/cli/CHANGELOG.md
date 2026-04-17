@@ -1,5 +1,72 @@
 # @mainahq/cli
 
+## 1.2.0
+
+### Minor Changes
+
+- v1.2.0 — 50 issues shipped across 6 milestones:
+
+  **Init & Wiki fixes:**
+
+  - CI workflow uses actual package.json script names and `maina verify`
+  - Constitution architecture enriched for monorepos (workspace layout, package names)
+  - Wiki reads descriptions from package.json, modules use meaningful names (not cluster-N)
+  - MCP getContext output capped at 50K chars to prevent token limit errors
+  - MCP responses use `{ data, error, meta }` envelope
+  - Builtin secret checker skips test files and test fixture values
+
+  **Onboarding:**
+
+  - New /quickstart page (3 commands, under 60 seconds)
+  - MCP install badges for Claude Code, Cursor, Windsurf on hero
+  - Build-time stats generator (single source of truth for docs numbers)
+  - 5 cookbook pages (CI verify, Claude Code, CodeRabbit, constitution check, Playwright MCP)
+  - 4 blog posts (no SDK, no Passmark, no custom search, wiki-is-a-view)
+
+  **Constitution rebuild (derived, not authored):**
+
+  - Import adapters for existing rule files (CLAUDE.md, AGENTS.md, .cursorrules, etc.)
+  - Git-log + CI analyzer (commit conventions, hot paths, CI workflows, CODEOWNERS)
+  - Lint-config + manifest parsers (biome, eslint, tsconfig, editorconfig, prettier, package.json)
+  - Pattern sampler (async style, function style, import style, error handling)
+  - Glob-scoped constitution rules via constitution.d/\*.md
+  - Interview gap-filler with rejected rules persistence
+
+  **PR comment v2:**
+
+  - Sticky root-comment writer (find-or-create via marker, race-safe)
+  - GitHub Checks API integration (success/failure/neutral, annotations, merge gating)
+  - Slash command parser (/maina retry, explain, approve)
+
+  **Error reporting & telemetry:**
+
+  - PII and code-content scrubbing library (paths, secrets, emails, IPs, env values)
+  - Error ID generation (deterministic 6-char IDs, CLI + MCP surfaces)
+  - OSS error reporting (opt-in, consent-gated, PostHog-ready)
+  - Cloud error reporting (opt-out, account-linked, user_id/org_id/plan_tier)
+  - Usage telemetry (separate consent, anonymous events)
+
+  **MCP & Wiki:**
+
+  - Progressive tool disclosure (list_tools meta-tool, 14 total tools)
+  - DeepWiki-compatible MCP server (ask_question, read_wiki_structure, read_wiki_contents)
+  - Symbol page templates with Mermaid call graphs + LLM prose
+  - SCIP TypeScript ingest (subprocess runner, JSON parser, monorepo tsconfig discovery)
+  - Wiki repositioned as "a view of the Context engine"
+
+  **CI & Infra:**
+
+  - Source map generation + release artifact upload
+  - Dep bumps (biome 2.4.12, bun-types 1.3.12, knip 6.4.1, lefthook 2.1.6, vite 8.0.8)
+
+  **ADRs:** 17 architecture decision records (0013-0029)
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @mainahq/core@1.2.0
+  - @mainahq/mcp@1.2.0
+
 ## 1.1.5
 
 ### Patch Changes

@@ -1,13 +1,16 @@
-# Workflow: feature/041-treesitter-pattern-sampler
+# Workflow: feature/045-scip-typescript-ingest
 
-## plan (2026-04-17T12:30:13.449Z)
-Feature 041 scaffolded. Branch: feature/041-treesitter-pattern-sampler. Dir: /Users/Bikash/try/maina/.maina/features/041-treesitter-pattern-sampler.
+## plan (2026-04-17T14:33:26.047Z)
+Feature 045 scaffolded. Branch: feature/045-scip-typescript-ingest. Dir: /Users/Bikash/try/maina/.maina/features/045-scip-typescript-ingest.
 
-## design (2026-04-17T12:31:58.091Z)
-ADR 0025 created: Tree-sitter pattern sampler for constitution.
+## design (2026-04-17T14:48:06.446Z)
+ADR 0029 created: SCIP TypeScript ingest for wiki.
 
-## verify (2026-04-17T12:35:06.167Z)
+## verify (2026-04-17T14:50:32.570Z)
 Pipeline passed: 0 findings, 0ms.
 
-## commit (2026-04-17T12:36:10.480Z)
+## commit (2026-04-17T14:51:04.667Z)
 Verified: 12 tools, 8 findings. Committed.
+
+## commit (2026-04-17T15:13:28.308Z)
+Verified: 12 tools, 11 findings. Committed.
