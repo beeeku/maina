@@ -1128,11 +1128,17 @@ Types: feat, fix, refactor, test, docs, chore, ci, perf
 
 function buildCiWorkflow(stack: DetectedStack): string {
 	const isBun = stack.runtime === "bun";
+	const runCmd = isBun ? "bun" : "npm";
 	const setup = isBun
 		? "      - uses: oven-sh/setup-bun@v2"
 		: "      - uses: actions/setup-node@v4";
 	const install = isBun ? "bun install" : "npm ci";
-	const check = isBun ? "bun run check" : "npm run lint";
+
+	// Use actual script names from package.json (#79)
+	const check = stack.scripts.check
+		? `${runCmd} run check`
+		: `${runCmd} run lint`;
+
 	const typecheck =
 		stack.language === "typescript"
 			? `      - run: ${isBun ? "bun run typecheck" : "npx tsc --noEmit"}\n`

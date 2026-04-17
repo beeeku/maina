@@ -105,6 +105,67 @@ describe("bootstrap", () => {
 		}
 	});
 
+	// ── CI workflow uses actual script names (#79) ───────────────────────
+
+	test("CI workflow uses 'bun run lint' when project has lint script but no check script", async () => {
+		writeFileSync(
+			join(tmpDir, "package.json"),
+			JSON.stringify({
+				devDependencies: { "@types/bun": "latest" },
+				scripts: { lint: "biome check .", test: "bun test" },
+			}),
+		);
+		writeFileSync(join(tmpDir, "tsconfig.json"), "{}");
+
+		const result = await bootstrap(tmpDir);
+		expect(result.ok).toBe(true);
+
+		const ci = readFileSync(
+			join(tmpDir, ".github", "workflows", "maina-ci.yml"),
+			"utf-8",
+		);
+		expect(ci).toContain("bun run lint");
+		expect(ci).not.toContain("bun run check");
+	}, 30_000);
+
+	test("CI workflow uses 'bun run check' when project has check script", async () => {
+		writeFileSync(
+			join(tmpDir, "package.json"),
+			JSON.stringify({
+				devDependencies: { "@types/bun": "latest" },
+				scripts: { check: "biome check .", lint: "biome lint ." },
+			}),
+		);
+
+		const result = await bootstrap(tmpDir);
+		expect(result.ok).toBe(true);
+
+		const ci = readFileSync(
+			join(tmpDir, ".github", "workflows", "maina-ci.yml"),
+			"utf-8",
+		);
+		expect(ci).toContain("bun run check");
+	}, 30_000);
+
+	test("CI workflow uses 'npm run lint' for node projects with lint script", async () => {
+		writeFileSync(
+			join(tmpDir, "package.json"),
+			JSON.stringify({
+				dependencies: { express: "^4" },
+				scripts: { lint: "eslint .", test: "jest" },
+			}),
+		);
+
+		const result = await bootstrap(tmpDir);
+		expect(result.ok).toBe(true);
+
+		const ci = readFileSync(
+			join(tmpDir, ".github", "workflows", "maina-ci.yml"),
+			"utf-8",
+		);
+		expect(ci).toContain("npm run lint");
+	}, 30_000);
+
 	test("creates prompts directory with defaults", async () => {
 		const result = await bootstrap(tmpDir);
 		expect(result.ok).toBe(true);
