@@ -1,0 +1,34 @@
+---
+title: Why the wiki is a view, not a product
+description: The Context engine is the product. The wiki renders what it knows.
+---
+
+**tl;dr** — The wiki isn't a separate product. It's a view of the Context engine — one of several ways to see what Maina knows about your codebase.
+
+## The confusion
+
+Early messaging positioned the wiki as a standalone feature: "codebase knowledge compiler." Users thought Maina was two things — a verification tool AND a wiki tool. That's wrong.
+
+## One engine, many views
+
+The **Context engine** is the core. It has 4 layers:
+
+1. **Working** — current branch, staged files, recent changes
+2. **Episodic** — PR summaries with Ebbinghaus decay
+3. **Semantic** — tree-sitter AST, PageRank-scored dependency graph
+4. **Retrieval** — ripgrep code search with auto-generated queries
+
+The wiki takes the knowledge graph built from these layers and renders it as **persistent, human-readable markdown articles**. It's not a separate system — it's a view.
+
+## Other views (coming)
+
+- **Blast radius** — "if this symbol changes, what else is affected?"
+- **Symbol graph** — per-symbol documentation with callers/callees
+
+Same engine. Same data. Different rendering.
+
+## Why this matters
+
+When you run `maina wiki query "how does auth work?"`, you're not querying a separate database. You're asking the Context engine to synthesize an answer from the same knowledge graph that powers `maina verify`, `maina review`, and every AI call.
+
+**Decision record:** [ADR 0022 — Wiki is a view](/adr/0022-wiki-is-a-view)

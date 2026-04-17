@@ -1,0 +1,24 @@
+---
+title: Why we're not building our own search
+description: Pagefind for docs, Orama for in-app. No custom search engine.
+---
+
+**tl;dr** — Pagefind handles docs search. Orama (under evaluation) handles in-app wiki search. Building a custom search engine is the wrong use of our time.
+
+## The temptation
+
+Every tool with a knowledge base eventually thinks "we should build search." We have a wiki with 375+ articles. Surely custom search would be better?
+
+No.
+
+## What we use instead
+
+**Docs site search:** [Pagefind](https://pagefind.app/) — runs at build time, generates a static index, ships a default UI behind Cmd+K. Zero runtime cost, typo tolerance, under 400KB. Already working.
+
+**In-app wiki search:** [Orama](https://orama.com/) — under evaluation with hard gates (must beat lexical by 15% NDCG@10, index size under 2x, p95 latency under 50ms). If it passes, we ship it. If not, ripgrep remains the answer.
+
+## Why not @workkit?
+
+We briefly considered @workkit as a search solution. @workkit is a Cloudflare Workers toolkit — it has no search capabilities. Using it for search would be inventing a library that doesn't exist.
+
+**Decision records:** [ADR 0017 — No @workkit search](/adr/0017-no-workkit-search), [ADR 0014 — Orama experiment gates](/adr/0014-experiment-gate-stagehand-orama)

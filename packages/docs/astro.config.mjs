@@ -61,6 +61,15 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Blog',
+          items: [
+            { slug: 'blog/why-no-sdk' },
+            { slug: 'blog/why-not-passmark' },
+            { slug: 'blog/why-not-custom-search' },
+            { slug: 'blog/wiki-is-a-view' },
+          ],
+        },
+        {
           label: 'Roadmap',
           items: [
             { slug: 'roadmap' },
