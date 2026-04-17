@@ -1,45 +1,25 @@
-# Feature: [Name]
+# Feature: MCP install badges on mainahq.com hero
 
 ## Problem Statement
 
-What specific problem does this solve? Who experiences it? What happens if we don't solve it?
-
-- [NEEDS CLARIFICATION] Define the problem clearly.
-
-## Target User
-
-Who benefits? What is their current workflow? What frustrates them about it?
-
-- Primary: [NEEDS CLARIFICATION]
-- Secondary: [NEEDS CLARIFICATION]
-
-## User Stories
-
-- As a [role], I want [capability] so that [benefit].
+The hero shows a curl install command but no one-click MCP setup for agent-native users (Claude Code, Cursor, Windsurf). These users want to add Maina to their IDE in one click, not copy-paste JSON.
 
 ## Success Criteria
 
-How do we know this works? Every criterion must be testable — if you can't write
-an assertion for it, the requirement isn't clear enough.
-
-- [ ] [NEEDS CLARIFICATION] Define measurable, testable criteria.
+- [ ] Three badges next to the curl command: "Add to Claude Code", "Add to Cursor", "Add to Windsurf"
+- [ ] Each badge works end-to-end on a clean machine
+- [ ] Snippets reference the `@mainahq/cli`-installed `maina` binary
+- [ ] Badges render above the fold on mobile (<=375px width)
+- [ ] No layout shift on badge render
 
 ## Scope
 
 ### In Scope
-
-- [NEEDS CLARIFICATION] What this feature does.
+- Three badge components in the Hero
+- Claude Code: `claude mcp add-json maina '{"command":"maina","args":["--mcp"]}'`
+- Cursor: deeplink `cursor://anysphere.cursor-deeplink/mcp/install?name=maina&config=<base64>`
+- Windsurf: copy MCP config to clipboard with toast notification
 
 ### Out of Scope
-
-- [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
-
-## Design Decisions
-
-Key choices made and WHY. Record tradeoffs — future you will thank you.
-
-- [NEEDS CLARIFICATION] What alternatives were considered? Why was this one chosen?
-
-## Open Questions
-
-- [NEEDS CLARIFICATION] List ambiguities. Every question here must be resolved before implementation.
+- Other IDEs (Cline, Roo, etc.) — future issue
+- Badge click analytics (needs telemetry first)
