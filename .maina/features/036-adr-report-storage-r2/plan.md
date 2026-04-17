@@ -4,74 +4,38 @@
 
 ## Architecture
 
-What is the technical approach? How does it fit into existing architecture?
-Where are the integration points with existing code?
+Documentation-only change. Write an ADR in `adr/` following the standard format. The ADR formalizes the existing Cloudflare R2 choice and specifies that maina-cloud uses `@workkit/r2` for all storage operations.
 
-- Pattern: [NEEDS CLARIFICATION]
-- Integration points: [NEEDS CLARIFICATION]
+- Pattern: ADR (Architecture Decision Record)
+- Integration points: Referenced by #131 (report viewer) and #130 (PR comment v2)
+- **Storage layer: `@workkit/r2`** — typed R2 client with presigned URLs, streaming, multipart upload. Already used in maina-cloud. Zero custom R2 code needed.
 
 ## Key Technical Decisions
 
-What libraries, patterns, or approaches? WHY these and not alternatives?
-
-- [NEEDS CLARIFICATION]
+- Use `@workkit/r2` (MIT, `@workkit/r2@0.1.1`) for all R2 operations in maina-cloud
+  - `createPresignedUrl()` for CI upload flow (no server-side proxy needed)
+  - `r2.put()` / `r2.get()` for server-side report reads
+  - `streamToJson()` / `streamToBuffer()` for report and screenshot serving
+  - `multipartUpload()` for large reports if needed
+- Bucket layout: `r/<run-id>/report.json`, `r/<run-id>/report.html`, `r/<run-id>/shot/<id>.png`
+- CDN via Cloudflare Cache API (R2 is already in the Cloudflare ecosystem)
 
 ## Files
 
 | File | Purpose | New/Modified |
 |------|---------|-------------|
-| [NEEDS CLARIFICATION] | | |
+| `adr/0013-report-storage-backend-cloudflare-r2.md` | ADR document | Modified (fill in scaffolded template) |
 
 ## Tasks
 
-TDD: every implementation task must have a preceding test task.
-
-- [ ] [NEEDS CLARIFICATION] Break down into small, testable tasks.
+- [ ] T1: Write ADR with all sections using @workkit/r2 as the storage layer
+- [ ] T2: Verify ADR passes maina verify (no slop, no placeholders)
 
 ## Failure Modes
 
-What can go wrong? How do we handle it gracefully?
-
-- [NEEDS CLARIFICATION]
+- N/A — documentation only, no runtime changes
 
 ## Testing Strategy
 
-Unit tests, integration tests, or both? What mocks are needed?
-
-- [NEEDS CLARIFICATION]
-
-
-## Wiki Context
-
-### Related Modules
-
-- **cluster-109** (6 entities) — `modules/cluster-109.md`
-
-### Related Decisions
-
-- 0012-v050-cloud-client-maina-cloud: v0.5.0 Cloud Client + maina-cloud [accepted]
-- 0007-visual-verification-with-playwright: Visual verification with Playwright [proposed]
-- 0002-multi-language-verify-pipeline: Multi-language verify pipeline [accepted]
-- 0010-v03x-hardening-verify-gaps-rl-loop-hldlld: v0.3.x Hardening: Verify Gaps + RL Loop + HLD/LLD [accepted]
-
-### Similar Features
-
-- 027-v10-launch: Implementation Plan
-- 025-v06-hosted-verification: Implementation Plan
-- 009-interactive-design: Implementation Plan
-- 007-todo-api-crud: Implementation Plan
-- 024-v05-cloud-client: Implementation Plan — v0.5.0 Cloud Client + maina-cloud
-- 010-benchmark-harness: Implementation Plan
-
-### Suggestions
-
-- Module 'cluster-109' already has 6 entities — consider extending it
-- Feature 027-v10-launch did something similar — check wiki/features/027-v10-launch.md
-- Feature 025-v06-hosted-verification did something similar — check wiki/features/025-v06-hosted-verification.md
-- Feature 009-interactive-design did something similar — check wiki/features/009-interactive-design.md
-- Feature 007-todo-api-crud did something similar — check wiki/features/007-todo-api-crud.md
-- Feature 024-v05-cloud-client did something similar — check wiki/features/024-v05-cloud-client.md
-- Feature 010-benchmark-harness did something similar — check wiki/features/010-benchmark-harness.md
-- ADR 0012-v050-cloud-client-maina-cloud (v0.5.0 Cloud Client + maina-cloud) is accepted — ensure compatibility
-- ADR 0002-multi-language-verify-pipeline (Multi-language verify pipeline) is accepted — ensure compatibility
-- ADR 0010-v03x-hardening-verify-gaps-rl-loop-hldlld (v0.3.x Hardening: Verify Gaps + RL Loop + HLD/LLD) is accepted — ensure compatibility
+- maina verify (slop check, no TODO/FIXME markers)
+- Manual review for completeness against acceptance criteria

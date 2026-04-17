@@ -1,45 +1,50 @@
-# Feature: [Name]
+# Feature: ADR — Report Storage Backend (R2)
 
 ## Problem Statement
 
-What specific problem does this solve? Who experiences it? What happens if we don't solve it?
+Maina Cloud verification generates proof artifacts (JSON reports, screenshots, HTML views) that need durable storage with public read access. The team chose Cloudflare R2 early on, but the decision isn't documented. Future contributors have no written record of why R2, what the bucket layout is, or what retention/GDPR policies apply.
 
-- [NEEDS CLARIFICATION] Define the problem clearly.
+- Without a written ADR, contributors may duplicate the decision or pick a conflicting backend.
+- Blocks the self-hosted report viewer (#131) and PR comment v2 (#130).
 
 ## Target User
 
-Who benefits? What is their current workflow? What frustrates them about it?
-
-- Primary: [NEEDS CLARIFICATION]
-- Secondary: [NEEDS CLARIFICATION]
-
-## User Stories
-
-- As a [role], I want [capability] so that [benefit].
+- Primary: Maina contributors extending cloud verification infrastructure
+- Secondary: Cloud customers who need to understand data retention and GDPR compliance
 
 ## Success Criteria
 
-How do we know this works? Every criterion must be testable — if you can't write
-an assertion for it, the requirement isn't clear enough.
-
-- [ ] [NEEDS CLARIFICATION] Define measurable, testable criteria.
+- [ ] `docs/decisions/0001-report-storage-backend.md` exists and is comprehensive
+- [ ] Covers cost model at 10k runs/month and 100k runs/month
+- [ ] Documents bucket layout: `r/<run-id>/` with sub-paths for JSON, HTML, screenshots
+- [ ] Describes signed upload flow from CI
+- [ ] Retention policy: 90 days default, extensible per plan
+- [ ] GDPR delete path documented
+- [ ] CDN cache strategy documented
+- [ ] Disaster recovery approach documented
+- [ ] Documents why R2 over S3 / Supabase Storage (zero egress, S3-compatible, cheaper at scale)
 
 ## Scope
 
 ### In Scope
 
-- [NEEDS CLARIFICATION] What this feature does.
+- Writing the ADR document with all acceptance criteria
+- Cost comparison table (R2 vs S3 vs Supabase Storage)
+- Bucket layout specification
+- Retention and GDPR policies
 
 ### Out of Scope
 
-- [NEEDS CLARIFICATION] What this feature explicitly does NOT do (prevents over-building).
+- Implementing any infrastructure changes
+- Building the report viewer (that's #131)
+- CI upload pipeline (that's part of PR comment v2)
 
 ## Design Decisions
 
-Key choices made and WHY. Record tradeoffs — future you will thank you.
-
-- [NEEDS CLARIFICATION] What alternatives were considered? Why was this one chosen?
+- R2 chosen over S3: zero egress fees, S3-compatible API, cheaper at scale
+- R2 chosen over Supabase Storage: simpler, no extra auth layer, Cloudflare ecosystem alignment
+- Bucket layout uses `r/<run-id>/` prefix for easy per-run cleanup
 
 ## Open Questions
 
-- [NEEDS CLARIFICATION] List ambiguities. Every question here must be resolved before implementation.
+- None — this is a documentation-only ADR formalizing existing decisions.
