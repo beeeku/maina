@@ -106,13 +106,15 @@ The check is mechanical — no LLM in the loop — and runs in parallel with the
 - `export *` re-exports are treated as a wildcard — any symbol claimed against such a package is accepted. This trades precision for fewer false positives.
 - Severity is `warning`, not `error`. Promote it via `.maina/constitution.md` once the false-positive rate is well understood.
 
-**Silencing a finding:** if a flagged import is actually correct (e.g. the source file uses an exotic export form the regex misses), add the rule to your noisy-rules list:
+**Silencing a finding:** if a flagged import is actually correct (for example the source uses an exotic export form the regex misses), tune the rule through `.maina/constitution.md` — drop its severity to `info` or skip it entirely:
 
-```bash
-maina feedback dismiss doc-claims/missing-export
+```md
+## Verification
+
+- `doc-claims/missing-export`: severity = info
 ```
 
-After enough dismissals the rule is auto-downgraded or skipped per the standard noisy-rule preferences.
+The same constitution surface controls every other verify tool, so the silencing path is uniform across the pipeline.
 
 ## Tools
 

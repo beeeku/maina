@@ -255,4 +255,43 @@ describe("detectDocClaims", () => {
 		const result = await detectDocClaims(["guide.mdx"], { cwd: testDir });
 		expect(result.findings.length).toBe(1);
 	});
+
+	it("refuses to read paths that escape cwd via relative-import traversal", async () => {
+		// Hostile doc claims a relative import that climbs out of cwd. We
+		// must NOT produce findings (which would imply we read the
+		// out-of-tree target) AND must NOT throw.
+		const md = [
+			"```ts",
+			'import { x } from "../../../../etc/passwd";',
+			"```",
+		].join("\n");
+		writeFileSync(join(testDir, "hostile.md"), md);
+		const result = await detectDocClaims(["hostile.md"], { cwd: testDir });
+		expect(result.findings.length).toBe(0);
+	});
+
+	it("strips TS `type` / `typeof` modifiers from export list items", async () => {
+		// Source uses TS export-list type modifiers; the EXPORTED name is
+		// the identifier after the modifier, not the modifier itself.
+		writePackage(
+			"@local/pkg",
+			"export { type Foo, typeof Bar, Baz } from './internal';\n",
+		);
+		const md = [
+			"```ts",
+			'import { Foo, Bar, Baz } from "@local/pkg";',
+			"```",
+		].join("\n");
+		writeFileSync(join(testDir, "doc.md"), md);
+		const result = await detectDocClaims(["doc.md"], { cwd: testDir });
+		expect(result.findings.length).toBe(0);
+	});
+
+	it("recognises default-import identifiers containing `$` (e.g. `import $ from`)", async () => {
+		writePackage("@local/pkg", "export default function pkg() {}\n");
+		const md = ["```ts", 'import $ from "@local/pkg";', "```"].join("\n");
+		writeFileSync(join(testDir, "doc.md"), md);
+		const result = await detectDocClaims(["doc.md"], { cwd: testDir });
+		expect(result.findings.length).toBe(0);
+	});
 });

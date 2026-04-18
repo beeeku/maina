@@ -36,7 +36,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import type { Finding } from "../diff-filter";
 
@@ -45,7 +45,13 @@ import type { Finding } from "../diff-filter";
 export interface DocImport {
 	/** Module specifier as written in the doc (`@workkit/memory`, `./foo`, `react`). */
 	module: string;
-	/** Named symbols imported. For default imports we use the local name. */
+	/**
+	 * Imported export keys to validate against the resolved source. Default
+	 * imports are recorded as the literal string `"default"` (matching what
+	 * `export default` produces in `collectExports`), not the local binding
+	 * name in the doc — the local name is irrelevant to whether the source
+	 * actually exports a default.
+	 */
 	symbols: string[];
 	/** 1-based line number within the markdown file pointing at the import. */
 	line: number;
@@ -131,17 +137,23 @@ function parseNamedImport(
 	return { module: m[2] ?? "", symbols };
 }
 
-/** Match `import Foo from "mod";`. */
+/** Match `import Foo from "mod";`. Identifier may include `$` (e.g. `import $ from "lodash"`). */
 function parseDefaultImport(
 	line: string,
 ): { module: string; symbols: string[] } | null {
-	const re = /import\s+(\w+)\s+from\s*["']([^"']+)["']/;
+	const re = /import\s+([A-Za-z_$][\w$]*)\s+from\s*["']([^"']+)["']/;
 	const m = re.exec(line);
 	if (!m) return null;
 	return { module: m[2] ?? "", symbols: ["default"] };
 }
 
-/** Match `require("mod")` or `import("mod")`. No symbol claims, just module. */
+/**
+ * Match `require("mod")` or `import("mod")`. We DO NOT extract destructured
+ * symbols (e.g. `const { foo } = require("mod")`) — those are validated only
+ * if the doc also has an explicit ES `import` form. The bare module access
+ * still records the module so future iterations can verify the package
+ * resolves; today the empty `symbols` array short-circuits validation.
+ */
 function parseDynamicImport(
 	line: string,
 ): { module: string; symbols: string[] } | null {
@@ -157,18 +169,30 @@ function parseDynamicImport(
  * Try to resolve a module specifier to an absolute source-file path inside
  * the workspace. Returns null when the specifier looks external (npm) or
  * cannot be resolved — caller treats that as "skip".
+ *
+ * Pass a `pkgIndex` Map to memoize the (potentially expensive) workspace
+ * package scan across many imports in one verify run.
  */
 function resolveWorkspaceModule(
 	specifier: string,
 	docFile: string,
 	cwd: string,
+	pkgIndex?: Map<string, string>,
 ): string | null {
-	// Relative imports — resolve against doc directory
+	// Relative imports — resolve against doc directory, then guard against
+	// path traversal: a hostile doc could write a relative specifier that
+	// climbs out of the workspace root, and we should refuse to read it.
 	if (specifier.startsWith(".")) {
 		const docDir = dirname(
 			isAbsolute(docFile) ? docFile : resolve(cwd, docFile),
 		);
 		const base = resolve(docDir, specifier);
+		const cwdAbs = resolve(cwd);
+		const rel = relative(cwdAbs, base);
+		if (rel.startsWith("..") || isAbsolute(rel)) {
+			// Escape attempt; treat as unresolvable.
+			return null;
+		}
 		return firstExisting([
 			base,
 			`${base}.ts`,
@@ -180,8 +204,12 @@ function resolveWorkspaceModule(
 		]);
 	}
 
-	// Workspace package by scanning packages/*. Walks one level deep, plus
-	// one extra level for scoped layouts (`packages/@scope/name`).
+	// Workspace package — use the memoized index when provided, else scan.
+	if (pkgIndex !== undefined) {
+		const cached = pkgIndex.get(specifier);
+		return cached ?? null;
+	}
+
 	const packagesRoot = join(cwd, "packages");
 	if (!existsSync(packagesRoot)) return null;
 
@@ -308,13 +336,17 @@ function collectExports(source: string): Set<string> {
 		if (m[1]) exports.add(m[1]);
 	}
 
-	// `export { A, B as C, default as D }` — possibly with `from "..."`
-	const listRe = /\bexport\s*\{([^}]+)\}/g;
+	// `export { A, B as C, default as D, type Foo, typeof Bar }` — possibly with `from "..."`.
+	// TS lets each list item carry an optional `type ` or `typeof ` modifier; the
+	// exported NAME is the identifier after that modifier, not the modifier itself.
+	const listRe = /\bexport\s+(?:type\s+)?\{([^}]+)\}/g;
 	for (const m of stripped.matchAll(listRe)) {
 		const list = m[1] ?? "";
 		for (const raw of list.split(",")) {
-			const item = raw.trim();
+			let item = raw.trim();
 			if (!item) continue;
+			// Strip a leading `type ` or `typeof ` modifier on the item itself.
+			item = item.replace(/^(?:type|typeof)\s+/, "");
 			// `X as Y` — the EXPORTED name is Y (what consumers import).
 			const aliasIdx = item.toLowerCase().indexOf(" as ");
 			const exported = aliasIdx === -1 ? item : item.slice(aliasIdx + 4).trim();
@@ -323,6 +355,43 @@ function collectExports(source: string): Set<string> {
 	}
 
 	return exports;
+}
+
+/**
+ * Build a one-shot index of `package.json#name` → resolved entrypoint path
+ * for every workspace package under `<cwd>/packages`. Used by
+ * `detectDocClaims` so we scan the filesystem ONCE per verify run instead
+ * of once per import in the changed docs.
+ */
+function buildPackageIndex(cwd: string): Map<string, string> {
+	const idx = new Map<string, string>();
+	const packagesRoot = join(cwd, "packages");
+	if (!existsSync(packagesRoot)) return idx;
+
+	for (const pkgDir of collectPackageDirs(packagesRoot)) {
+		const pkgJsonPath = join(pkgDir, "package.json");
+		if (!existsSync(pkgJsonPath)) continue;
+		let pkgJson: { name?: string; main?: string; module?: string };
+		try {
+			pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+		} catch {
+			continue;
+		}
+		if (!pkgJson.name) continue;
+		const main = pkgJson.module ?? pkgJson.main ?? "src/index.ts";
+		const candidate = resolve(pkgDir, main);
+		const found = firstExisting([
+			candidate,
+			`${candidate}.ts`,
+			`${candidate}.tsx`,
+			`${candidate}.js`,
+			join(candidate, "index.ts"),
+			join(candidate, "index.tsx"),
+			join(candidate, "index.js"),
+		]);
+		if (found) idx.set(pkgJson.name, found);
+	}
+	return idx;
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────
@@ -339,6 +408,9 @@ export async function detectDocClaims(
 ): Promise<DocClaimsResult> {
 	const { cwd } = options;
 	const findings: Finding[] = [];
+	// One-shot scan of workspace packages so each import resolves in O(1)
+	// instead of O(packages × imports).
+	const pkgIndex = buildPackageIndex(cwd);
 
 	for (const file of files) {
 		if (!isMarkdown(file)) continue;
@@ -355,7 +427,7 @@ export async function detectDocClaims(
 		for (const imp of imports) {
 			if (imp.symbols.length === 0) continue; // dynamic import with no symbol claim
 
-			const resolved = resolveWorkspaceModule(imp.module, file, cwd);
+			const resolved = resolveWorkspaceModule(imp.module, file, cwd, pkgIndex);
 			// External / unresolved → skip silently (documented limitation).
 			if (!resolved) continue;
 
