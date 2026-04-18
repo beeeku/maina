@@ -217,8 +217,37 @@ export function getTopCategoriesByFile(
 // ── Ingestion ───────────────────────────────────────────────────────────────
 
 /**
+ * Markers that identify auto-generated PR-summary comments which carry no
+ * actionable signal but trip our keyword categoriser (CodeRabbit's summary
+ * header contains words like "auto-generated" and substrings the
+ * `security` / `style` rules grab onto). These are issue-level (no
+ * `path`), so they show up in the DB as 10 false-positive `security`
+ * findings per session.
+ *
+ * Marker source: CodeRabbit emits these literal HTML comments at the top
+ * of every summary it posts. The list is intentionally narrow — only
+ * comments whose body STARTS WITH one of these markers is dropped, so we
+ * don't accidentally swallow a real review comment that quotes the marker.
+ */
+const NOISE_MARKERS: readonly string[] = [
+	"<!-- This is an auto-generated comment: summarize by coderabbit.ai -->",
+	"<!-- This is an auto-generated comment: review in progress by coderabbit.ai -->",
+	"<!-- This is an auto-generated comment: skip review by coderabbit.ai -->",
+];
+
+/** True if the comment body is a known auto-generated PR-summary header. */
+export function isAutoSummaryComment(body: string): boolean {
+	const head = body.trimStart();
+	for (const marker of NOISE_MARKERS) {
+		if (head.startsWith(marker)) return true;
+	}
+	return false;
+}
+
+/**
  * Ingest a batch of pre-fetched comments into the local DB. Skips comments
- * from reviewers not in the allow-list. Idempotent on `sourceId`.
+ * from reviewers not in the allow-list AND comments whose body is an
+ * auto-generated PR-summary header. Idempotent on `sourceId`.
  *
  * This split (fetch vs ingest) keeps the heavy network code (`gh api`) out
  * of the hot test path and out of the categorisation logic.
@@ -233,6 +262,12 @@ export function ingestComments(
 	let skipped = 0;
 	for (const c of comments) {
 		if (!allowed.has(c.reviewer.toLowerCase())) {
+			skipped += 1;
+			continue;
+		}
+		if (isAutoSummaryComment(c.body)) {
+			// Auto-generated PR-summary header — no actionable signal, and
+			// would otherwise pollute the categoriser with false positives.
 			skipped += 1;
 			continue;
 		}
