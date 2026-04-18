@@ -168,4 +168,31 @@ describe("mcpAction list", () => {
 		const scopes = r.list?.entries.map((e) => e.scope).sort();
 		expect(scopes).toEqual(["global", "project"]);
 	});
+
+	test("scope=project skips clients that have no project config (no misleading global fallback)", async () => {
+		// Windsurf has no projectConfigPath. Asking for project-scope only
+		// should yield zero rows for it instead of silently reporting the
+		// global path under `scope: "project"`.
+		const r = await mcpAction({
+			command: "list",
+			home: HOME,
+			scope: "project",
+			client: "windsurf",
+			cwd: HOME,
+		});
+		expect(r.list?.entries).toHaveLength(0);
+	});
+
+	test("scope=both still includes global for clients without project support", async () => {
+		const r = await mcpAction({
+			command: "list",
+			home: HOME,
+			scope: "both",
+			client: "windsurf",
+			cwd: HOME,
+		});
+		// Only the global row — the project row is skipped.
+		expect(r.list?.entries).toHaveLength(1);
+		expect(r.list?.entries[0]?.scope).toBe("global");
+	});
 });

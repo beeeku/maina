@@ -55,20 +55,28 @@ Or configure manually per tool:
     {"mcpServers":{"maina":{"command":"npx","args":["@mainahq/cli","--mcp"]}}}
     ```
   </TabItem>
-  <TabItem label="Continue.dev">
-    `.continue/mcpServers/maina.json` (auto-discovered):
-    ```json
-    {"maina":{"command":"npx","args":["@mainahq/cli","--mcp"]}}
-    ```
-  </TabItem>
-  <TabItem label="Roo Code">
-    `.roo/mcp.json`:
+  <TabItem label="Cline">
+    `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` (mac; `.config/Code/...` on Linux, `%APPDATA%/Code/...` on Windows):
     ```json
     {"mcpServers":{"maina":{"command":"npx","args":["@mainahq/cli","--mcp"]}}}
     ```
   </TabItem>
-  <TabItem label="Amazon Q">
-    `.amazonq/mcp.json`:
+  <TabItem label="Codex CLI">
+    `~/.codex/config.toml`:
+    ```toml
+    [mcp_servers.maina]
+    command = "npx"
+    args = ["@mainahq/cli", "--mcp"]
+    ```
+  </TabItem>
+  <TabItem label="Continue.dev">
+    `~/.continue/config.json` under `experimental.modelContextProtocolServers`:
+    ```json
+    {"experimental":{"modelContextProtocolServers":[{"name":"maina","transport":{"type":"stdio","command":"npx","args":["@mainahq/cli","--mcp"]}}]}}
+    ```
+  </TabItem>
+  <TabItem label="Gemini CLI">
+    `~/.gemini/settings.json`:
     ```json
     {"mcpServers":{"maina":{"command":"npx","args":["@mainahq/cli","--mcp"]}}}
     ```
@@ -76,8 +84,15 @@ Or configure manually per tool:
   <TabItem label="Zed">
     `~/.config/zed/settings.json` under `context_servers`:
     ```json
-    {"context_servers":{"maina":{"command":{"path":"npx","args":["@mainahq/cli","--mcp"]},"source":"custom"}}}
+    {"context_servers":{"maina":{"source":"custom","command":{"path":"npx","args":["@mainahq/cli","--mcp"]}}}}
     ```
+  </TabItem>
+  <TabItem label="Other (Roo, Amazon Q)">
+    Not yet handled by `maina mcp add`. Configure manually under each tool's `mcpServers` block:
+    ```json
+    {"mcpServers":{"maina":{"command":"npx","args":["@mainahq/cli","--mcp"]}}}
+    ```
+    (`.roo/mcp.json` for Roo Code; `.amazonq/mcp.json` for Amazon Q.)
   </TabItem>
 </Tabs>
 

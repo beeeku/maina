@@ -63,7 +63,10 @@ Setup & Config:
   setup         Guided first-time setup
   doctor        Check tool and engine health
   login         Cloud authentication
-  configure     Edit maina config`,
+  configure     Edit maina config
+  mcp add       Install maina MCP server in supported AI clients
+  mcp remove    Uninstall maina MCP server from clients
+  mcp list      Show maina MCP install status per client`,
 		)
 		.version(pkg.version);
 

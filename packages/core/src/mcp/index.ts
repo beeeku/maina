@@ -127,6 +127,11 @@ export async function runList(
 					? ["project"]
 					: ["global"];
 		for (const scope of scopes) {
+			// If a client doesn't define a project-scope config path, skip
+			// the project entry entirely rather than silently reporting the
+			// global path with `scope: "project"` (which would mislead users
+			// who explicitly asked for `--scope project`).
+			if (scope === "project" && !info.projectConfigPath) continue;
 			const path =
 				scope === "project" && info.projectConfigPath
 					? info.projectConfigPath(opts.cwd)
