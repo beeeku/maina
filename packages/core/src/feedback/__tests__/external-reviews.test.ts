@@ -9,6 +9,7 @@ import {
 	getTopCategoriesByFile,
 	ingestComments,
 	insertFinding,
+	isAutoSummaryComment,
 	parsePaginatedJson,
 	queryFindings,
 } from "../external-reviews";
@@ -162,6 +163,46 @@ describe("DB layer", () => {
 	});
 });
 
+describe("isAutoSummaryComment", () => {
+	test("matches each known CodeRabbit summary marker", () => {
+		const markers = [
+			"<!-- This is an auto-generated comment: summarize by coderabbit.ai -->",
+			"<!-- This is an auto-generated comment: review in progress by coderabbit.ai -->",
+			"<!-- This is an auto-generated comment: skip review by coderabbit.ai -->",
+		];
+		for (const m of markers) {
+			expect(isAutoSummaryComment(`${m}\n\nLots of body content.`)).toBe(true);
+		}
+	});
+
+	test("tolerates leading whitespace before the marker", () => {
+		expect(
+			isAutoSummaryComment(
+				"   \n\n<!-- This is an auto-generated comment: summarize by coderabbit.ai -->\nbody",
+			),
+		).toBe(true);
+	});
+
+	test("does not match real review comments that merely mention 'auto-generated'", () => {
+		// Make sure we don't accidentally swallow a real review comment that
+		// happens to discuss auto-generation. The marker must be at the start.
+		expect(
+			isAutoSummaryComment(
+				"This rule fires on auto-generated code; consider an exception.",
+			),
+		).toBe(false);
+	});
+
+	test("does not match unrelated HTML comments", () => {
+		expect(isAutoSummaryComment("<!-- TODO: refactor -->\nbody")).toBe(false);
+	});
+
+	test("does not match empty / whitespace-only bodies", () => {
+		expect(isAutoSummaryComment("")).toBe(false);
+		expect(isAutoSummaryComment("   \n\n\t")).toBe(false);
+	});
+});
+
 describe("ingestComments", () => {
 	test("filters non-allowed reviewers", () => {
 		const comments: ExternalReviewComment[] = [
@@ -193,6 +234,46 @@ describe("ingestComments", () => {
 		if (!result.ok) return;
 		expect(result.value.ingested).toBe(1);
 		expect(result.value.skipped).toBe(1);
+	});
+
+	test("drops auto-generated CodeRabbit summary headers, keeps real comments", () => {
+		const comments: ExternalReviewComment[] = [
+			// The summary boilerplate — should be dropped (counts as skipped).
+			{
+				sourceId: "summary-1",
+				prNumber: 9,
+				prRepo: "x/y",
+				filePath: null, // summary comments are issue-level
+				line: null,
+				reviewer: "coderabbitai",
+				body: "<!-- This is an auto-generated comment: summarize by coderabbit.ai -->\n\n## Walkthrough\n\nReally long auto summary here.",
+				diffAtReview: undefined,
+			},
+			// A real review comment from the same reviewer — should be kept.
+			{
+				sourceId: "real-1",
+				prNumber: 9,
+				prRepo: "x/y",
+				filePath: "src/foo.ts",
+				line: 42,
+				reviewer: "coderabbitai",
+				body: "This export doesn't exist on the resolved module.",
+				diffAtReview: undefined,
+			},
+		];
+		const result = ingestComments(tmpDir, comments, {
+			allowedReviewers: ALLOWED_REVIEWERS,
+		});
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.value.ingested).toBe(1);
+		expect(result.value.skipped).toBe(1);
+
+		const all = queryFindings(tmpDir, {});
+		expect(all.ok).toBe(true);
+		if (!all.ok) return;
+		expect(all.value).toHaveLength(1);
+		expect(all.value[0]?.sourceId).toBe("real-1");
 	});
 
 	test("explicit human reviewer is allowed and stored as kind=human", () => {

@@ -196,6 +196,7 @@ export {
 	ingestComments,
 	ingestPrReviews,
 	insertFinding,
+	isAutoSummaryComment,
 	parsePaginatedJson,
 	type QueryFindingsOptions,
 	queryFindings,
