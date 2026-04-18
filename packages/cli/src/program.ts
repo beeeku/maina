@@ -13,6 +13,7 @@ import { explainCommand } from "./commands/explain";
 import { initCommand } from "./commands/init";
 import { learnCommand } from "./commands/learn";
 import { loginCommand, logoutCommand } from "./commands/login";
+import { mcpCommand } from "./commands/mcp";
 import { planCommand } from "./commands/plan";
 import { prCommand } from "./commands/pr";
 import { promptCommand } from "./commands/prompt";
@@ -62,7 +63,10 @@ Setup & Config:
   setup         Guided first-time setup
   doctor        Check tool and engine health
   login         Cloud authentication
-  configure     Edit maina config`,
+  configure     Edit maina config
+  mcp add       Install maina MCP server in supported AI clients
+  mcp remove    Uninstall maina MCP server from clients
+  mcp list      Show maina MCP install status per client`,
 		)
 		.version(pkg.version);
 
@@ -91,6 +95,7 @@ Setup & Config:
 	program.addCommand(loginCommand());
 	program.addCommand(logoutCommand());
 	program.addCommand(configureCommand());
+	program.addCommand(mcpCommand());
 
 	// ── Internals ───────────────────────────────────────────────────────
 	program.addCommand(analyzeCommand());
