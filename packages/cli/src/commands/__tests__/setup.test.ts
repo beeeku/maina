@@ -139,6 +139,7 @@ function makeDeps(
 
 let tmpDir: string;
 let originalTelemetryEnv: string | undefined;
+let originalCiEnv: string | undefined;
 
 beforeEach(() => {
 	tmpDir = makeTmpDir();
@@ -146,12 +147,20 @@ beforeEach(() => {
 	// and is independently covered by the sub-task-8 telemetry tests.
 	originalTelemetryEnv = process.env.MAINA_TELEMETRY;
 	process.env.MAINA_TELEMETRY = "0";
+	// CI runners set CI=true, which `resolveCiMode` honours and silently flips
+	// every test into ci-mode (suppressing prompts, picking maina-ci/* UA).
+	// Clear it so the default test posture matches local. Tests that need
+	// CI-mode behaviour pass `ci: true` explicitly.
+	originalCiEnv = process.env.CI;
+	delete process.env.CI;
 });
 
 afterEach(() => {
 	rmSync(tmpDir, { recursive: true, force: true });
 	if (originalTelemetryEnv === undefined) delete process.env.MAINA_TELEMETRY;
 	else process.env.MAINA_TELEMETRY = originalTelemetryEnv;
+	if (originalCiEnv === undefined) delete process.env.CI;
+	else process.env.CI = originalCiEnv;
 });
 
 // ── Backward-compat helpers ─────────────────────────────────────────────────
