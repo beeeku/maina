@@ -152,7 +152,9 @@ async function listAvailableLabels(
 	deps: SpawnDeps,
 ): Promise<Set<string> | null> {
 	try {
-		const args = ["gh", "label", "list", "--json", "name", "--limit", "200"];
+		// --limit caps the total fetched (gh auto-paginates underneath at 100/call).
+		// 1000 covers the long tail of repos — anything higher is ~pathological.
+		const args = ["gh", "label", "list", "--json", "name", "--limit", "1000"];
 		if (opts.repo) args.push("--repo", opts.repo);
 
 		const { exitCode, stdout } = await deps.spawn(args, { cwd: opts.cwd });
