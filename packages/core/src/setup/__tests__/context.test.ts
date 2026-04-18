@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { assembleStackContext, contextHash, summarizeRepo } from "../context";
 import { loadUniversalPrompt } from "../prompts";
+
+// Resolve the maina repo root from this test file's location so the test
+// works in any checkout (local, CI, dependency tree). __dirname here is
+// `packages/core/src/setup/__tests__`, so go up four levels.
+const MAINA_REPO_ROOT = resolve(import.meta.dir, "..", "..", "..", "..", "..");
 
 function makeTmpDir(): string {
 	const dir = join(
@@ -16,7 +21,7 @@ function makeTmpDir(): string {
 
 describe("assembleStackContext — happy path (maina repo)", () => {
 	test("detects TypeScript, bun, biome, bun:test on this repo", async () => {
-		const result = await assembleStackContext("/Users/Bikash/try/maina");
+		const result = await assembleStackContext(MAINA_REPO_ROOT);
 		expect(result.ok).toBe(true);
 		if (!result.ok) return;
 		const ctx = result.value;
@@ -87,8 +92,8 @@ describe("assembleStackContext — edge cases", () => {
 
 describe("contextHash determinism", () => {
 	test("same context yields same hash across runs", async () => {
-		const r1 = await assembleStackContext("/Users/Bikash/try/maina");
-		const r2 = await assembleStackContext("/Users/Bikash/try/maina");
+		const r1 = await assembleStackContext(MAINA_REPO_ROOT);
+		const r2 = await assembleStackContext(MAINA_REPO_ROOT);
 		expect(r1.ok && r2.ok).toBe(true);
 		if (!r1.ok || !r2.ok) return;
 		// Zero out volatile fields (bytes/files counts can shift slightly on rebuild)
@@ -147,13 +152,10 @@ describe("contextHash determinism", () => {
 
 describe("summarizeRepo", () => {
 	test("produces non-empty markdown under 40k chars for maina repo", async () => {
-		const result = await assembleStackContext("/Users/Bikash/try/maina");
+		const result = await assembleStackContext(MAINA_REPO_ROOT);
 		expect(result.ok).toBe(true);
 		if (!result.ok) return;
-		const summary = await summarizeRepo(
-			"/Users/Bikash/try/maina",
-			result.value,
-		);
+		const summary = await summarizeRepo(MAINA_REPO_ROOT, result.value);
 		expect(summary.length).toBeGreaterThan(0);
 		expect(summary.length).toBeLessThanOrEqual(40_000);
 		expect(summary).toContain("# Repo Summary");
