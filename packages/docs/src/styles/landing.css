@@ -251,7 +251,17 @@ body {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 13.5px;
   padding: 12px 14px;
-  outline: none;
+  outline: 0;
+}
+
+/* Keyboard focus must stay visible on both the readonly input and its
+   copy button — default browser rings are gone (outline: 0 above, and
+   the button's accent bg swallows the ring). Replacement is an accent
+   ring that works against the terminal chrome in both themes. */
+.hero-v2__install-input:focus-visible,
+.hero-v2__install-copy:focus-visible {
+  outline: 2px solid var(--color-accent, #f97316);
+  outline-offset: 2px;
 }
 
 .hero-v2__install-copy {
