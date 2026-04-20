@@ -19,6 +19,8 @@
  * (see `scripts/capture-terminal-script.ts`, follow-up task).
  */
 
+import { INSTALL_PROMPT } from "./landing";
+
 export type FrameKind = "input" | "output" | "header" | "ok" | "warn" | "err";
 
 export interface Frame {
@@ -36,7 +38,7 @@ export interface Frame {
 
 export const heroFrames: Frame[] = [
 	// 0–8s · setup
-	{ t: 0.0, kind: "input", text: "$ bunx @mainahq/cli@latest setup" },
+	{ t: 0.0, kind: "input", text: INSTALL_PROMPT },
 	{ t: 1.2, kind: "output", text: "┌  maina setup" },
 	{ t: 2.0, kind: "output", text: "│  Detected monorepo · TypeScript · bun" },
 	{
@@ -150,7 +152,7 @@ export const fullFrames: Frame[] = [
 	{
 		t: 1.2,
 		kind: "input",
-		text: "$ bunx @mainahq/cli@latest setup",
+		text: INSTALL_PROMPT,
 		chapter: "context",
 		annotation: "one command, no API key",
 	},

@@ -9,8 +9,13 @@
  * the way it does.
  */
 
-/** Change in one place; propagates to all four install-line appearances. */
+/** Change in one place; propagates to every install-line appearance
+ *  on the page AND to the terminal demo's input frames. */
 export const INSTALL_COMMAND = "bunx @mainahq/cli@latest setup" as const;
+
+/** Same string, prefixed with the shell prompt — what the terminal
+ *  animation echoes as its first input line. */
+export const INSTALL_PROMPT = `$ ${INSTALL_COMMAND}` as const;
 
 /** Meta / SEO. */
 export const META = {

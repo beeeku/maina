@@ -49,34 +49,8 @@ const resolveHref = (href: string): string =>
   </ul>
 </section>
 
-<script is:inline>
-  (function () {
-    var btn = document.querySelector('.final-cta__install-copy');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var sel = btn.getAttribute('data-copy-target');
-      if (!sel) return;
-      var input = document.querySelector(sel);
-      if (!input) return;
-      var done = function () {
-        var original = btn.textContent;
-        btn.textContent = 'Copied';
-        setTimeout(function () { btn.textContent = original; }, 1600);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(input.value).then(done, function () {
-          input.select();
-          document.execCommand('copy');
-          done();
-        });
-      } else {
-        input.select();
-        document.execCommand('copy');
-        done();
-      }
-    });
-  })();
-</script>
+<!-- Copy behaviour: see the delegated listener in index.astro. -->
+
 
 <style is:global>
   .final-cta {

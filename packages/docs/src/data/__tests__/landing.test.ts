@@ -19,6 +19,7 @@ import {
 	FOOTER,
 	HERO,
 	INSTALL_COMMAND,
+	INSTALL_PROMPT,
 	META,
 	NAV,
 	PAIN_STRIP,
@@ -33,6 +34,23 @@ describe("landing copy invariants", () => {
 		expect(HERO.installCommand).toBe(INSTALL_COMMAND);
 		expect(TERMINAL_SECTION.installCommand).toBe(INSTALL_COMMAND);
 		expect(FINAL_CTA.installCommand).toBe(INSTALL_COMMAND);
+	});
+
+	it("INSTALL_PROMPT wraps INSTALL_COMMAND with the shell prompt", () => {
+		expect(INSTALL_PROMPT).toBe(`$ ${INSTALL_COMMAND}`);
+	});
+
+	it("terminal frames use INSTALL_PROMPT (not a hardcoded string)", () => {
+		// Any `input` frame that runs the install command must reach it via
+		// the shared constant — no literal "bunx @mainahq/cli@latest setup"
+		// baked into terminal-script.ts frames.
+		const literal = "bunx @mainahq/cli@latest setup";
+		const allFrames = [...heroFrames, ...fullFrames];
+		for (const f of allFrames) {
+			if (f.kind === "input" && f.text.includes(literal)) {
+				expect(f.text).toBe(INSTALL_PROMPT);
+			}
+		}
 	});
 
 	it("meta title matches the verbatim spec headline (anchors the whole page tone)", () => {
@@ -107,7 +125,7 @@ describe("landing copy invariants", () => {
 });
 
 describe("terminal script invariants", () => {
-	it("hero frames are strictly time-ordered", () => {
+	it("hero frames are monotonic in time (non-decreasing)", () => {
 		for (let i = 1; i < heroFrames.length; i++) {
 			const prev = heroFrames[i - 1];
 			const curr = heroFrames[i];
@@ -116,15 +134,19 @@ describe("terminal script invariants", () => {
 		}
 	});
 
-	it("full frames are strictly time-ordered and all have chapter markers", () => {
+	it("full frames are monotonic in time and every frame has a chapter marker", () => {
 		for (let i = 1; i < fullFrames.length; i++) {
 			const prev = fullFrames[i - 1];
 			const curr = fullFrames[i];
 			if (!prev || !curr) continue;
 			expect(curr.t).toBeGreaterThanOrEqual(prev.t);
 		}
+		// Membership check — a typo like "verfiy" in one frame's chapter
+		// would previously have passed `toBeDefined`.
+		const validChapters = new Set(TERMINAL_SECTION.chapters.map((c) => c.id));
 		for (const f of fullFrames) {
 			expect(f.chapter).toBeDefined();
+			expect(validChapters.has(f.chapter as string)).toBe(true);
 		}
 	});
 
