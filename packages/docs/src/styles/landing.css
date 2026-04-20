@@ -141,12 +141,152 @@ html {
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--font);
+  /* Default to the display font (Inter). Legacy components that want mono
+     still read `var(--font)` locally. Phase-9 cleanup will prune those. */
+  font-family: var(--font-display, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Hero v2 layout ──────────────────────────────────────────────────
+   Two-column grid on desktop (copy left, terminal right); stacked on
+   mobile. Not in HeroTerminal's scoped styles because the grid lives
+   on Hero's parent section. */
+
+.hero-v2 {
+  max-width: 1200px;
+  margin: 40px auto 72px;
+  padding: 24px 24px 8px;
+  display: grid;
+  gap: 48px;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .hero-v2 {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 56px;
+    padding-top: 56px;
+  }
+}
+
+.hero-v2__col--copy { min-width: 0; }
+.hero-v2__col--terminal { min-width: 0; }
+
+.hero-v2__eyebrow {
+  margin: 0 0 20px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--color-ink-muted, #a8a29e);
+  letter-spacing: 0.01em;
+}
+
+.hero-v2__headline {
+  margin: 0 0 22px;
+  font-family: var(--font-display, -apple-system, sans-serif);
+  font-size: clamp(32px, 4.2vw, 52px);
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--color-ink, #fafaf9);
+  letter-spacing: -0.01em;
+}
+
+.hero-v2__headline > span {
+  display: block;
+}
+
+.hero-v2__headline-accent {
+  color: var(--color-ink-muted, #a8a29e);
+  font-size: 0.72em;
+  font-weight: 500;
+  margin-top: 12px;
+  line-height: 1.35;
+}
+
+.hero-v2__sub {
+  margin: 0 0 30px;
+  max-width: 620px;
+  color: var(--color-ink-muted, #a8a29e);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.hero-v2__install {
+  margin: 0 0 20px;
+  max-width: 520px;
+}
+
+.hero-v2__install-label {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--color-ink-muted, #a8a29e);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-v2__install-row {
+  display: flex;
+  background: var(--color-terminal-bg, #0b0b0b);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius, 10px);
+  overflow: hidden;
+}
+
+.hero-v2__install-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--color-ink, #fafaf9);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13.5px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.hero-v2__install-copy {
+  background: var(--color-accent, #f97316);
+  color: var(--color-accent-ink, #18181b);
+  border: 0;
+  padding: 0 18px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 140ms ease;
+}
+
+.hero-v2__install-copy:hover { filter: brightness(1.08); }
+.hero-v2__install-copy:focus-visible {
+  outline: 2px solid var(--color-accent, #f97316);
+  outline-offset: 2px;
+}
+
+.hero-v2__affordances {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  color: var(--color-ink-muted, #a8a29e);
+}
+
+.hero-v2__affordance a {
+  color: var(--color-ink-muted, #a8a29e);
+  text-decoration: none;
+}
+
+.hero-v2__affordance a:hover {
+  color: var(--color-accent, #f97316);
 }
 
 /* --- Scroll Reveal Animations --- */
