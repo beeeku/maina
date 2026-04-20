@@ -14,7 +14,10 @@ const rows = COMPARISON.rows.filter((r) => !('draft' in r && r.draft));
 ---
 
 <section class="cmp-v2" id="comparison">
-  <h2 class="cmp-v2__title">{COMPARISON.header}</h2>
+  <div class="cmp-v2__head">
+    <span class="section-eyebrow">// compare</span>
+    <h2 class="cmp-v2__title">{COMPARISON.header}</h2>
+  </div>
   <div class="cmp-v2__scroll">
     <table class="cmp-v2__table">
       <thead>
@@ -46,11 +49,15 @@ const rows = COMPARISON.rows.filter((r) => !('draft' in r && r.draft));
     padding: 0 24px;
   }
 
+  .cmp-v2__head {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
   .cmp-v2__title {
     font-family: var(--font-display);
     font-size: clamp(26px, 3vw, 36px);
-    text-align: center;
-    margin: 0 0 28px;
+    margin: 0;
     color: var(--color-ink);
   }
 

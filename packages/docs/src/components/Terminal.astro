@@ -153,6 +153,14 @@ const chapterAnchorForFrame = (idx: number, chapter?: string): string | undefine
     padding: 0 24px;
   }
 
+  /* Chapter anchor targets inside the pre; each first frame of a
+     chapter carries id="chapter-<id>". scroll-margin-top pushes the
+     scroll target down past the nav so the chapter line isn't hidden
+     under it. */
+  .termv2 [data-frame][id^="chapter-"] {
+    scroll-margin-top: 96px;
+  }
+
   .termv2__head {
     text-align: center;
     margin-bottom: 24px;

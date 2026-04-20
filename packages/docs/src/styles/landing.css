@@ -37,15 +37,16 @@
    via `cursor-blink`. */
 
 @keyframes mt-frame-reveal {
-  /* Loop-aware: a frame with animation-delay = t seconds, animation-
-     duration = --mt-duration, and animation-iteration-count: infinite
-     will first appear at t, stay visible until ~97% of the cycle, fade
-     out, and come back at t + duration. The fade-out just before the
-     loop point avoids a visible flicker when the animation restarts. */
-  0% { opacity: 0; transform: translateY(6px); }
-  1% { opacity: 1; transform: translateY(0); }
-  96% { opacity: 1; }
-  100% { opacity: 0; }
+  /* Play once, hold. Each frame fades in over ~500ms starting at its
+     own animation-delay = t seconds, and holds the final state via
+     animation-fill-mode: forwards. Looping across the full timeline
+     would require either per-frame keyframes or JS-driven playback
+     because CSS animation-delay does not repeat on subsequent
+     iterations — frames would desync after the first cycle. Play-
+     once-hold keeps the demo deterministic; the Restart button is
+     the explicit re-play path. */
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes mt-cursor-blink {
@@ -59,16 +60,15 @@
   to { transform: translateY(-1px); }
 }
 
-/* Reduced-motion: strip animation, show final frame statically. */
+/* Reduced-motion: strip animation, show final frame statically. Keep
+   the controls visible — a user with reduced-motion on who clicks
+   Restart is opting into a replay, and hiding the buttons would
+   silently remove that option. */
 @media (prefers-reduced-motion: reduce) {
   [data-mt-frames] [data-frame] {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
-  }
-  [data-mt-frames][data-mt-controls] {
-    /* Hide play/pause/restart controls when motion is off. */
-    --mt-controls-display: none;
   }
 }
 
@@ -291,6 +291,52 @@ body {
 
 .hero-v2__affordance a:hover {
   color: var(--color-accent, #f97316);
+}
+
+/* ─── Section rhythm ──────────────────────────────────────────────────
+   The landing page alternates between contained sections (transparent
+   bg, the page's own bg shows through) and full-bleed banded sections
+   (subtly different bg colour) so each block reads as its own unit.
+   Applied by adding `band` class on the inner <section>. */
+
+.band-bleed {
+  --band-y: 72px;
+  padding: var(--band-y) 0;
+  position: relative;
+}
+
+.band-bleed::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklch, var(--color-bg-elev, #18181b) 55%, var(--color-bg, #0b0b0b));
+  z-index: -1;
+}
+
+.band-hairline {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Terminal section shares width + spacing across phases. */
+.section-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Small eyebrow/section-label for lower sections to anchor tone. */
+.section-eyebrow {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 3px 10px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--color-accent, #f97316);
+  background: rgba(249, 115, 22, 0.12);
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* --- Scroll Reveal Animations --- */

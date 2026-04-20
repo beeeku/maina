@@ -12,7 +12,10 @@ const resolveHref = (href: string): string =>
 ---
 
 <section class="engines-v2" id="engines">
-  <h2 class="engines-v2__title">{ENGINES.header}</h2>
+  <div class="engines-v2__head">
+    <span class="section-eyebrow">// engines</span>
+    <h2 class="engines-v2__title">{ENGINES.header}</h2>
+  </div>
   <ul class="engines-v2__grid">
     {ENGINES.cards.map((card) => (
       <li class="engines-v2__card" id={`engine-${card.id}`}>
@@ -40,11 +43,15 @@ const resolveHref = (href: string): string =>
     padding: 0 24px;
   }
 
+  .engines-v2__head {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
   .engines-v2__title {
     font-family: var(--font-display);
     font-size: clamp(26px, 3vw, 36px);
-    text-align: center;
-    margin: 0 0 36px;
+    margin: 0;
     color: var(--color-ink);
   }
 
