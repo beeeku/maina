@@ -1,44 +1,50 @@
 ---
-// A/B scaffold. `HERO_VARIANT=v2` at build time swaps the hero for the
-// v2 stub which errors loudly — implement Hero.v2.astro before enabling.
-import HeroV1 from '../components/Hero.astro';
-import HeroV2 from '../components/Hero.v2.astro';
-import PainStrip from '../components/PainStrip.astro';
-import Terminal from '../components/Terminal.astro';
-import Engines from '../components/Engines.astro';
-import ProofStrip from '../components/ProofStrip.astro';
-import StackFit from '../components/StackFit.astro';
-import Comparison from '../components/Comparison.astro';
-import FinalCta from '../components/FinalCta.astro';
-import Faq from '../components/Faq.astro';
+import CloudHero from '../components/CloudHero.astro';
+import GovernancePainStrip from '../components/GovernancePainStrip.astro';
+import CloudFeatureGrid from '../components/CloudFeatureGrid.astro';
+import OssVsCloud from '../components/OssVsCloud.astro';
+import WaitlistForm from '../components/WaitlistForm.astro';
+import DemoBooking from '../components/DemoBooking.astro';
+import CloudFaq from '../components/CloudFaq.astro';
+import CloudFinalCta from '../components/CloudFinalCta.astro';
 import Footer from '../components/Footer.astro';
-import { META, NAV } from '../data/landing';
+import { CLOUD_META } from '../data/cloud-landing';
+import { NAV } from '../data/landing';
 import '../styles/landing.css';
-
-const HERO_VARIANT = import.meta.env.HERO_VARIANT ?? 'v1';
-const Hero = HERO_VARIANT === 'v2' ? HeroV2 : HeroV1;
 
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Maina',
-  description: META.description,
-  url: META.url,
-  applicationCategory: 'DeveloperApplication',
-  operatingSystem: 'macOS, Linux, Windows (WSL)',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  softwareVersion: '1.1.0',
-  programmingLanguage: ['TypeScript', 'Python', 'Go', 'Rust', 'C#', 'Java', 'PHP'],
-  featureList: [
-    'Context Engine (4-layer retrieval, AST + PageRank)',
-    '19-tool verification pipeline (diff-only)',
-    'MCP server',
-    'Constitution + versioned prompts',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      name: 'Maina',
+      url: 'https://mainahq.com/',
+      logo: 'https://mainahq.com/favicon.svg',
+      sameAs: [
+        'https://github.com/mainahq',
+        'https://www.linkedin.com/company/mainahq',
+      ],
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'Maina Cloud',
+      description: CLOUD_META.description,
+      url: CLOUD_META.url,
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'macOS, Linux, Windows (WSL)',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/PreOrder' },
+      featureList: [
+        'One versioned team constitution',
+        'Permalinkable verification report per diff',
+        'GitHub OAuth device flow (no API keys)',
+        'Team-level prompt A/B testing',
+        'EU telemetry hosting option',
+      ],
+    },
   ],
-  codeRepository: 'https://github.com/mainahq/maina',
 };
 ---
 
@@ -54,14 +60,14 @@ const jsonLd = {
         document.documentElement.setAttribute('data-theme', theme);
       })();
     </script>
-    <title>{META.title}</title>
-    <meta name="description" content={META.description} />
-    <meta property="og:title" content={META.title} />
-    <meta property="og:description" content={META.description} />
+    <title>{CLOUD_META.title}</title>
+    <meta name="description" content={CLOUD_META.description} />
+    <meta property="og:title" content={CLOUD_META.ogTitle} />
+    <meta property="og:description" content={CLOUD_META.ogDescription} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={META.url} />
-    {META.ogImage && (
-      <meta property="og:image" content={META.ogImage} />
+    <meta property="og:url" content={CLOUD_META.url} />
+    {CLOUD_META.ogImage && (
+      <meta property="og:image" content={CLOUD_META.ogImage} />
     )}
     <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
@@ -81,9 +87,13 @@ const jsonLd = {
       </a>
       <div class="nav-right">
         <div class="nav-links">
-          {NAV.links.map((l) => (
-            <a href={l.href.startsWith('/') ? `${base}${l.href}` : l.href}>{l.label}</a>
-          ))}
+          {NAV.links.map((l) => {
+            const href = l.href.startsWith('/') ? `${base}${l.href}` : l.href;
+            const active = l.label === 'Cloud';
+            return (
+              <a href={href} class={active ? 'cloud-nav-link-active' : ''}>{l.label}</a>
+            );
+          })}
         </div>
         <button class="theme-toggle" type="button" aria-label="Toggle theme">
           <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
@@ -91,20 +101,19 @@ const jsonLd = {
         </button>
       </div>
     </nav>
-    <Hero />
-    <div class="band-bleed"><PainStrip /></div>
-    <Terminal />
-    <div class="band-bleed band-hairline"><Engines /></div>
-    <ProofStrip />
-    <div class="band-bleed"><StackFit /></div>
-    <Comparison />
-    <div class="band-bleed band-hairline"><FinalCta /></div>
-    <Faq />
+
+    <CloudHero />
+    <div class="band-bleed"><GovernancePainStrip /></div>
+    <CloudFeatureGrid />
+    <div class="band-bleed band-hairline"><OssVsCloud /></div>
+    <WaitlistForm />
+    <div class="band-bleed"><DemoBooking /></div>
+    <CloudFinalCta />
+    <CloudFaq />
     <Footer />
+
     <script is:inline>
-      // Copy-to-clipboard — one delegated listener for every button
-      // with `data-copy-target`. Guarded by feature detection so the
-      // readonly <input> still works for no-clipboard browsers.
+      // Copy-to-clipboard — shared delegated listener, same as /
       document.addEventListener('click', function (ev) {
         const target = ev.target;
         if (!(target instanceof Element)) return;
@@ -132,19 +141,6 @@ const jsonLd = {
         }
       });
 
-      // Scroll reveal
-      const obs = new IntersectionObserver((entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            e.target.classList.add('visible');
-            obs.unobserve(e.target);
-          }
-        }
-      }, { threshold: 0.15 });
-      for (const el of document.querySelectorAll('.reveal, .reveal-stagger')) {
-        obs.observe(el);
-      }
-
       // Theme toggle
       (function () {
         var btn = document.querySelector('.theme-toggle');
@@ -163,5 +159,9 @@ const jsonLd = {
         });
       })();
     </script>
+
+    <style is:global>
+      .cloud-nav-link-active { color: var(--color-accent) !important; font-weight: 600; }
+    </style>
   </body>
 </html>

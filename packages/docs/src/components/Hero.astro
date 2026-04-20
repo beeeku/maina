@@ -1,89 +1,66 @@
 ---
-const rawBase = import.meta.env.BASE_URL;
-const base = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
+/**
+ * Hero — feature 050. All copy sourced from `src/data/landing.ts`;
+ * no string in this component may originate here (enforced by the
+ * Phase-9 CI grep check). Right column is the 52-second auto-playing
+ * terminal rendered by `HeroTerminal.astro`.
+ */
+import { HERO } from '../data/landing';
+import HeroTerminal from './HeroTerminal.astro';
 ---
 
-<section class="hero">
-  <div class="hero-prompt">~/project $</div>
-  <h1>AI writes 41% of your code.<br><span class="accent">Who's checking it?</span></h1>
-  <p class="hero-subtitle">
-    One command. Zero config. No API key. A tailored constitution, wired agents,
-    seeded wiki, and a real verify finding — in under 60 seconds.
-  </p>
-  <div class="install-cmd" id="setup-cmd" title="Click to copy">
-    <code>bunx @mainahq/cli@latest setup</code>
+<section class="hero-v2" id="hero">
+  <div class="hero-v2__col hero-v2__col--copy">
+    <p class="hero-v2__eyebrow">{HERO.eyebrow}</p>
+    <h1 class="hero-v2__headline">
+      <span>{HERO.headlineLine1}</span>
+      <span class="hero-v2__headline-accent">{HERO.headlineLine2}</span>
+    </h1>
+    <p class="hero-v2__sub">{HERO.sub}</p>
+
+    <div class="hero-v2__install" id="install">
+      <label class="hero-v2__install-label" for="hero-install">Install</label>
+      <div class="hero-v2__install-row">
+        <input
+          id="hero-install"
+          class="hero-v2__install-input"
+          type="text"
+          readonly
+          value={HERO.installCommand}
+          aria-label="Install command — read-only, select to copy"
+        />
+        <button
+          class="hero-v2__install-copy"
+          type="button"
+          data-copy-target="#hero-install"
+          aria-label="Copy install command"
+        >
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <ul class="hero-v2__affordances">
+      {HERO.affordances.map((a) => (
+        <li class="hero-v2__affordance">
+          {a.kind === 'scroll' && 'target' in a ? (
+            <a href={a.target}>{a.label}</a>
+          ) : a.kind === 'link' && 'href' in a ? (
+            <a href={a.href} rel="noopener">{a.label}</a>
+          ) : (
+            <span>{a.label}</span>
+          )}
+        </li>
+      ))}
+    </ul>
   </div>
-  <div class="hero-actions">
-    <a href={`${base}/getting-started`} class="btn-primary">Get Started</a>
-    <a href="https://github.com/mainahq/maina" class="btn-secondary">GitHub</a>
+
+  <div class="hero-v2__col hero-v2__col--terminal" aria-hidden="false">
+    <HeroTerminal />
   </div>
-  <div class="mcp-badges">
-    <button class="mcp-badge" data-action="claude" title="Add Maina MCP to Claude Code">
-      <span class="mcp-badge-icon">&#x2728;</span> Add to Claude Code
-    </button>
-    <a class="mcp-badge" id="cursor-badge" href="#" title="Add Maina MCP to Cursor">
-      <span class="mcp-badge-icon">&#x1F4DD;</span> Add to Cursor
-    </a>
-    <button class="mcp-badge" data-action="windsurf" title="Add Maina MCP to Windsurf">
-      <span class="mcp-badge-icon">&#x1F3C4;</span> Add to Windsurf
-    </button>
-  </div>
-  <div class="mcp-toast" id="mcp-toast" aria-live="polite"></div>
 </section>
 
-<script is:inline>
-(function() {
-  var serverConfig = {command:"bunx",args:["@mainahq/cli","--mcp"]};
-  var mcpConfig = JSON.stringify(serverConfig);
+<!-- Copy-to-clipboard behaviour lives in index.astro: a single delegated
+     listener wires every element that carries `data-copy-target`. That
+     keeps Hero and FinalCta from drifting apart. -->
 
-  // Cursor deeplink: base64-encode just the server config (name param identifies the server).
-  // Percent-encode the base64 because +, /, = are reserved in query strings.
-  var cursorConfig = encodeURIComponent(btoa(mcpConfig));
-  var cursorBadge = document.getElementById('cursor-badge');
-  if (cursorBadge) {
-    cursorBadge.href = 'cursor://anysphere.cursor-deeplink/mcp/install?name=maina&config=' + cursorConfig;
-  }
-
-  // Copy the setup command on click
-  var setupCmd = document.getElementById('setup-cmd');
-  if (setupCmd) {
-    setupCmd.style.cursor = 'pointer';
-    setupCmd.addEventListener('click', function() {
-      navigator.clipboard.writeText('bunx @mainahq/cli@latest setup').then(function() {
-        showToast('Copied! Paste into your terminal.');
-      });
-    });
-  }
-
-  // Badge click handlers
-  document.querySelectorAll('.mcp-badge[data-action]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var action = btn.getAttribute('data-action');
-      var text = '';
-      var msg = '';
-
-      if (action === 'claude') {
-        text = "claude mcp add-json maina '" + mcpConfig + "'";
-        msg = 'Claude Code command copied!';
-      } else if (action === 'windsurf') {
-        text = JSON.stringify({mcpServers:{maina:serverConfig}}, null, 2);
-        msg = 'Windsurf MCP config copied! Paste into ~/.codeium/windsurf/mcp_config.json';
-      }
-
-      if (text) {
-        navigator.clipboard.writeText(text).then(function() {
-          showToast(msg);
-        });
-      }
-    });
-  });
-
-  function showToast(msg) {
-    var toast = document.getElementById('mcp-toast');
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(function() { toast.classList.remove('visible'); }, 3000);
-  }
-})();
-</script>
