@@ -47,11 +47,23 @@ describe("cloud copy invariants", () => {
 		expect(GOVERNANCE_PAIN_STRIP.cap).toContain("answerable");
 	});
 
-	it("feature grid ships six cards with at least one proof link each", () => {
-		expect(CLOUD_FEATURE_GRID.cards.length).toBe(6);
+	it("feature grid ships seven cards with at least one proof link each", () => {
+		expect(CLOUD_FEATURE_GRID.cards.length).toBe(7);
 		for (const c of CLOUD_FEATURE_GRID.cards) {
 			expect(c.proofLinks.length).toBeGreaterThanOrEqual(1);
 		}
+	});
+
+	it("feature grid covers the CI / GitHub Action card", () => {
+		const hasCi = CLOUD_FEATURE_GRID.cards.some(
+			(c) => c.id === "ci" && c.title.includes("GitHub Action"),
+		);
+		expect(hasCi).toBe(true);
+	});
+
+	it("demo booking uses Calendly, with mailto kept as a fallback", () => {
+		expect(DEMO.scheduler.startsWith("https://calendly.com/")).toBe(true);
+		expect(DEMO.mailto).toContain("@mainahq.com");
 	});
 
 	it("OSS vs Cloud matrix has two columns and every row supplies oss + cloud", () => {
@@ -68,10 +80,6 @@ describe("cloud copy invariants", () => {
 		expect(WAITLIST.fields.teamSize.required).toBe(true);
 		expect(WAITLIST.fields.company.required).toBe(false);
 		expect(WAITLIST.fields.notes.required).toBe(false);
-	});
-
-	it("demo booking falls back to mailto when no scheduler is wired", () => {
-		expect(DEMO.mailto).toContain("@mainahq.com");
 	});
 
 	it("proof strip has the five cloud-specific stats", () => {

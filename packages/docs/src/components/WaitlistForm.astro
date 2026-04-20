@@ -8,9 +8,11 @@
  * the form with a thank-you panel. On 4xx/5xx or network error, the
  * form shows a fallback `mailto:` link.
  *
- * NEEDS CLARIFICATION (plan.md): backend — Worker / PostHog / Formspree.
- * Until resolved the form posts to `/api/waitlist` (404 today on
- * mainahq.com). The mailto fallback covers submission in the meantime.
+ * Backend decision (2026-04-21): a `@workkit`-built Cloudflare Worker
+ * landing in the private `mainahq/maina-cloud` repo owns POST
+ * `/api/waitlist`. Until the Worker ships, POSTs 404 and the mailto
+ * fallback covers submission end-to-end. No frontend change is
+ * needed when the Worker goes live.
  */
 import { WAITLIST } from '../data/cloud-landing';
 

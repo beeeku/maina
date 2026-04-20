@@ -141,6 +141,19 @@ export const CLOUD_FEATURE_GRID = {
 			proof: "Proof: threat model in the private beta docs.",
 			proofLinks: [{ label: "threat model", href: "/cloud/threat-model" }],
 		},
+		{
+			id: "ci",
+			title: "One GitHub Action. Every PR, verified.",
+			body: "Drop `mainahq/verify-action` into your workflow and every PR gets the same 19-tool pipeline your devs run locally — diff-only findings, a sticky comment with the permalinkable proof URL, an exit code your branch protection can gate on. The Action reads the team constitution from your Cloud org, so CI and laptop speak the same rules.",
+			proof: "Proof: mainahq/verify-action · ADR-0008 (CI shape).",
+			proofLinks: [
+				{
+					label: "mainahq/verify-action",
+					href: "https://github.com/mainahq/verify-action",
+				},
+				{ label: "ADR-0008", href: "/adr/0008" },
+			],
+		},
 	],
 } as const;
 
@@ -259,13 +272,13 @@ export const WAITLIST = {
 	thankyou: "Request received. Check your inbox within 48 hours.",
 } as const;
 
-/** Demo booking card. */
+/** Demo booking card. Scheduler = Calendly (decision 2026-04-21). */
 export const DEMO = {
 	header: "Would rather see it run first?",
 	body: "20 minutes, your repo on screen, no slides. We'll install Maina on a clone of your monorepo, run the 19-tool verify on a real diff, and show you what a permalinkable proof looks like. If it's not worth the 20 minutes, we'll owe you coffee.",
 	ctaLabel: "Pick a time →",
-	// [NEEDS CLARIFICATION: scheduler] — Cal.com / Calendly / mailto.
-	// Mailto for today; swap when scheduler decision lands.
+	scheduler: "https://calendly.com/mainahq/maina-cloud-demo",
+	/** Kept as a graceful fallback if the Calendly slug changes. */
 	mailto: "demo@mainahq.com",
 } as const;
 
@@ -313,7 +326,7 @@ export const CLOUD_FAQ = {
 		},
 		{
 			q: "Can we self-host?",
-			a: "Not in the private beta. On the roadmap for teams 100+ devs.",
+			a: "Not in the private beta. The Enterprise / self-hosted tier lands after v2.0 per the public roadmap.",
 		},
 		{
 			q: "What's the pricing?",

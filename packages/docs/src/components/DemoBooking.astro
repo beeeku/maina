@@ -1,14 +1,12 @@
 ---
 /**
- * DemoBooking — lightweight "book a demo" card. Scheduler choice is
- * open (plan.md Q2); until resolved, the CTA is a mailto. When a
- * scheduler lands the CTA gets rewired to a lazy-loaded embed.
+ * DemoBooking — lightweight "book a demo" card. Scheduler = Calendly
+ * public link (opens in a new tab). Mailto is kept as the fallback
+ * if the Calendly slug ever disappears.
  */
 import { DEMO } from '../data/cloud-landing';
 
-const subject = encodeURIComponent('Maina Cloud demo request');
-const body = encodeURIComponent('Pick 2-3 time windows that work for you:\n- \n- \n- \n');
-const href = `mailto:${DEMO.mailto}?subject=${subject}&body=${body}`;
+const href = DEMO.scheduler;
 ---
 
 <section class="demo" id="demo">
@@ -16,7 +14,7 @@ const href = `mailto:${DEMO.mailto}?subject=${subject}&body=${body}`;
     <span class="section-eyebrow">// demo</span>
     <h2 class="demo__title">{DEMO.header}</h2>
     <p class="demo__body">{DEMO.body}</p>
-    <a class="demo__cta" href={href}>{DEMO.ctaLabel}</a>
+    <a class="demo__cta" href={href} target="_blank" rel="noopener">{DEMO.ctaLabel}</a>
   </div>
 </section>
 
