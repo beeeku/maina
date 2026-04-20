@@ -8,29 +8,31 @@
  *     (Traag et al. 2019 showed Louvain sometimes splits a cluster across
  *     two communities connected only through the graph's body).
  *
- *   - **leiden** — starts from Louvain's partition and applies a refinement
- *     pass that guarantees every returned community is **internally
- *     connected**. Disconnected pieces within a Louvain community are split
- *     into their own communities. This always produces modularity ≥ Louvain
- *     because the cross-piece pairs that used to contribute negatively
- *     (A_ij = 0 but k_i·k_j/2m > 0) are removed from the same-community sum.
+ *   - **leiden-connected** — starts from Louvain's partition and applies a
+ *     refinement pass that guarantees every returned community is
+ *     **internally connected**. Disconnected pieces within a Louvain
+ *     community are split into their own communities. This always produces
+ *     modularity ≥ Louvain because the cross-piece pairs that used to
+ *     contribute negatively (A_ij = 0 but k_i·k_j/2m > 0) are removed from
+ *     the same-community sum.
  *
- * This is a pragmatic Leiden — full Traag/Waltman/van Eck refinement adds a
- * per-community random-order move pass and multi-level aggregation. The
- * connectedness-only variant satisfies the two invariants that matter for
- * the wiki use-case:
+ * The label is `"leiden-connected"` rather than `"leiden"` on purpose — the
+ * full Traag/Waltman/van Eck algorithm also does a per-community random-order
+ * move pass and multi-level aggregation. We only do the connectedness-only
+ * refinement, which is enough for the two invariants the wiki use-case cares
+ * about:
  *   1. No disconnected communities.
  *   2. Modularity ≥ Louvain on the same graph.
  *
- * Upgrade to the full algorithm in a follow-up if the module articles still
- * look weird after real-repo measurements.
+ * Upgrade to the full algorithm in a follow-up if module articles still look
+ * weird after real-repo measurements.
  */
 
 import { detectCommunities as detectLouvain } from "./louvain";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
-export type CommunityAlgorithm = "leiden" | "louvain";
+export type CommunityAlgorithm = "leiden-connected" | "louvain";
 
 export interface CommunitiesResult {
 	/** community id → node ids (sorted, stable). */
@@ -42,7 +44,7 @@ export interface CommunitiesResult {
 }
 
 export interface DetectOptions {
-	/** Defaults to `"leiden"`. */
+	/** Defaults to `"leiden-connected"`. */
 	algorithm?: CommunityAlgorithm;
 	/**
 	 * Deterministic seed hook. The current implementation is fully
@@ -124,14 +126,14 @@ function splitIntoConnectedComponents(
 // ─── Public API ─────────────────────────────────────────────────────────
 
 /**
- * Detect communities. Defaults to `leiden` — same shape as the old
+ * Detect communities. Defaults to `leiden-connected` — same shape as the old
  * `detectCommunities` from `./louvain.ts` plus an `algorithm` field.
  */
 export function detectCommunities(
 	adjacency: Map<string, Set<string>>,
 	options: DetectOptions = {},
 ): CommunitiesResult {
-	const algorithm = options.algorithm ?? "leiden";
+	const algorithm = options.algorithm ?? "leiden-connected";
 	// Seed is plumbed for future use; the current deterministic implementation
 	// ignores it. Keeping the parameter in the signature so the contract is
 	// stable when the full Leiden refinement pass lands.
@@ -147,8 +149,8 @@ export function detectCommunities(
 		};
 	}
 
-	// Leiden: refine by splitting any disconnected community into its
-	// connected components.
+	// leiden-connected: refine by splitting any disconnected community into
+	// its connected components.
 	const refined = new Map<number, string[]>();
 	let nextId = 0;
 	// Walk original communities in id order — keeps output deterministic.
@@ -174,5 +176,5 @@ export function detectCommunities(
 		totalEdges(adjacency),
 	);
 
-	return { communities: refined, modularity, algorithm: "leiden" };
+	return { communities: refined, modularity, algorithm: "leiden-connected" };
 }

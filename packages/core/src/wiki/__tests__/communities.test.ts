@@ -19,10 +19,10 @@ function adjOf(
 
 describe("communities.detectCommunities", () => {
 	describe("defaults", () => {
-		it("defaults to leiden", () => {
+		it("defaults to leiden-connected", () => {
 			const adj = adjOf([["a", "b"]]);
 			const r = detectCommunities(adj);
-			expect(r.algorithm).toBe("leiden");
+			expect(r.algorithm).toBe("leiden-connected");
 		});
 
 		it("accepts algorithm: 'louvain'", () => {
@@ -85,7 +85,7 @@ describe("communities.detectCommunities", () => {
 				["g", "h"], // isolated second graph
 			]);
 
-			const leiden = detectCommunities(adj, { algorithm: "leiden" });
+			const leiden = detectCommunities(adj, { algorithm: "leiden-connected" });
 
 			for (const members of leiden.communities.values()) {
 				if (members.length <= 1) continue;
@@ -129,7 +129,7 @@ describe("communities.detectCommunities", () => {
 			]);
 
 			const louvain = detectLouvain(adj);
-			const leiden = detectCommunities(adj, { algorithm: "leiden" });
+			const leiden = detectCommunities(adj, { algorithm: "leiden-connected" });
 
 			expect(leiden.modularity).toBeGreaterThanOrEqual(louvain.modularity);
 		});
@@ -183,7 +183,7 @@ describe("communities.detectCommunities", () => {
 			const adj = adjOf(edges);
 
 			const louvain = detectLouvain(adj);
-			const leiden = detectCommunities(adj, { algorithm: "leiden" });
+			const leiden = detectCommunities(adj, { algorithm: "leiden-connected" });
 
 			expect(leiden.modularity).toBeGreaterThanOrEqual(louvain.modularity);
 			// Leiden must never return a disconnected community on this input.

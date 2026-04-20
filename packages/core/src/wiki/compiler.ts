@@ -4,7 +4,7 @@
  * Pipeline:
  * 1. Run all extractors (code entities, features, decisions, workflow traces)
  * 2. Build the unified knowledge graph
- * 3. Run Louvain community detection for module boundaries
+ * 3. Run community detection (leiden-connected by default) for module boundaries
  * 4. Compute PageRank
  * 5. Generate articles using template-based compilation (no AI)
  * 6. Generate wikilinks via linker
@@ -76,9 +76,9 @@ export interface CompileOptions {
 	 */
 	sample?: boolean;
 	/**
-	 * Community detection algorithm. Defaults to `"leiden"`, which guarantees
-	 * connected communities and modularity ≥ Louvain. Pass `"louvain"` to opt
-	 * back into the legacy path. See `./communities.ts`.
+	 * Community detection algorithm. Defaults to `"leiden-connected"`, which
+	 * guarantees connected communities and modularity ≥ Louvain. Pass
+	 * `"louvain"` to opt back into the legacy path. See `./communities.ts`.
 	 */
 	communityAlgorithm?: CommunityAlgorithm;
 	/**
@@ -1107,9 +1107,9 @@ export async function compile(
 			traces,
 		);
 
-		// ── Step 3: Community detection (Leiden by default, Louvain opt-in) ──
+		// ── Step 3: Community detection (leiden-connected by default) ────────
 		const communityResult = detectCommunities(graph.adjacency, {
-			algorithm: options.communityAlgorithm ?? "leiden",
+			algorithm: options.communityAlgorithm ?? "leiden-connected",
 		});
 
 		// ── Step 4: Compute PageRank ───────────────────────────────────
