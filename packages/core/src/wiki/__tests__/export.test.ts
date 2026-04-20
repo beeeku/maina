@@ -163,14 +163,45 @@ describe("exportObsidian", () => {
 		expect(matches.length).toBeGreaterThanOrEqual(2);
 	});
 
-	it("includes [[wikilinks]] for outgoing and incoming edges", () => {
+	it("includes [[wikilinks]] that resolve to canonical file paths", () => {
 		const files = exportObsidian(fixture(), NO_ARTICLES);
 		const greeterKey = findPath(files, "entity/entity_Greeter");
 		const greeter = (greeterKey && files[greeterKey]) || "";
+		const versionKey = findPath(files, "entity/entity_VERSION") ?? "";
+		const coreKey = findPath(files, "module/module_core") ?? "";
 		expect(greeter).toContain("## Outgoing");
-		expect(greeter).toContain("- references → [[entity:VERSION|VERSION]]");
+		// Links point at the actual file basename (minus .md), so Obsidian's
+		// resolver can reach the file even when the filename was hash-suffixed.
+		expect(greeter).toContain(
+			`- references → [[${versionKey.replace(/\.md$/, "")}|VERSION]]`,
+		);
 		expect(greeter).toContain("## Incoming");
-		expect(greeter).toContain("- contains ← [[module:core|core]]");
+		expect(greeter).toContain(
+			`- contains ← [[${coreKey.replace(/\.md$/, "")}|core]]`,
+		);
+	});
+
+	it("every wikilink target corresponds to a file the export actually wrote", () => {
+		const files = exportObsidian(fixture(), NO_ARTICLES);
+		// Collect the canonical set of page basenames (minus .md).
+		const pageBasenames = new Set(
+			Object.keys(files)
+				.filter((k) => k.endsWith(".md") && k !== "index.md")
+				.map((k) => k.replace(/\.md$/, "")),
+		);
+		// Every [[link|label]] in every page (including index) must target one
+		// of those basenames — raw ids are not valid on their own because the
+		// filename may carry a disambiguating hash suffix.
+		const linkRe = /\[\[([^|\]]+)\|/g;
+		for (const [, contents] of Object.entries(files)) {
+			for (const match of contents.matchAll(linkRe)) {
+				const target = match[1];
+				if (!target) continue;
+				// Skip Obsidian workspace JSON (not markdown).
+				if (target.startsWith("{")) continue;
+				expect(pageBasenames.has(target)).toBe(true);
+			}
+		}
 	});
 
 	it("frontmatter carries node metadata", () => {

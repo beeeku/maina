@@ -161,6 +161,21 @@ describe("Wiki Compiler", () => {
 			expect(moduleArticles.length).toBeGreaterThan(0);
 		});
 
+		it("gives every module article a unique path (no cross-community overwrite)", async () => {
+			// leiden-connected can split a Louvain community in two, so two
+			// communities can derive the same `moduleName`. The compiler must
+			// still emit distinct paths — last-write-wins would silently lose
+			// one of the articles.
+			const result = await compile(makeOptions());
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+
+			const modulePaths = result.value.articles
+				.filter((a) => a.type === "module")
+				.map((a) => a.path);
+			expect(new Set(modulePaths).size).toBe(modulePaths.length);
+		});
+
 		it("should produce entity articles for top entities", async () => {
 			const result = await compile(makeOptions());
 			expect(result.ok).toBe(true);

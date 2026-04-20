@@ -1121,7 +1121,11 @@ export async function compile(
 		// ── Step 6: Generate template-based articles ───────────────────
 		const articles: WikiArticle[] = [];
 
-		// Module articles — one per community.
+		// Module articles — one per community. leiden-connected can split a
+		// Louvain community in two, so two distinct communities can derive
+		// the same `moduleName`. Track used paths and suffix with the
+		// community id on collision so neither article gets overwritten.
+		const usedModulePaths = new Set<string>();
 		for (const [commId, members] of communityResult.communities) {
 			const moduleNodes = members.filter(
 				(m) => graph.nodes.get(m)?.type === "module",
@@ -1146,8 +1150,12 @@ export async function compile(
 				pageRankScores,
 			);
 
-			const safeName = moduleName.replace(/[^a-zA-Z0-9_-]/g, "-");
+			const safeBase = moduleName.replace(/[^a-zA-Z0-9_-]/g, "-");
+			const safeName = usedModulePaths.has(`wiki/modules/${safeBase}.md`)
+				? `${safeBase}-${commId}`
+				: safeBase;
 			const articlePath = `wiki/modules/${safeName}.md`;
+			usedModulePaths.add(articlePath);
 			const maxPR = Math.max(
 				0,
 				...memberEntities.map(

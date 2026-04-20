@@ -198,6 +198,16 @@ function obsidianFilenameForNode(node: GraphNode): string {
 }
 
 /**
+ * Wikilink target for a node — same canonical path Obsidian will write,
+ * minus the `.md` extension. Using raw node ids would break navigation
+ * whenever `obsidianFilenameForNode` applies sanitisation or the hash
+ * suffix.
+ */
+function obsidianLinkForNode(node: GraphNode): string {
+	return obsidianFilenameForNode(node).replace(/\.md$/, "");
+}
+
+/**
  * Directory map: `path → file contents`. Caller writes each entry to disk.
  *
  * Layout:
@@ -254,7 +264,9 @@ export function exportObsidian(
 			for (const e of outs) {
 				const tgt = graph.nodes.get(e.target);
 				if (tgt) {
-					lines.push(`- ${e.type} → [[${tgt.id}|${tgt.label}]]`);
+					lines.push(
+						`- ${e.type} → [[${obsidianLinkForNode(tgt)}|${tgt.label}]]`,
+					);
 				}
 			}
 			lines.push("");
@@ -265,7 +277,9 @@ export function exportObsidian(
 			for (const e of ins) {
 				const src = graph.nodes.get(e.source);
 				if (src) {
-					lines.push(`- ${e.type} ← [[${src.id}|${src.label}]]`);
+					lines.push(
+						`- ${e.type} ← [[${obsidianLinkForNode(src)}|${src.label}]]`,
+					);
 				}
 			}
 			lines.push("");
@@ -285,7 +299,7 @@ export function exportObsidian(
 		index.push(`## ${type}`);
 		index.push("");
 		for (const n of byType.get(type) ?? []) {
-			index.push(`- [[${n.id}|${n.label}]]`);
+			index.push(`- [[${obsidianLinkForNode(n)}|${n.label}]]`);
 		}
 		index.push("");
 	}
