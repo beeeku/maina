@@ -4,7 +4,7 @@
 
 *Observe. Learn. Verify.*
 
-[Docs](https://mainahq.com/) | [Getting Started](https://mainahq.com/getting-started/) | [Commands](https://mainahq.com/commands/) | [Roadmap](https://mainahq.com/roadmap/)
+[Docs](https://mainahq.com/) | [Getting Started](https://mainahq.com/getting-started/) | [Commands](https://mainahq.com/commands/) | [Roadmap](https://mainahq.com/roadmap/) | [Context7](https://context7.com/mainahq/maina)
 
 ---
 
