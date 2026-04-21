@@ -264,7 +264,18 @@ async function openEditor(rule: Rule): Promise<Rule> {
 	// to `vi`), and read the edited text back. If anything fails — missing
 	// editor, non-zero exit, empty edit — we keep the original rule rather
 	// than dropping user-authored content silently.
-	const editor = process.env.VISUAL ?? process.env.EDITOR ?? "vi";
+	const editorRaw = process.env.VISUAL ?? process.env.EDITOR ?? "vi";
+	// `$VISUAL` / `$EDITOR` routinely carry args: `code --wait`, `vim -u NONE`,
+	// `emacs -nw`, etc. Passing the whole string as argv[0] would make Bun
+	// look for a binary literally named `"code --wait"`. We tokenise on
+	// whitespace; quoted editor strings aren't part of the standard contract
+	// (`git`/`VISUAL` conventions are whitespace-separated) so we don't
+	// attempt full shell-word parsing.
+	const editorArgv = editorRaw
+		.trim()
+		.split(/\s+/)
+		.filter((s) => s.length > 0);
+	if (editorArgv.length === 0) return rule;
 	const tmp = join(
 		tmpdir(),
 		`maina-rule-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`,
@@ -276,7 +287,7 @@ async function openEditor(rule: Rule): Promise<Rule> {
 	try {
 		writeFileSync(tmp, header + rule.text + "\n");
 		const proc = Bun.spawn({
-			cmd: [editor, tmp],
+			cmd: [...editorArgv, tmp],
 			stdin: "inherit",
 			stdout: "inherit",
 			stderr: "inherit",

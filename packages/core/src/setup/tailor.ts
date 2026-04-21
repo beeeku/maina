@@ -112,7 +112,9 @@ export function validateConstitution(text: string): ValidateResult {
 }
 
 function stripFirstHeading(section: string): string {
-	return section.replace(/^##\s+[^\n]*\n/, "");
+	// `\r?\n` so CRLF checkouts (Windows) strip the same way as LF — otherwise
+	// the heading line lingers in `expectedBody` and validation false-fails.
+	return section.replace(/^##\s+[^\r\n]*\r?\n/, "");
 }
 
 function normaliseSectionText(text: string): string {
@@ -126,11 +128,18 @@ function normaliseSectionText(text: string): string {
 }
 
 function extractSection(text: string, heading: string): string | null {
+	// JavaScript RegExp has no `\Z` end-of-input anchor — what the earlier
+	// pattern used as `\Z` was being parsed as a literal `Z`. We normalise
+	// the input first and append a sentinel `\n## __END__` so the lookahead
+	// always has the next heading to terminate on, even when the section we
+	// want is the last one in the document.
+	const normalised = text.replace(/\r\n/g, "\n");
+	const sentinel = `${normalised}\n## __END__`;
 	const re = new RegExp(
-		`^##\\s+${heading}\\b[^\\n]*\\n([\\s\\S]*?)(?=^##\\s|\\Z)`,
+		`^##\\s+${heading}\\b[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s)`,
 		"m",
 	);
-	const m = re.exec(text);
+	const m = re.exec(sentinel);
 	return m ? (m[1] ?? null) : null;
 }
 
