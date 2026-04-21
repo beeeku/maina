@@ -10,8 +10,23 @@
  */
 
 /** Change in one place; propagates to every install-line appearance
- *  on the page AND to the terminal demo's input frames. */
-export const INSTALL_COMMAND = "bunx @mainahq/cli@latest setup" as const;
+ *  on the page AND to the terminal demo's input frames.
+ *
+ *  Canonical command is `curl … | bash` (installs globally, leaves
+ *  `maina` on PATH so AI agents that spawn subshells can find it —
+ *  see onboarding-60s Wave 1, gap G1). `bunx @mainahq/cli@latest
+ *  setup` and `bun add -g @mainahq/cli` are documented alternates
+ *  in `docs/getting-started.mdx`. */
+export const INSTALL_COMMAND =
+	"curl -fsSL https://api.mainahq.com/install | bash" as const;
+
+/** Alternate install lines shown under the Alternates disclosure. */
+export const INSTALL_ALTERNATES = [
+	"bun add -g @mainahq/cli",
+	"pnpm add -g @mainahq/cli",
+	"npm install -g @mainahq/cli",
+	"bunx @mainahq/cli@latest setup",
+] as const;
 
 /** Same string, prefixed with the shell prompt — what the terminal
  *  animation echoes as its first input line. */

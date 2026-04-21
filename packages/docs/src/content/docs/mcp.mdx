@@ -41,7 +41,7 @@ The launcher is auto-detected per machine, in this priority order:
 
 Tiers 1-3 are written using the **absolute** resolved binary location (`/opt/homebrew/bin/bunx`, `/Users/.../.bun/bin/maina`, etc.) so MCP clients with stripped-PATH spawn contexts (Cursor, Zed, Claude Code desktop) can find them. Tier 4 is the only case where the bare command name is written. Manual examples below use `npx` for portability.
 
-The setup wizard (`maina setup`) also writes the project-scoped configs (`.mcp.json` and `.claude/settings.json`) for you, so most users won't need `maina mcp add` unless they want maina available in every project from any client.
+The setup wizard (`maina setup`) also writes the project-scoped configs (`.mcp.json`, `.claude/settings.json`, `.cursor/mcp.json`) for you using a **keyed JSON merge** — every existing `mcpServers.*` entry is preserved byte-for-byte and only the `maina` key is written. Safe to re-run; safe against hand-edited configs. Most users won't need `maina mcp add` unless they want maina available in every project from any client.
 
 Or configure manually per tool:
 
@@ -107,26 +107,45 @@ Or configure manually per tool:
 
 No plugins, no extensions, no separate server process.
 
-## Tools
+## Tools — progressive disclosure
 
-The MCP server exposes 14 tools, each delegating to the appropriate engine:
+By default the MCP server registers **three high-value tools + one discovery meta-tool** at handshake, keeping the capability payload that every session streams to the host small:
 
-| Tool | Description | Engine |
+| Default (handshake) | Description | Engine |
 |------|------------|--------|
-| `getContext` | Get focused codebase context for a command. Returns context assembled from the relevant layers with token budget applied. | Context |
-| `getConventions` | Get the project constitution and conventions. Returns `.maina/constitution.md` content. | Prompt |
 | `verify` | Run the verification pipeline on staged or specified files. Returns findings with severity and location. | Verify |
+| `getContext` | Get focused codebase context for a command. Returns context assembled from the relevant layers with token budget applied. | Context |
+| `reviewCode` | Run two-stage review on a diff — spec compliance first, then code quality. | Verify + Prompt |
+| `list_tools` | Enumerate every MCP tool the server could expose, for capability discovery. Returns the full 10-tool catalogue without registering them. | Server |
+
+Opt in to the **full 10-tool surface** with `--all-tools`. In this mode `list_tools` is no longer registered (it was only relevant when the remaining seven were hidden):
+
+```bash
+maina --mcp --all-tools
+# or via createMcpServer({ allTools: true })
+```
+
+| Extended (only with `--all-tools`) | Description | Engine |
+|------|------------|--------|
+| `getConventions` | Get the project constitution and conventions. Returns `.maina/constitution.md` content. | Prompt |
 | `checkSlop` | Check code for AI-generated slop patterns (filler words, hallucinated imports, dead code). | Verify |
-| `reviewCode` | Run two-stage review on a diff -- spec compliance first, then code quality. | Verify + Prompt |
 | `explainModule` | Get a Mermaid dependency diagram for a directory. Visualizes module structure and cross-file references. | Context |
 | `suggestTests` | Generate TDD test stubs from a plan.md file. Returns test code with red-green annotations. | Prompt + Context |
 | `analyzeFeature` | Check spec/plan/tasks consistency for a feature. Reports mismatches and orphaned artifacts. | Context |
 | `wikiQuery` | Search and synthesize answers from codebase wiki. Returns AI-generated answer with source citations. | Context (L5) |
 | `wikiStatus` | Wiki health dashboard — article counts, coverage, staleness. | Context |
-| `ask_question` | Ask the wiki an open-ended question. DeepWiki-compatible entry point. | Context (L5) |
-| `list_tools` | Enumerate every MCP tool the server exposes, for capability discovery. | Server |
-| `read_wiki_structure` | Return the wiki's article index — titles, types, paths. DeepWiki-compatible. | Context |
-| `read_wiki_contents` | Fetch the full markdown of a named wiki article. DeepWiki-compatible. | Context |
+
+**DeepWiki compat** — three additional tools are registered alongside the 10 when `--all-tools` is on, preserving wire-compatibility with DeepWiki clients:
+
+| DeepWiki-compat | Description | Engine |
+|------|------------|--------|
+| `ask_question` | Ask the wiki an open-ended question. | Context (L5) |
+| `read_wiki_structure` | Return the wiki's article index — titles, types, paths. | Context |
+| `read_wiki_contents` | Fetch the full markdown of a named wiki article. | Context |
+
+Set `MAINA_MCP_STRICT_TEN=1` to prune DeepWiki from the `--all-tools` surface when you need an exact 10-tool handshake (for comparison tests, for example).
+
+Why progressive: every tool description is streamed to the host on every session start, and that payload burns conversation context before any real work happens. Three tools at handshake is enough for the most common flows; agents that need the rest can call `list_tools` to discover them and ask the user to relaunch with `--all-tools`.
 
 ## How It Works
 

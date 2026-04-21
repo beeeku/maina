@@ -1,6 +1,6 @@
 ---
 title: Commands
-description: All 38+ Maina commands organized by workflow phase -- Brainstorm, Define, Build, Verify, Wiki, Cloud, and Meta.
+description: Every Maina command organized by workflow phase -- Brainstorm, Define, Build, Verify, Wiki, Cloud, and Meta. The canonical surface is whatever `maina --help` prints.
 ---
 
 import Mermaid from '../../components/Mermaid.astro';
@@ -44,15 +44,18 @@ import Mermaid from '../../components/Mermaid.astro';
     style Wiki fill:#4a1942,stroke:#e879f9,color:#f0abfc
 `} />
 
-Maina has 38+ commands organized into seven workflow phases. Every command draws from the three engines -- Context, Prompt, and Verify -- as needed.
+Maina commands are organized into seven workflow phases. Every command draws from the three engines -- Context, Prompt, and Verify -- as needed. Run `maina --help` to see the live top-level surface (internal commands like `analyze`, `stats`, and `sync` are hidden from top-level help but still callable by name).
 
-Eight commands support `--json` for machine-readable output (JSON envelope with `{ data, error, meta }`): `analyze`, `commit`, `context`, `doctor`, `review`, `slop`, `stats`, and `verify`.
+Commands that support `--json` for machine-readable output (JSON envelope with `{ data, error, meta }`): `analyze`, `commit`, `context`, `doctor`, `review`, `slop`, `stats`, `verify`, `wiki status`.
 
 ## Setup Phase
 
 | Command | Description |
 |---------|------------|
-| `maina setup` | Guided first-time setup — detects IDE, configures MCP, runs init + doctor |
+| `maina setup` | Guided first-time setup — detects stack, derives constitution from your existing rule files, materialises skills, kicks off the wiki in background. `--yes` skips prompts; `--ci` emits one JSON object per phase; `--update` re-tailors; `--reset` backs up `.maina/` and starts fresh. |
+| `maina doctor` | Health check across tools, engines, AI status, wiki coverage, and MCP integrations. Reads both project-local and user-global MCP configs (`~/.claude/settings.json`, `~/.cursor/mcp.json`, `~/.codeium/windsurf/mcp_config.json`, `~/.config/zed/settings.json`) and reports scope per client: `project`, `global`, `both`, or `missing`. |
+| `maina doctor --fix` | Iterate every `missing` MCP row and execute its printed `maina mcp add --client X --scope global` remediation. Confirms interactively; `--yes` skips (`--json` implies `--yes`). |
+| `maina doctor --json` | Emit `{tools, engines, aiStatus, wikiHealth, mcpHealth: { integrations: [{client, scope, fix?}] }, cacheStats}` for CI consumption. |
 | `maina mcp add` | Install the maina MCP server in every detected client's global config (Claude Code, Cline, Codex, Continue, Copilot, Cursor, Gemini CLI, OpenHands, Roo Code, Windsurf, Zed AI). Auto-detects; pass `--client <list>` to override or `--scope project` for per-repo install. |
 | `maina mcp remove` | Strip the maina MCP entry from each client's config. Defaults to global scope; same `--client / --scope global\|project\|both / --dry-run / --json` flags as `add`. |
 | `maina mcp list` | Show maina MCP install status per client. |
@@ -75,7 +78,7 @@ Set up your project and define architecture.
 | `maina init --install` | Auto-install missing verification tools after bootstrapping. | None |
 | `maina configure` | Interactive project settings -- update constitution, conventions, visual URLs, tool preferences. | None |
 | `maina ticket` | Create a GitHub Issue with automatic module tagging. Use `--repo` for cross-repo issue creation with aliases from `.maina/config.json`. | Semantic (module structure) |
-| `maina context` | Generate focused codebase context. Loads all 4 layers in exploration mode (80% budget). | All 4 layers (exploration) |
+| `maina context` | Generate focused codebase context. Loads all 4 layers in exploration mode (80% budget). Writes to `.maina/CONTEXT.md` by default; use `--output <path>` to override. An existing `CONTEXT.md` at repo root is preserved unless `--force`. | All 4 layers (exploration) |
 | `maina explain` | Visualize codebase structure with Mermaid dependency diagrams and module summaries. | Semantic (dependency graph) |
 | `maina design` | Create an Architecture Decision Record (ADR) with HLD/LLD sections. Use `--hld` for AI generation. Use `--auto` for fully automated ADR creation from plan context. | Semantic (existing ADRs) |
 | `maina review-design` | Review an ADR against existing decisions and the project constitution. Blocks empty ADRs. | Semantic (ADRs + constitution) |
@@ -125,9 +128,11 @@ Compile and query codebase knowledge.
 | Command | Description | Context Needs |
 |---------|------------|---------------|
 | `maina wiki init` | Compile codebase knowledge wiki from code, plans, specs, ADRs, workflows | Working, Semantic |
+| `maina wiki init --background` | Fork the compile, seed `.maina/wiki/.progress.json`, return immediately. Poll with `maina wiki status`. `maina setup` uses this to keep onboarding under 60 s. | Working, Semantic |
+| `maina wiki init --depth quick` | Compile only the top 20 PageRank-scored files. Used by `setup`'s background seed. | Working, Semantic |
 | `maina wiki compile` | Incremental recompilation. `--full` for complete. `--ai` for LLM enhancement. `--dry-run` to preview. | Working |
 | `maina wiki query <question>` | AI-powered search across wiki articles. `--save` to persist answer. | Wiki (L5) |
-| `maina wiki status` | Health dashboard: articles by type, coverage, staleness, last compile | None |
+| `maina wiki status` | Health dashboard: articles by type, coverage, staleness, last compile. When a background compile is running, shows `Compiling… N%` + ETA; marked `stalled` when the progress file hasn't been updated in 10+ minutes. `--json` emits the structured snapshot. | None |
 | `maina wiki lint` | Check wiki for stale articles, broken links, spec drift, decision violations | Working, Semantic |
 | `maina wiki ingest <source>` | Add external docs to wiki/raw/ for compilation | None |
 

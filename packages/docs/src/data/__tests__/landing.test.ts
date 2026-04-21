@@ -42,13 +42,21 @@ describe("landing copy invariants", () => {
 
 	it("terminal frames use INSTALL_PROMPT (not a hardcoded string)", () => {
 		// Any `input` frame that runs the install command must reach it via
-		// the shared constant — no literal "bunx @mainahq/cli@latest setup"
-		// baked into terminal-script.ts frames.
-		const literal = "bunx @mainahq/cli@latest setup";
+		// the shared constant — no literal install lines baked into
+		// terminal-script.ts frames. Guards against both the canonical
+		// `curl … | bash` and the legacy `bunx` form in case the constant
+		// flips again in future.
+		const literals = [
+			"curl -fsSL https://api.mainahq.com/install | bash",
+			"bunx @mainahq/cli@latest setup",
+		];
 		const allFrames = [...heroFrames, ...fullFrames];
 		for (const f of allFrames) {
-			if (f.kind === "input" && f.text.includes(literal)) {
-				expect(f.text).toBe(INSTALL_PROMPT);
+			if (f.kind !== "input") continue;
+			for (const literal of literals) {
+				if (f.text.includes(literal)) {
+					expect(f.text).toBe(INSTALL_PROMPT);
+				}
 			}
 		}
 	});

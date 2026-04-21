@@ -6,12 +6,29 @@ description: One command. Zero config. No API key. Tailored constitution, agent 
 import { Steps, Aside, CardGrid, LinkCard, Badge } from '@astrojs/starlight/components';
 
 ```bash
+curl -fsSL https://api.mainahq.com/install | bash
+```
+
+That's the whole install. No API key. No login. No Docker. Installs `maina` globally so the AI agents in your editor can shell out to it — the script fails loudly (distinct exit codes for no-package-manager / install-failed / PATH-missing) rather than pretending everything worked.
+
+In under 60 seconds `maina setup` detects your stack, writes a constitution tailored to *your* repo, wires up every AI coding tool you have installed, seeds a searchable codebase wiki in the background, and runs `maina verify` to surface a real finding inline.
+
+<details>
+<summary>Alternate install paths</summary>
+
+If you already have a package manager on PATH, a global install works too:
+
+```bash
+bun  add -g @mainahq/cli
+pnpm add -g @mainahq/cli
+npm  install -g @mainahq/cli
+
+# One-off; setup will warn that `maina` will not be on PATH after exit,
+# so AI-agent subshells won't find it. Prefer the one-liner above.
 bunx @mainahq/cli@latest setup
 ```
 
-That's the whole install. No API key. No login. No Docker. It works anywhere Bun or Node runs.
-
-In under 60 seconds `maina setup` detects your stack, writes a constitution tailored to *your* repo, wires up every AI coding tool you have installed, seeds a searchable codebase wiki, and runs `maina verify` to surface a real finding inline.
+</details>
 
 ## What the wizard does
 
@@ -19,17 +36,33 @@ In under 60 seconds `maina setup` detects your stack, writes a constitution tail
 
 1. **Detect** — Languages, frameworks, package manager, linters, test runners, and CI system, inferred from files already in your repo. No prompts to fill out.
 
-2. **Infer** — A tailored `.maina/constitution.md` is generated via the host AI if you're running inside Claude Code / Cursor / Codex, or via the anonymous Cloudflare AI Gateway if not. Bring your own key with `MAINA_API_KEY` for full control. No network? Setup degrades gracefully and ships a solid default.
+2. **Infer** — A tailored `.maina/constitution.md` is generated via the host AI if you're running inside Claude Code / Cursor / Codex, or via the anonymous Cloudflare AI Gateway if not. Bring your own key with `OPENROUTER_API_KEY` for full control. No network? Setup degrades gracefully — the offline template still includes the `## Maina Workflow` and `## File Layout` sections verbatim, and the reason is surfaced in the terminal and logged to `.maina/setup.log` with a copy-pasteable recovery line.
 
-3. **Scaffold** — Five agent instruction files are written with non-destructive `<maina-managed>` regions so your existing rules stay intact:
+3. **Scaffold** — Agent instruction files use non-destructive `<maina-managed>` regions so your existing rules stay intact:
 
    - `AGENTS.md`
+   - `CLAUDE.md`
    - `.cursor/rules/maina.mdc`
-   - `.claude/CLAUDE.md`
    - `.github/copilot-instructions.md`
    - `.windsurf/rules/maina.md`
 
-   The codebase wiki is seeded in the foreground for 10 seconds; anything not finished continues in the background while you keep working.
+   Project-level MCP configs use **keyed JSON merge** — every existing `mcpServers.*` entry is preserved byte-for-byte; only the `maina` key is written:
+
+   - `.claude/settings.json` (Claude Code)
+   - `.cursor/mcp.json` (Cursor)
+
+   The eight cross-platform skills are materialised into your project so any agent can read them directly:
+
+   - `.maina/skills/onboarding/SKILL.md`
+   - `.maina/skills/verification-workflow/SKILL.md`
+   - `.maina/skills/tdd/SKILL.md`
+   - `.maina/skills/code-review/SKILL.md`
+   - `.maina/skills/plan-writing/SKILL.md`
+   - `.maina/skills/context-generation/SKILL.md`
+   - `.maina/skills/wiki-workflow/SKILL.md`
+   - `.maina/skills/cloud-workflow/SKILL.md`
+
+   The codebase wiki is kicked off in the **background** — `maina setup` returns immediately after seeding `.maina/wiki/.progress.json`. Poll progress any time with `maina wiki status`.
 
 4. **Verify** — `maina verify` runs once and surfaces one real finding inline. Now every agent on your machine — Claude Code, Cursor, Copilot, Windsurf — respects the same rules and reviews the same diff.
 
@@ -49,10 +82,10 @@ Target: **under 60 seconds** in host mode, **under 90 seconds** in cloud mode.
 ## CI and automation
 
 ```bash
-bunx @mainahq/cli@latest setup --ci
+maina setup --ci
 ```
 
-`--ci` disables all prompts and emits one JSON object per phase on stdout, making the wizard safe to drop into GitHub Actions, GitLab CI, or any provisioning script.
+`--ci` disables all prompts and emits one JSON object per phase on stdout, making the wizard safe to drop into GitHub Actions, GitLab CI, or any provisioning script. The onboarding promise is enforced on every push via the [`onboarding-e2e` matrix](https://github.com/mainahq/maina/blob/master/.github/workflows/onboarding-e2e.yml): Claude Code × TypeScript must complete in under 60 seconds, with Claude Code / Cursor × Python / Go / Rust tracked as informational cells.
 
 ## Next steps
 

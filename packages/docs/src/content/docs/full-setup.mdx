@@ -14,27 +14,35 @@ Maina is the verification layer for AI-generated code. 19+ tools. 7 languages. O
 ## Install
 
 <Tabs>
-  <TabItem label="Wizard (recommended)">
-    ```bash
-    bunx @mainahq/cli@latest setup
-    ```
-    Detects your stack, generates a tailored constitution, scaffolds agent files, seeds the wiki, and runs verify — no API key, no login. See [Getting Started](/getting-started).
-  </TabItem>
-  <TabItem label="bun">
-    ```bash
-    bun add -g @mainahq/cli
-    ```
-  </TabItem>
-  <TabItem label="npm">
-    ```bash
-    npm install -g @mainahq/cli
-    ```
-  </TabItem>
-  <TabItem label="One-liner (shell)">
+  <TabItem label="One-liner (recommended)">
     ```bash
     curl -fsSL https://api.mainahq.com/install | bash
     ```
-    Detects your OS and installs maina globally. Pair with `maina setup`.
+    Detects your OS + package manager, installs `maina` globally, and runs `maina setup` in the current repo. Exits with a shell-profile-specific remediation if `maina` doesn't land on PATH afterwards. See [Getting Started](/getting-started).
+  </TabItem>
+  <TabItem label="bun (global)">
+    ```bash
+    bun add -g @mainahq/cli
+    maina setup
+    ```
+  </TabItem>
+  <TabItem label="pnpm (global)">
+    ```bash
+    pnpm add -g @mainahq/cli
+    maina setup
+    ```
+  </TabItem>
+  <TabItem label="npm (global)">
+    ```bash
+    npm install -g @mainahq/cli
+    maina setup
+    ```
+  </TabItem>
+  <TabItem label="bunx (one-off)">
+    ```bash
+    bunx @mainahq/cli@latest setup
+    ```
+    Runs the wizard from a cached copy. Setup warns that `maina` will not be on PATH after exit, so AI-agent subshells won't find it — prefer one of the global install paths above.
   </TabItem>
 </Tabs>
 
