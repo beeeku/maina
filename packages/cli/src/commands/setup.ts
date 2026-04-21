@@ -39,6 +39,8 @@ import {
 	isTelemetryOptedOut,
 	newSetupId,
 	recoveryCommand,
+	renderFileLayoutSection,
+	renderWorkflowSection,
 	resolveSetupAI,
 	type SetupAIMetadata,
 	type SetupAIResult,
@@ -1326,24 +1328,37 @@ function writeDegradedLogEntry(
 
 function buildHostFallbackConstitution(stack: StackContext): string {
 	const langs = stack.languages.join(", ") || "your stack";
-	return `# Project Constitution
-
-> Stub authored by \`maina setup\` while the host AI completes the request.
-> Re-run \`maina setup --update\` once the host returns to refresh.
-
-## Stack
-
-- Languages: ${langs}
-- Package manager: ${stack.packageManager}
-
-## Principles
-
-1. Tests first.
-2. Small, reviewable diffs.
-3. Conventional commits.
-4. No silent failures — return \`Result<T, E>\`.
-5. Lint and type-check before push.
-`;
+	const principles = [
+		"# Project Constitution",
+		"",
+		"> Stub authored by `maina setup` while the host AI completes the request.",
+		"> Re-run `maina setup --update` once the host returns to refresh.",
+		"",
+		"## Stack",
+		"",
+		`- Languages: ${langs}`,
+		`- Package manager: ${stack.packageManager}`,
+		"",
+		"## Principles",
+		"",
+		"1. Tests first.",
+		"2. Small, reviewable diffs.",
+		"3. Conventional commits.",
+		"4. No silent failures — return `Result<T, E>`.",
+		"5. Lint and type-check before push.",
+		"",
+	].join("\n");
+	// Wave 2 acceptance criterion 6.2: every generated constitution — including
+	// the host-fallback stub while delegation is in flight — must ship with the
+	// `## Maina Workflow` and `## File Layout` sections. We reuse the same
+	// renderers the tailor/generic paths use so AI agents that read this stub
+	// still land feature artefacts under `.maina/features/…`.
+	const workflow = renderWorkflowSection();
+	const layout = renderFileLayoutSection({
+		languages: stack.languages,
+		toplevelDirs: [],
+	});
+	return `${principles}\n${workflow}\n\n${layout}\n`;
 }
 
 // ── Commander Command ────────────────────────────────────────────────────────
