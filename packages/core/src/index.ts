@@ -45,6 +45,16 @@ export type {
 	Tier3Results,
 	Tier3Totals,
 } from "./benchmark/types";
+// Bootstrap — shared scaffolding used by `init` and `setup`
+export {
+	COMMIT_PROMPT_TEMPLATE,
+	CONFIG_YML_STUB,
+	CONSTITUTION_STUB,
+	REVIEW_PROMPT_TEMPLATE,
+	type ScaffoldOptions,
+	type ScaffoldReport,
+	scaffold,
+} from "./bootstrap/index";
 // Cache
 export {
 	type CacheManager,
@@ -357,7 +367,11 @@ export {
 	type ConfirmResult,
 	confirmRules,
 	contextHash,
+	type CursorMcpEntry,
 	degradedBanner,
+	type DeploySkillsOptions,
+	type DeploySkillsReport,
+	deploySkills,
 	detectExistingRuleFiles,
 	deviceFingerprint,
 	extractManaged,
@@ -372,6 +386,10 @@ export {
 	loadUniversalPrompt,
 	MAINA_REGION_END,
 	MAINA_REGION_START,
+	type MainaMcpEntry,
+	type MergeJsonKeyedOptions,
+	type MergeJsonKeyedResult,
+	mergeJsonKeyed,
 	mergeManaged,
 	newSetupId,
 	type OptOutResult,
@@ -408,9 +426,17 @@ export {
 	type UniversalPromptInputs,
 	type ValidateResult,
 	validateConstitution,
+	type WriteClaudeSettingsAction,
+	type WriteClaudeSettingsOptions,
+	type WriteClaudeSettingsReport,
+	type WriteCursorMcpAction,
+	type WriteCursorMcpOptions,
+	type WriteCursorMcpReport,
 	wrapManaged,
 	writeAllAgentFiles,
 	writeClaudeMd,
+	writeClaudeSettings,
+	writeCursorMcp,
 } from "./setup/index";
 // Stats
 export {
