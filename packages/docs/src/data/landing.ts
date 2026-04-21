@@ -9,18 +9,6 @@
  * the way it does.
  */
 
-/**
- * Context7 — external docs indexing service that exposes maina's docs
- * through an MCP-native search endpoint. Listed here so the footer / AI-
- * agents section can link to it. The public key is embeddable (not a
- * secret) — Context7 uses it to namespace search + analytics for the
- * maina project; it only ever appears in front-end widget embeds.
- */
-export const CONTEXT7 = {
-	url: "https://context7.com/mainahq/maina",
-	publicKey: "pk_7io1S3BJ34G7mGa8zrRsF",
-} as const;
-
 /** Change in one place; propagates to every install-line appearance
  *  on the page AND to the terminal demo's input frames.
  *
@@ -316,7 +304,6 @@ export const FOOTER = {
 	links: [
 		{ label: "Cloud", href: "/cloud" },
 		{ label: "Docs", href: "/quickstart" },
-		{ label: "Context7", href: CONTEXT7.url },
 		{ label: "GitHub", href: "https://github.com/mainahq/maina" },
 		{
 			label: "License",

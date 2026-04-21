@@ -120,11 +120,8 @@ describe("landing copy invariants", () => {
 		expect(labels).toEqual(["Docs", "Commands", "Wiki", "Cloud", "GitHub"]);
 	});
 
-	it("footer stays trimmed — five or fewer links", () => {
-		// Raised from 4 → 5 when Context7 landed (feat 054 follow-up). If this
-		// ceiling needs to rise again, the next reviewer should push back: footer
-		// links are valuable only as long as they fit on one mobile row.
-		expect(FOOTER.links.length).toBeLessThanOrEqual(5);
+	it("footer is trimmed — four or fewer links", () => {
+		expect(FOOTER.links.length).toBeLessThanOrEqual(4);
 	});
 
 	it("final cta omits Discord until the sign-off lands", () => {
