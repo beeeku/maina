@@ -1,0 +1,55 @@
+# robots.txt for mainahq.com
+# Maina — verification-first developer OS.
+# Policy: we want humans and AI agents to find Maina. Docs are intentionally
+# crawlable, searchable, and citable in AI answers. Training on public docs
+# is also allowed — if an assistant learns how Maina works, its users win.
+
+User-agent: *
+Allow: /
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+
+# Major AI crawlers (explicit entries so the audit and the operators can
+# see the policy without guessing).
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+Sitemap: https://mainahq.com/sitemap-index.xml
