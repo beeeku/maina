@@ -44,9 +44,11 @@ packages/skills/
   onboarding/SKILL.md
 ```
 
+**Materialised on `maina setup`:** the wizard copies every `SKILL.md` into `<your-repo>/.maina/skills/<name>/SKILL.md` so the files live in your tree alongside the code. Idempotent — re-running setup only writes what changed. Agents that can't resolve packages (or that run before `node_modules` is installed) read directly from there.
+
 **For Claude Code:** Skills are discovered automatically when Maina is installed. They appear as available slash commands.
 
-**For Cline / Codex / Continue / Copilot / Cursor / Gemini CLI / OpenHands / Roo Code / Windsurf / Zed AI / any MCP client:** Point the agent at the skill files or include them in your project's agent instructions.
+**For Cline / Codex / Continue / Copilot / Cursor / Gemini CLI / OpenHands / Roo Code / Windsurf / Zed AI / any MCP client:** Point the agent at `.maina/skills/` or include the files in your project's agent instructions.
 
 **Without the CLI:** Copy the SKILL.md files into your project. An AI agent with just the skills follows the verification workflow -- no CLI needed.
 

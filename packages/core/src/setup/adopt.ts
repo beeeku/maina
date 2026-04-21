@@ -11,7 +11,7 @@
  * repos — no file path is resolved outside `cwd`.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import type { Result } from "../db/index";
 
@@ -119,7 +119,7 @@ export async function adoptRules(cwd: string): Promise<Result<Rule[], string>> {
 
 		for (const entry of TOP_LEVEL_FILES) {
 			const full = join(cwd, entry.path);
-			if (!existsSync(full)) continue;
+			if (!isSafeRegularFile(full)) continue;
 			const text = safeRead(full);
 			if (text === null) continue;
 			rules.push(...extractRulesFromText(text, entry.path, entry.kind));
@@ -159,7 +159,7 @@ export function formatProvenanceComment(rule: Rule): string {
 export function detectExistingRuleFiles(cwd: string): string[] {
 	const found: string[] = [];
 	for (const entry of TOP_LEVEL_FILES) {
-		if (existsSync(join(cwd, entry.path))) found.push(entry.path);
+		if (isSafeRegularFile(join(cwd, entry.path))) found.push(entry.path);
 	}
 	for (const dirSource of DIRECTORY_SOURCES) {
 		const dirFull = join(cwd, dirSource.dir);
@@ -169,6 +169,22 @@ export function detectExistingRuleFiles(cwd: string): string[] {
 		}
 	}
 	return found;
+}
+
+/**
+ * `true` only for regular files that are not symbolic links. Matches the
+ * symlink guard the directory walker uses — a top-level `AGENTS.md` pointing
+ * at `/etc/passwd` via a symlink must not be read (CodeRabbit finding
+ * 2026-04-22: the initial Wave-QA fix covered the walker but left top-level
+ * files exposed).
+ */
+function isSafeRegularFile(path: string): boolean {
+	try {
+		const st = lstatSync(path);
+		return st.isFile();
+	} catch {
+		return false;
+	}
 }
 
 // ── Internals ────────────────────────────────────────────────────────────────
@@ -196,12 +212,16 @@ function walkFiles(dir: string, suffixes: string[], cwd: string): WalkedFile[] {
 	}
 	for (const entry of entries.sort()) {
 		const full = join(dir, entry);
-		let st: ReturnType<typeof statSync>;
+		// `lstatSync` does not follow symlinks. A symlinked rules directory
+		// pointing outside `cwd` would otherwise let `walkFiles` read arbitrary
+		// filesystem paths — we skip those entries entirely.
+		let st: ReturnType<typeof lstatSync>;
 		try {
-			st = statSync(full);
+			st = lstatSync(full);
 		} catch {
 			continue;
 		}
+		if (st.isSymbolicLink()) continue;
 		if (st.isDirectory()) {
 			out.push(...walkFiles(full, suffixes, cwd));
 			continue;

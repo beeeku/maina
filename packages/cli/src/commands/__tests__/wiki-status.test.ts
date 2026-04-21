@@ -29,6 +29,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	rmSync,
+	utimesSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -166,14 +167,21 @@ describe("wiki status — progress rendering (G9)", () => {
 		expect(result.progress).toBeNull();
 	});
 
-	test("progress older than 10 minutes is flagged stale", async () => {
+	test("progress file older than 10 minutes is flagged stale (mtime, not startedAt)", async () => {
 		seedWikiDirs(tmpDir);
-		const longAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+		// Keep `startedAt` fresh — this proves staleness comes from file mtime.
+		// An implementation that regressed to checking `startedAt` would
+		// see a recent timestamp and incorrectly report fresh here.
+		const nowIso = new Date().toISOString();
 		writeProgress(tmpDir, {
-			startedAt: longAgo,
+			startedAt: nowIso,
 			percent: 20,
 			etaSeconds: 600,
 		});
+		// Backdate ONLY the file's mtime past the 10-minute threshold.
+		const progressPath = join(tmpDir, ".maina", "wiki", ".progress.json");
+		const hourAgoMs = (Date.now() - 60 * 60 * 1000) / 1000;
+		utimesSync(progressPath, hourAgoMs, hourAgoMs);
 
 		const result = await wikiStatusAction({ cwd: tmpDir });
 

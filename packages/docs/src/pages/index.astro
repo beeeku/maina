@@ -13,7 +13,17 @@ import FinalCta from '../components/FinalCta.astro';
 import Faq from '../components/Faq.astro';
 import Footer from '../components/Footer.astro';
 import { META, NAV } from '../data/landing';
+import cliPackage from '../../../cli/package.json';
 import '../styles/landing.css';
+
+// Fail the build if the CLI version isn't readable — shipping JSON-LD with
+// `softwareVersion: "0.0.0"` is worse than no version at all because it
+// poisons downstream search indexes. The previous `?? '0.0.0'` fallback
+// masked a real config error.
+const cliVersion = (cliPackage as { version?: unknown }).version;
+if (typeof cliVersion !== 'string' || cliVersion.trim() === '') {
+  throw new Error('packages/cli/package.json must declare a non-empty version');
+}
 
 const HERO_VARIANT = import.meta.env.HERO_VARIANT ?? 'v1';
 const Hero = HERO_VARIANT === 'v2' ? HeroV2 : HeroV1;
@@ -21,6 +31,10 @@ const Hero = HERO_VARIANT === 'v2' ? HeroV2 : HeroV1;
 const rawBase = import.meta.env.BASE_URL;
 const base = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 
+// JSON-LD softwareVersion is locked to the CLI's package.json at build
+// time so it can never drift behind a release (see docs-manifest SSOT
+// rule). featureList enumerates engines + surfaces, not tool counts —
+// counts live in the commands/mcp docs where they are also regenerated.
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -30,13 +44,13 @@ const jsonLd = {
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'macOS, Linux, Windows (WSL)',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  softwareVersion: '1.1.0',
+  softwareVersion: cliVersion,
   programmingLanguage: ['TypeScript', 'Python', 'Go', 'Rust', 'C#', 'Java', 'PHP'],
   featureList: [
     'Context Engine (4-layer retrieval, AST + PageRank)',
-    '19-tool verification pipeline (diff-only)',
-    'MCP server',
-    'Constitution + versioned prompts',
+    'Verify Engine (diff-only verification pipeline)',
+    'Progressive MCP server',
+    'Constitution derivation + versioned prompts',
   ],
   codeRepository: 'https://github.com/mainahq/maina',
 };

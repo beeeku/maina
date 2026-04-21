@@ -12,7 +12,14 @@
  * future setup re-runs can re-surface them if their confidence rises.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	unlinkSync,
+	writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Rule } from "./adopt";
 
@@ -253,8 +260,55 @@ async function loadClackPrompt(): Promise<
 }
 
 async function openEditor(rule: Rule): Promise<Rule> {
-	// Minimal implementation — the test suite injects `editImpl` so we only
-	// need a best-effort path for the CLI. Keep as pass-through to avoid
-	// unhandled `$EDITOR` failures in restricted environments.
-	return rule;
+	// Write the current rule text to a temp file, spawn $EDITOR (falling back
+	// to `vi`), and read the edited text back. If anything fails — missing
+	// editor, non-zero exit, empty edit — we keep the original rule rather
+	// than dropping user-authored content silently.
+	const editorRaw = process.env.VISUAL ?? process.env.EDITOR ?? "vi";
+	// `$VISUAL` / `$EDITOR` routinely carry args: `code --wait`, `vim -u NONE`,
+	// `emacs -nw`, etc. Passing the whole string as argv[0] would make Bun
+	// look for a binary literally named `"code --wait"`. We tokenise on
+	// whitespace; quoted editor strings aren't part of the standard contract
+	// (`git`/`VISUAL` conventions are whitespace-separated) so we don't
+	// attempt full shell-word parsing.
+	const editorArgv = editorRaw
+		.trim()
+		.split(/\s+/)
+		.filter((s) => s.length > 0);
+	if (editorArgv.length === 0) return rule;
+	const tmp = join(
+		tmpdir(),
+		`maina-rule-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`,
+	);
+	const header =
+		"# Edit the rule below. Lines starting with `#` are ignored.\n" +
+		`# Source: ${rule.source}\n` +
+		`# Confidence: ${rule.confidence.toFixed(2)}\n\n`;
+	try {
+		writeFileSync(tmp, header + rule.text + "\n");
+		const proc = Bun.spawn({
+			cmd: [...editorArgv, tmp],
+			stdin: "inherit",
+			stdout: "inherit",
+			stderr: "inherit",
+		});
+		const code = await proc.exited;
+		if (code !== 0) return rule;
+		const raw = readFileSync(tmp, "utf-8");
+		const edited = raw
+			.split(/\r?\n/)
+			.filter((l) => !l.startsWith("#"))
+			.join("\n")
+			.trim();
+		if (edited.length === 0) return rule;
+		return { ...rule, text: edited };
+	} catch {
+		return rule;
+	} finally {
+		try {
+			unlinkSync(tmp);
+		} catch {
+			// ignore cleanup failures
+		}
+	}
 }

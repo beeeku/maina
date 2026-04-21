@@ -128,16 +128,52 @@ export async function wikiInitAction(
 		writeProgressSeed(wikiDir);
 		const depth = options.depth ?? "full";
 		const spawn = options._spawnBackground ?? defaultSpawnBackground;
-		const args = [
-			"bun",
-			"run",
-			"maina",
-			"wiki",
-			"init",
-			"--json",
-			"--depth",
-			depth,
-		];
+		// Invoke `maina` directly when it's on PATH (the normal install case).
+		// Falling back to `process.execPath` + `process.argv[1]` keeps the
+		// background spawn working when the CLI was launched from a path that
+		// isn't on the user's PATH (e.g. a bun-linked dev build). We never
+		// use `bun run maina` because user repos don't have a `maina` script
+		// in their package.json, so `bun run maina` would fail.
+		// Resolve a spawn argv that reliably re-enters the same CLI:
+		//   1. If `maina` resolves on PATH → use it directly.
+		//   2. Else if `process.argv[1]` is a real file → `<bun> <script> …`.
+		//   3. Else bail out of the background path entirely — spawning
+		//      `<bun> "" wiki init` produces a cryptic ENOENT and silently
+		//      breaks `maina setup`'s wiki kick-off. Better to log + return
+		//      so the caller can fall back to a foreground compile later.
+		const mainaOnPath = Bun.which("maina");
+		const entryScript = process.argv[1];
+		let args: string[] | null = null;
+		if (mainaOnPath !== null) {
+			args = [mainaOnPath, "wiki", "init", "--json", "--depth", depth];
+		} else if (entryScript && existsSync(entryScript)) {
+			args = [
+				process.execPath,
+				entryScript,
+				"wiki",
+				"init",
+				"--json",
+				"--depth",
+				depth,
+			];
+		}
+		if (args === null) {
+			if (!options.json) {
+				log.warning(
+					"Cannot resolve the maina entry script — skipping background wiki compile. Run `maina wiki init` manually once `maina` is on PATH.",
+				);
+			}
+			return {
+				articlesCreated: 0,
+				modules: 0,
+				entities: 0,
+				features: 0,
+				decisions: 0,
+				architecture: 0,
+				backgrounded: true,
+				duration: 0,
+			};
+		}
 		if (options.ai === true) args.push("--ai");
 		spawn(args, cwd);
 		if (!options.json) {

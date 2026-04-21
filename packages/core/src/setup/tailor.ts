@@ -88,7 +88,63 @@ export function validateConstitution(text: string): ValidateResult {
 	if (!/^##\s+File Layout\b/m.test(text)) {
 		return { ok: false, reason: "missing `## File Layout` section" };
 	}
+
+	// The workflow template is constant — an LLM that paraphrased it instead
+	// of substituting it verbatim is violating the spec. We compare the
+	// extracted body (content after the `## Maina Workflow` heading up to the
+	// next top-level `##`) against the template's body, normalising whitespace
+	// so trailing blanks or re-wrapped lines don't false-fail.
+	const expectedBody = normaliseSectionText(
+		stripFirstHeading(renderWorkflowSection()),
+	);
+	const workflowSection = extractSection(text, "Maina Workflow");
+	if (workflowSection === null || workflowSection.trim().length === 0) {
+		return { ok: false, reason: "`## Maina Workflow` section is empty" };
+	}
+	if (normaliseSectionText(workflowSection) !== expectedBody) {
+		return {
+			ok: false,
+			reason:
+				"`## Maina Workflow` section was paraphrased, not substituted verbatim",
+		};
+	}
 	return { ok: true };
+}
+
+function stripFirstHeading(section: string): string {
+	// `\r?\n` so CRLF checkouts (Windows) strip the same way as LF — otherwise
+	// the heading line lingers in `expectedBody` and validation false-fails.
+	return section.replace(/^##\s+[^\r\n]*\r?\n/, "");
+}
+
+function normaliseSectionText(text: string): string {
+	return text
+		.replace(/\r\n/g, "\n")
+		.split("\n")
+		.map((l) => l.trimEnd())
+		.filter((l) => l.length > 0)
+		.join("\n")
+		.trim();
+}
+
+function extractSection(text: string, heading: string): string | null {
+	// JavaScript RegExp has no `\Z` end-of-input anchor — what the earlier
+	// pattern used as `\Z` was being parsed as a literal `Z`. We normalise
+	// the input first and append a sentinel `\n## __END__` so the lookahead
+	// always has the next heading to terminate on, even when the section we
+	// want is the last one in the document.
+	// The heading is regex-escaped to close the (currently-theoretical) regex
+	// injection vector flagged by ast-grep — a future caller passing
+	// metacharacters would otherwise break the pattern.
+	const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const normalised = text.replace(/\r\n/g, "\n");
+	const sentinel = `${normalised}\n## __END__`;
+	const re = new RegExp(
+		`^##\\s+${escapedHeading}\\b[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s)`,
+		"m",
+	);
+	const m = re.exec(sentinel);
+	return m ? (m[1] ?? null) : null;
 }
 
 export function renderWorkflowSection(): string {

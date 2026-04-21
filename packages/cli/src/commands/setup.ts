@@ -39,6 +39,8 @@ import {
 	isTelemetryOptedOut,
 	newSetupId,
 	recoveryCommand,
+	renderFileLayoutSection,
+	renderWorkflowSection,
 	resolveSetupAI,
 	type SetupAIMetadata,
 	type SetupAIResult,
@@ -829,6 +831,14 @@ export async function setupAction(
 		sp2.stop(`Constitution ready (${ai.source}).`);
 		constitutionText = ai.text;
 	}
+	// Enforce Wave 2 acceptance §6.2: every generated constitution — tailor,
+	// cloud, BYOK, degraded, host-fallback — MUST ship with the two required
+	// sections. Cloud returns raw LLM text that sometimes omits them; rather
+	// than retrying through tailor (expensive + requires a separate prompt
+	// contract with the gateway), we deterministically append any missing
+	// section from the shared renderer so file-layout discipline lands in
+	// every repo regardless of tier.
+	constitutionText = ensureRequiredSections(constitutionText, result.stack);
 
 	// ── Phase 3: scaffold ───────────────────────────────────────────────────
 	const sp3 = deps.spinner();
@@ -1324,26 +1334,88 @@ function writeDegradedLogEntry(
 	}
 }
 
+/**
+ * Post-process any constitution text to guarantee it contains the **canonical**
+ * Wave 2 §6.2 sections. An LLM that paraphrased the workflow would slip past a
+ * heading-only regex check (CodeRabbit finding 2026-04-22) — so we strip any
+ * existing `## Maina Workflow` / `## File Layout` block (canonical or
+ * paraphrased) and re-append the template output. Idempotent: text that
+ * already has the canonical sections ends up with them in the same place
+ * (order-preserving via `includes`) or moved to the end (when a paraphrase
+ * had to be stripped).
+ */
+function ensureRequiredSections(text: string, stack: StackContext): string {
+	const workflowCanonical = renderWorkflowSection();
+	const fileLayoutCanonical = renderFileLayoutSection({
+		languages: stack.languages,
+		toplevelDirs: [],
+	});
+	let out = text.replace(/\r\n/g, "\n");
+	if (!out.endsWith("\n")) out = `${out}\n`;
+
+	// Fast path: canonical bodies already present verbatim — preserve order.
+	const hasCanonicalWorkflow = out.includes(workflowCanonical);
+	const hasCanonicalFileLayout = out.includes(fileLayoutCanonical);
+	if (hasCanonicalWorkflow && hasCanonicalFileLayout) return out;
+
+	// Strip any paraphrased version of each section before appending canonical.
+	if (!hasCanonicalWorkflow) {
+		out = stripSection(out, "Maina Workflow");
+		out = `${out.trimEnd()}\n\n${workflowCanonical}\n`;
+	}
+	if (!hasCanonicalFileLayout) {
+		out = stripSection(out, "File Layout");
+		out = `${out.trimEnd()}\n\n${fileLayoutCanonical}\n`;
+	}
+	return out;
+}
+
+/**
+ * Remove a `## <heading>` block from `text`. Matches from the heading line up
+ * to the next `##` (or end of string). No-op when the section is absent.
+ */
+function stripSection(text: string, heading: string): string {
+	const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const re = new RegExp(
+		`(?:^|\\n)##\\s+${escaped}\\b[^\\n]*\\n[\\s\\S]*?(?=\\n##\\s|$)`,
+		"m",
+	);
+	return text.replace(re, "");
+}
+
 function buildHostFallbackConstitution(stack: StackContext): string {
 	const langs = stack.languages.join(", ") || "your stack";
-	return `# Project Constitution
-
-> Stub authored by \`maina setup\` while the host AI completes the request.
-> Re-run \`maina setup --update\` once the host returns to refresh.
-
-## Stack
-
-- Languages: ${langs}
-- Package manager: ${stack.packageManager}
-
-## Principles
-
-1. Tests first.
-2. Small, reviewable diffs.
-3. Conventional commits.
-4. No silent failures — return \`Result<T, E>\`.
-5. Lint and type-check before push.
-`;
+	const principles = [
+		"# Project Constitution",
+		"",
+		"> Stub authored by `maina setup` while the host AI completes the request.",
+		"> Re-run `maina setup --update` once the host returns to refresh.",
+		"",
+		"## Stack",
+		"",
+		`- Languages: ${langs}`,
+		`- Package manager: ${stack.packageManager}`,
+		"",
+		"## Principles",
+		"",
+		"1. Tests first.",
+		"2. Small, reviewable diffs.",
+		"3. Conventional commits.",
+		"4. No silent failures — return `Result<T, E>`.",
+		"5. Lint and type-check before push.",
+		"",
+	].join("\n");
+	// Wave 2 acceptance criterion 6.2: every generated constitution — including
+	// the host-fallback stub while delegation is in flight — must ship with the
+	// `## Maina Workflow` and `## File Layout` sections. We reuse the same
+	// renderers the tailor/generic paths use so AI agents that read this stub
+	// still land feature artefacts under `.maina/features/…`.
+	const workflow = renderWorkflowSection();
+	const layout = renderFileLayoutSection({
+		languages: stack.languages,
+		toplevelDirs: [],
+	});
+	return `${principles}\n${workflow}\n\n${layout}\n`;
 }
 
 // ── Commander Command ────────────────────────────────────────────────────────
