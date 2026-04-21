@@ -16,6 +16,15 @@ import { META, NAV } from '../data/landing';
 import cliPackage from '../../../cli/package.json';
 import '../styles/landing.css';
 
+// Fail the build if the CLI version isn't readable — shipping JSON-LD with
+// `softwareVersion: "0.0.0"` is worse than no version at all because it
+// poisons downstream search indexes. The previous `?? '0.0.0'` fallback
+// masked a real config error.
+const cliVersion = (cliPackage as { version?: unknown }).version;
+if (typeof cliVersion !== 'string' || cliVersion.trim() === '') {
+  throw new Error('packages/cli/package.json must declare a non-empty version');
+}
+
 const HERO_VARIANT = import.meta.env.HERO_VARIANT ?? 'v1';
 const Hero = HERO_VARIANT === 'v2' ? HeroV2 : HeroV1;
 
@@ -35,7 +44,7 @@ const jsonLd = {
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'macOS, Linux, Windows (WSL)',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  softwareVersion: (cliPackage as { version?: string }).version ?? '0.0.0',
+  softwareVersion: cliVersion,
   programmingLanguage: ['TypeScript', 'Python', 'Go', 'Rust', 'C#', 'Java', 'PHP'],
   featureList: [
     'Context Engine (4-layer retrieval, AST + PageRank)',

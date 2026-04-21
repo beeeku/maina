@@ -133,10 +133,14 @@ function extractSection(text: string, heading: string): string | null {
 	// the input first and append a sentinel `\n## __END__` so the lookahead
 	// always has the next heading to terminate on, even when the section we
 	// want is the last one in the document.
+	// The heading is regex-escaped to close the (currently-theoretical) regex
+	// injection vector flagged by ast-grep — a future caller passing
+	// metacharacters would otherwise break the pattern.
+	const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	const normalised = text.replace(/\r\n/g, "\n");
 	const sentinel = `${normalised}\n## __END__`;
 	const re = new RegExp(
-		`^##\\s+${heading}\\b[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s)`,
+		`^##\\s+${escapedHeading}\\b[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s)`,
 		"m",
 	);
 	const m = re.exec(sentinel);

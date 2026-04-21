@@ -1335,28 +1335,52 @@ function writeDegradedLogEntry(
 }
 
 /**
- * Post-process any constitution text to guarantee it contains both of the
- * mandatory sections (Wave 2 §6.2). Idempotent — if a section is already
- * present with its `## Heading` line, we leave it alone; otherwise we append
- * the shared renderer output. Called after every tier's output (cloud, BYOK,
- * host-fallback, degraded) so G3/G7 compliance isn't tier-dependent.
+ * Post-process any constitution text to guarantee it contains the **canonical**
+ * Wave 2 §6.2 sections. An LLM that paraphrased the workflow would slip past a
+ * heading-only regex check (CodeRabbit finding 2026-04-22) — so we strip any
+ * existing `## Maina Workflow` / `## File Layout` block (canonical or
+ * paraphrased) and re-append the template output. Idempotent: text that
+ * already has the canonical sections ends up with them in the same place
+ * (order-preserving via `includes`) or moved to the end (when a paraphrase
+ * had to be stripped).
  */
 function ensureRequiredSections(text: string, stack: StackContext): string {
-	const normalised = text.endsWith("\n") ? text : `${text}\n`;
-	const hasWorkflow = /^##\s+Maina Workflow\b/m.test(normalised);
-	const hasFileLayout = /^##\s+File Layout\b/m.test(normalised);
-	if (hasWorkflow && hasFileLayout) return normalised;
-	let out = normalised;
-	if (!hasWorkflow) {
-		out = `${out}\n${renderWorkflowSection()}\n`;
+	const workflowCanonical = renderWorkflowSection();
+	const fileLayoutCanonical = renderFileLayoutSection({
+		languages: stack.languages,
+		toplevelDirs: [],
+	});
+	let out = text.replace(/\r\n/g, "\n");
+	if (!out.endsWith("\n")) out = `${out}\n`;
+
+	// Fast path: canonical bodies already present verbatim — preserve order.
+	const hasCanonicalWorkflow = out.includes(workflowCanonical);
+	const hasCanonicalFileLayout = out.includes(fileLayoutCanonical);
+	if (hasCanonicalWorkflow && hasCanonicalFileLayout) return out;
+
+	// Strip any paraphrased version of each section before appending canonical.
+	if (!hasCanonicalWorkflow) {
+		out = stripSection(out, "Maina Workflow");
+		out = `${out.trimEnd()}\n\n${workflowCanonical}\n`;
 	}
-	if (!hasFileLayout) {
-		out = `${out}\n${renderFileLayoutSection({
-			languages: stack.languages,
-			toplevelDirs: [],
-		})}\n`;
+	if (!hasCanonicalFileLayout) {
+		out = stripSection(out, "File Layout");
+		out = `${out.trimEnd()}\n\n${fileLayoutCanonical}\n`;
 	}
 	return out;
+}
+
+/**
+ * Remove a `## <heading>` block from `text`. Matches from the heading line up
+ * to the next `##` (or end of string). No-op when the section is absent.
+ */
+function stripSection(text: string, heading: string): string {
+	const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const re = new RegExp(
+		`(?:^|\\n)##\\s+${escaped}\\b[^\\n]*\\n[\\s\\S]*?(?=\\n##\\s|$)`,
+		"m",
+	);
+	return text.replace(re, "");
 }
 
 function buildHostFallbackConstitution(stack: StackContext): string {

@@ -101,8 +101,12 @@ export interface ResolveAIOptions {
  */
 function parseCloudTimeout(raw: string | undefined): number {
 	if (raw === undefined) return 20_000;
-	const parsed = Number.parseInt(raw, 10);
-	return Number.isFinite(parsed) && parsed > 0 ? parsed : 20_000;
+	// `Number.parseInt("20s", 10)` returns 20 — interpreting "20s" (twenty
+	// seconds) as 20 milliseconds would be catastrophic. Require a pure
+	// digit string so we reject prefixed/suffixed inputs entirely.
+	if (!/^\d+$/.test(raw)) return 20_000;
+	const parsed = Number(raw);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 20_000;
 }
 const DEFAULT_CLOUD_TIMEOUT_MS = parseCloudTimeout(
 	process.env.MAINA_CLOUD_TIMEOUT_MS,

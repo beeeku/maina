@@ -36,7 +36,7 @@ bunx @mainahq/cli@latest setup
 
 1. **Detect** — Languages, frameworks, package manager, linters, test runners, and CI system, inferred from files already in your repo. No prompts to fill out.
 
-2. **Infer** — A tailored `.maina/constitution.md` is generated via the host AI if you're running inside Claude Code / Cursor / Codex, or via the anonymous Cloudflare AI Gateway if not. Bring your own key with `OPENROUTER_API_KEY` for full control. No network? Setup degrades gracefully — the offline template still includes the `## Maina Workflow` and `## File Layout` sections verbatim, and the reason is surfaced in the terminal and logged to `.maina/setup.log` with a copy-pasteable recovery line.
+2. **Infer** — A tailored `.maina/constitution.md` is generated via the host AI if you're running inside Claude Code / Cursor / Codex, or via the anonymous Cloudflare AI Gateway if not. Bring your own key with `MAINA_API_KEY` (takes precedence) or `OPENROUTER_API_KEY` for full control. No network? Setup degrades gracefully — the offline template still includes the `## Maina Workflow` and `## File Layout` sections verbatim, and the reason is surfaced in the terminal and logged to `.maina/setup.log` with a copy-pasteable recovery line.
 
 3. **Scaffold** — Agent instruction files use non-destructive `<maina-managed>` regions so your existing rules stay intact:
 
@@ -46,7 +46,7 @@ bunx @mainahq/cli@latest setup
    - `.github/copilot-instructions.md`
    - `.windsurf/rules/maina.md`
 
-   Project-level MCP configs use **keyed JSON merge** — every existing `mcpServers.*` entry is preserved byte-for-byte; only the `maina` key is written:
+   Project-level MCP configs use **keyed JSON merge** — every existing `mcpServers.*` entry is preserved semantically (keys, values, array order), although JSON re-serialisation may normalise whitespace. Only the `maina` key is added:
 
    - `.claude/settings.json` (Claude Code)
    - `.cursor/mcp.json` (Cursor)
