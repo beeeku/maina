@@ -20,7 +20,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 const INSTALL_SH = resolve(import.meta.dir, "../../../..", "install.sh");
 

@@ -1,5 +1,4 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { confirm, intro, log, outro, spinner } from "@clack/prompts";
 import type {
