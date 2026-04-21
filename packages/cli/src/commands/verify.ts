@@ -9,6 +9,8 @@ import type {
 } from "@mainahq/core";
 import {
 	appendWorkflowStep,
+	buildUsageEvent,
+	captureUsage,
 	checkAIAvailability,
 	createCloudClient,
 	generateFixes,
@@ -22,6 +24,10 @@ import {
 	runPipeline,
 	runVisualVerification,
 } from "@mainahq/core";
+import packageJson from "../../package.json" with { type: "json" };
+
+const CLI_VERSION = (packageJson as { version?: string }).version ?? "0.0.0";
+
 import { Command } from "commander";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -170,6 +176,19 @@ export async function cloudVerifyAction(
 	const cwd = options.cwd ?? process.cwd();
 	const baseBranch = options.base ?? "main";
 	const sleepFn = deps?.sleepFn ?? ((ms: number) => Bun.sleep(ms));
+	const startedAt = Date.now();
+
+	// Cloud-path telemetry — `verifyAction` has its own started/completed
+	// captures but the Commander action dispatches cloud runs to this
+	// function directly, so we emit here too. Consent-gated inside
+	// `captureUsage`.
+	captureUsage(
+		buildUsageEvent(
+			"maina.verify.started",
+			{ cloud: true, deep: false, visual: false, all: false },
+			CLI_VERSION,
+		),
+	);
 
 	// ── Step 1: Auth ──────────────────────────────────────────────────────
 	let client: CloudClient;
@@ -298,6 +317,19 @@ export async function cloudVerifyAction(
 		`Cloud pipeline ${verifyResult.passed ? "passed" : "failed"}: ${verifyResult.findings.length} findings, ${verifyResult.durationMs}ms.`,
 	);
 
+	captureUsage(
+		buildUsageEvent(
+			"maina.verify.completed",
+			{
+				cloud: true,
+				passed: verifyResult.passed,
+				findings: verifyResult.findings.length,
+				durationMs: Date.now() - startedAt,
+			},
+			CLI_VERSION,
+		),
+	);
+
 	return {
 		passed: verifyResult.passed,
 		findingsCount: verifyResult.findings.length,
@@ -318,6 +350,23 @@ export async function verifyAction(
 	const cwd = options.cwd ?? process.cwd();
 	const mainaDir = join(cwd, ".maina");
 	const baseBranch = options.base ?? "main";
+	const startedAt = Date.now();
+
+	// Consent-gated — `captureUsage` is a no-op unless `telemetry: true` and
+	// the build-time key are both set. Emitting at the action boundary keeps
+	// cohort metrics honest even if the command bails later on a tool error.
+	captureUsage(
+		buildUsageEvent(
+			"maina.verify.started",
+			{
+				deep: options.deep === true,
+				cloud: options.cloud === true,
+				visual: options.visual === true,
+				all: options.all === true,
+			},
+			CLI_VERSION,
+		),
+	);
 
 	// ── AI availability check ────────────────────────────────────────────
 	const ai = checkAIAvailability();
@@ -472,6 +521,21 @@ export async function verifyAction(
 		workflowStep: "verify",
 		workflowId,
 	});
+
+	captureUsage(
+		buildUsageEvent(
+			"maina.verify.completed",
+			{
+				passed: result.passed,
+				findings: result.findingsCount,
+				hidden: result.hiddenCount ?? 0,
+				durationMs: Date.now() - startedAt,
+				deep: options.deep === true,
+				cloud: options.cloud === true,
+			},
+			CLI_VERSION,
+		),
+	);
 
 	return result;
 }

@@ -1,3 +1,4 @@
+import { flushTelemetry } from "@mainahq/core";
 import { Command } from "commander";
 import pkg from "../package.json";
 import { analyzeCommand } from "./commands/analyze";
@@ -74,6 +75,46 @@ Setup & Config:
 			"--debug",
 			"print full stack traces and error codes on failure (also MAINA_DEBUG=1 or DEBUG=1)",
 		);
+
+	// Drain any pending telemetry events at the end of every command so the
+	// process doesn't exit with in-flight HTTP requests. Budgeted at 2 s —
+	// short enough to keep `maina commit` snappy when the network is dead,
+	// long enough for a healthy PostHog ingest to complete (< 300 ms typical).
+	program.hook("postAction", async () => {
+		try {
+			await flushTelemetry(2_000);
+		} catch {
+			// Telemetry must never block or throw from the exit hook.
+		}
+	});
+
+	// Belt-and-braces drain for commands that call `process.exit()` directly
+	// (login/logout/doctor all do this under certain branches) — Commander's
+	// `postAction` hook does not fire in those cases so queued captures
+	// would otherwise be dropped. `beforeExit` is Node's last reliable hook
+	// before the event loop drains; `SIGINT`/`SIGTERM` cover Ctrl-C and
+	// orchestrator kills. `flushTelemetry` is a no-op when no SDK was ever
+	// instantiated, so this is free when telemetry is off.
+	let exitDrained = false;
+	const drain = async (code: number | null): Promise<void> => {
+		if (exitDrained) return;
+		exitDrained = true;
+		try {
+			await flushTelemetry(2_000);
+		} catch {
+			// swallow
+		}
+		if (code !== null) process.exit(code);
+	};
+	process.once("beforeExit", () => {
+		void drain(null);
+	});
+	process.once("SIGINT", () => {
+		void drain(130);
+	});
+	process.once("SIGTERM", () => {
+		void drain(143);
+	});
 
 	// ── Workflow ─────────────────────────────────────────────────────────
 	program.addCommand(brainstormCommand());
