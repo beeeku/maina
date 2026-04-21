@@ -43,6 +43,10 @@ packages/docs/.astro/
 .superpowers/
 .claude/
 
+# Test-generated scratch directories and fixtures (wiki tmp dirs, language detect fixtures)
+packages/**/__tests__/tmp-*/
+packages/core/src/language/__tests__/__fixtures__/
+
 # Private strategy docs — kept in mainahq/maina-cloud:strategy/ (see CLAUDE.md).
 # Listed here so accidentally reviving these filenames won't leak them again.
 PRODUCT_SPEC.md
