@@ -3,7 +3,7 @@ title: Copy Discipline
 description: Maina's affirmative verification framing — "passed N of M checks," not "0 findings."
 ---
 
-Maina's user-facing copy — receipt HTML, CLI output, GitHub App walkthrough comment, Slack posts — follows **affirmative verification framing**. This is non-negotiable; it's encoded as rule **C2** in the [Project Constitution](/engines/constitution).
+Maina's user-facing copy — receipt HTML, CLI output, GitHub App walkthrough comment, Slack posts — follows **affirmative verification framing**. This is non-negotiable; it's encoded as rule **C2** in the [project constitution](https://github.com/mainahq/maina/blob/master/.maina/constitution.md).
 
 ## The rule
 
@@ -48,20 +48,24 @@ Saying "0 findings" leaks the adversarial framing: it implies you *looked for pr
 
 ## Enforcement
 
-Grep CI check runs on every PR against `packages/docs/` and `packages/core/src/prompts/`:
+A grep-based CI check will block merges on banned phrases in `packages/docs/` and `packages/core/src/prompts/`, excluding this meta-doc (which quotes the phrases as *examples of what not to do*):
 
 ```bash
-rg -n '\b(0 findings?|no issues? found|no errors?|0 problems?)\b' packages/docs/ packages/core/src/prompts/
+rg -n '\b(0 findings?|no issues? found|no errors?|0 problems?)\b' \
+  packages/docs/ packages/core/src/prompts/ \
+  --glob '!packages/docs/src/content/docs/copy-discipline.mdx'
 ```
 
-A non-empty result fails CI and blocks merge. The walkthrough prompt (Wave 2.2) has an inline slop guard that rejects model output matching the same regex before it lands on a receipt.
+A non-empty result fails CI and blocks merge. The walkthrough prompt (Wave 2.2) will get an inline slop guard that rejects model output matching the same regex before it lands on a receipt.
+
+Both the CI script and the slop guard ship in the Wave 2.2 walkthrough ticket (mainahq/maina#238) — this guide defines the contract those checks enforce.
 
 ## Why we spelled this out as a constitution rule
 
-C2 is the brand. It's cheap to enforce now, expensive to retrofit once receipts have been shared publicly. The [direction doc](https://github.com/mainahq/maina-cloud) Risk 1 entry is "receipt collapses into 'another PR review tool' perception" — the visual similarity to CodeRabbit is real, so every string we ship has to reinforce the different framing.
+C2 is the brand. It's cheap to enforce now, expensive to retrofit once receipts have been shared publicly. The internal direction doc (2026-04-25) calls out Risk 1 as *"receipt collapses into 'another PR review tool' perception"* — the visual similarity to CodeRabbit is real, so every string we ship has to reinforce the different framing.
 
 ## See also
 
 - Constitution rule C2 (in `.maina/constitution.md`)
 - ADR 0030 — Receipt v1 field schema
-- [Risk 1 in the direction doc](https://github.com/mainahq/maina-cloud) (private)
+- Internal direction doc (private, mainahq team only): `DIRECTION_AND_BUILD_PLAN_2026_04_25.md` Risk 1
