@@ -25,6 +25,8 @@ Options considered:
 - At cap: receipt is emitted with `status: "partial"` regardless of underlying check outcomes. Downstream UI (receipt page, GitHub App check) renders a visible "retried N times, capped" badge.
 - Under cap with `retries > 0`: receipt emits its true status, but renders a "retried N times" badge so reviewers can weigh the signal accordingly.
 
+[NEEDS CLARIFICATION: legacy consumers that only understand `passed`/`failed` — should they read `partial` as `failed` (conservative), `passed` (lenient), or require an explicit compatibility shim field? Decide before receipt-v1 ships to the public schema so the contract is stable from day one.]
+
 ### Configuration
 
 ```markdown
@@ -38,6 +40,8 @@ Options considered:
 
 A retry is a new `maina verify` or `maina pr` invocation on the same branch + same HEAD agent-delta (the set of files the agent has touched since last commit by a human). Manual human commits reset the counter; pure agent-driven iterations increment.
 
+[NEEDS CLARIFICATION: how is "agent-delta" canonicalized across rebase, squash, cherry-pick, and empty agent commits? Proposed starting point — canonical ordered list of agent-modified paths plus blob hashes at HEAD, normalized via `git cat-file -p` tree content — but the exact algorithm must be locked before Wave 2 implementation so the retry counter is deterministic across edit histories.]
+
 ## Consequences
 
 ### Positive
@@ -50,11 +54,14 @@ A retry is a new `maina verify` or `maina pr` invocation on the same branch + sa
 ### Negative
 
 - Legitimate edge case: a human-directed retry (user says "fix and try again") counts against the cap. Mitigated by the human-commit-resets-counter rule, but a stubborn agent-driven fix can still hit the cap on a genuinely-tricky real bug. Accepted: at cap, status becomes `partial`, which is a softer signal than `failed` and doesn't block merging — just flags it.
+
+  [NEEDS CLARIFICATION: "doesn't block merging" is policy-level but not operationally defined. When the GitHub App emits the check for a `partial` receipt, should the GitHub Checks API conclusion be `neutral` (surfaces in UI, does not block branch protection), `action_required` (surfaces + gates), or `success` (invisible)? Decide before the Layer 3 App ships so branch-protection rules across design-partner orgs are deterministic.]
 - Retry count can be spoofed if an attacker controls both the agent and the receipt generator. Out of scope for v1 (integrity-only hashing per sibling ADR 0030); mitigated in v2 by keypair-signed receipts tied to the CI runner identity.
 
 ## References
 
-- Direction doc (private): `mainahq/maina-cloud:strategy/DIRECTION_AND_BUILD_PLAN_2026_04_25.md` Risk 3
+- Public context for Risk 3: see the Context section above; the internal direction doc is the fuller write-up but this ADR stands alone for public readers.
+- Direction doc (private, mainahq only): `mainahq/maina-cloud:strategy/DIRECTION_AND_BUILD_PLAN_2026_04_25.md` Risk 3
 - Tracking issue: [mainahq/maina#230](https://github.com/mainahq/maina/issues/230)
 - Sibling schema ADR: ships in [mainahq/maina#232](https://github.com/mainahq/maina/pull/232) as `adr/0030-receipt-v1-field-schema.md` (defines the `retries` field)
 - Constitution update ticket: [mainahq/maina#231](https://github.com/mainahq/maina/issues/231) (materializes as C3)
