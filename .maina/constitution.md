@@ -33,7 +33,7 @@ The receipt is the product's artifact. Every `maina pr` emits one (C5).
 - **Shape:** per `adr/0030-receipt-v1-field-schema.md`. Wire format is `@mainahq/receipt-schema` v1 at `schemas.mainahq.com/v1.json`.
 - **Integrity:** RFC 8785 canonicalize (with `hash` excluded from the canonicalization input) → sha256 (lowercase hex).
 - **Fields record, not decorate:** prompt versions, agent identity, retry count, diff shape, and every check's outcome are structural data — the receipt is a document, not a dashboard.
-- **Offline-verifiable:** `maina verify-receipt <path>` validates any receipt against the pinned schema without hosted infra.
+- **Offline-verifiable:** `maina verify-receipt <path>` validates any receipt against the pinned schema without hosted infra. (CLI lands in companion [PR #235](https://github.com/mainahq/maina/pull/235).)
 - **One receipt, three surfaces:** CLI (terminal), GitHub App (PR check + walkthrough comment), Enterprise rollup (fleet view). Same wire format across all three.
 
 ## Copy Discipline (C2)
@@ -91,11 +91,11 @@ Emission is one-way (constitution → derived files) and runs in `maina setup` a
 - Accepted reviews compressed to <500 tokens as episodic few-shot examples
 - A/B testing: candidates auto-promoted at >5% improvement, retired at <-5%
 - maina learn analyzes feedback and proposes prompt improvements
-- Feedback records include `constitutionHash` so learnings follow the policy version (not the repo)
+- Feedback records will include `constitutionHash` so learnings follow the policy version (not the repo). *Schema field + persistence lands in Wave 2 (#229 receipt integration + feedback DB migration); the constitution locks the contract in Wave 1.*
 
 ## Workflow Order (mandatory, sequential)
 
-Every feature follows this exact sequence using maina CLI/MCP tools. No skipping steps. `maina pr` is the terminal step — it auto-generates the receipt (C5); no separate `maina receipt` action exists.
+Every feature follows this exact sequence using maina CLI/MCP tools. No skipping steps. `maina pr` is the terminal step — by Wave 2 it auto-generates the receipt (C5); today it appends verification proof to the PR body. No separate `maina receipt` action will exist.
 
 ```
 maina brainstorm  → explore idea, generate structured ticket
@@ -109,7 +109,7 @@ maina review      → comprehensive code review
 fix               → address review findings
 maina commit      → verify + commit staged changes
 maina review      → final review pass
-maina pr          → create PR + auto-emit receipt
+maina pr          → create PR + auto-emit receipt (receipt emission lands in Wave 2)
 ```
 
 Between steps, use MCP tools for continuous checks:
