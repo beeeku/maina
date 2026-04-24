@@ -40,7 +40,9 @@ export async function detectAgent(
 ): Promise<AgentIdentity> {
 	const env = options.env ?? process.env;
 	const modelVersion =
-		options.modelVersion ?? env.MAINA_AGENT_MODEL ?? "unknown";
+		nonEmpty(options.modelVersion) ??
+		nonEmpty(env.MAINA_AGENT_MODEL) ??
+		"unknown";
 
 	// 1. Environment override
 	const envId = env.MAINA_AGENT_ID;
@@ -59,6 +61,10 @@ export async function detectAgent(
 
 	// 4. Fallback
 	return { id: "ci:unknown", modelVersion };
+}
+
+function nonEmpty(s: string | undefined | null): string | undefined {
+	return s && s.length > 0 ? s : undefined;
 }
 
 async function readAgentTrailer(cwd?: string): Promise<string | null> {

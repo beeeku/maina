@@ -208,10 +208,20 @@ function surfaceHiddenFailures(
 
 	if (hiddenFailures.length === 0) return mapped;
 
+	// Synthesize a unique id so this synthetic entry doesn't collide with a
+	// real `biome-check` mapped from `builtin`. Suffix is deterministic.
+	const baseId = "biome-check";
+	const usedIds = new Set(mapped.map((c) => c.id));
+	let id = `${baseId}-pipeline-internal`;
+	let suffix = 2;
+	while (usedIds.has(id)) {
+		id = `${baseId}-pipeline-internal-${suffix++}`;
+	}
+
 	return [
 		...mapped,
 		{
-			id: "biome-check",
+			id,
 			name: "Pipeline (typecheck / consistency / syntax-guard)",
 			status: "failed",
 			tool: "biome",

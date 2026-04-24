@@ -61,7 +61,7 @@ a { color: oklch(0.55 0.2 250); }
 <p class="meta">${escapeHtml(receipt.repo)} · ${escapeHtml(receipt.timestamp)}</p>
 
 <p>
-  <span class="status status-${receipt.status}">${statusLabel}</span>
+  <span class="status status-${receiptStatusClass(receipt.status)}">${statusLabel}</span>
   ${retryBadge}
 </p>
 
@@ -92,14 +92,35 @@ function renderCheck(check: Check): string {
 	const findings = check.findings
 		.map(
 			(f) =>
-				`  <div class="finding"><span class="severity severity-${f.severity}">${f.severity}</span>${escapeHtml(f.file)}${f.line !== undefined ? `:${f.line}` : ""} — ${escapeHtml(f.message)}</div>`,
+				`  <div class="finding"><span class="severity severity-${severityClass(f.severity)}">${escapeHtml(f.severity)}</span>${escapeHtml(f.file)}${f.line !== undefined ? `:${f.line}` : ""} — ${escapeHtml(f.message)}</div>`,
 		)
 		.join("\n");
-	return `<div class="check check-${check.status}">
+	return `<div class="check check-${checkStatusClass(check.status)}">
   <span class="check-name">${escapeHtml(check.name)}</span>
-  <span class="check-tool">${escapeHtml(check.tool)} · ${check.status}</span>
+  <span class="check-tool">${escapeHtml(check.tool)} · ${escapeHtml(check.status)}</span>
 ${findings}
 </div>`;
+}
+
+/** CSS class allow-list — receipts shouldn't normally contain unknown tokens, but
+ * an attacker who manages to feed a tampered receipt into this renderer can't
+ * use status fields to inject HTML attributes. */
+function receiptStatusClass(s: string): "passed" | "failed" | "partial" {
+	return s === "passed" || s === "failed" || s === "partial"
+		? (s as "passed" | "failed" | "partial")
+		: "failed";
+}
+
+function checkStatusClass(s: string): "passed" | "failed" | "skipped" {
+	return s === "passed" || s === "failed" || s === "skipped"
+		? (s as "passed" | "failed" | "skipped")
+		: "failed";
+}
+
+function severityClass(s: string): "info" | "warning" | "error" {
+	return s === "info" || s === "warning" || s === "error"
+		? (s as "info" | "warning" | "error")
+		: "error";
 }
 
 function summarizeStatus(
