@@ -19,6 +19,7 @@ import { mcpCommand } from "./commands/mcp";
 import { planCommand } from "./commands/plan";
 import { prCommand } from "./commands/pr";
 import { promptCommand } from "./commands/prompt";
+import { receiptCommand } from "./commands/receipt";
 import { reviewCommand } from "./commands/review";
 import { reviewDesignCommand } from "./commands/review-design";
 import { setupCommand } from "./commands/setup";
@@ -49,11 +50,13 @@ Workflow:
   spec          Generate test stubs from spec
 
 Build & Verify:
-  verify        Run verification pipeline
-  commit        Verify + commit with message
-  review        Two-stage code review
-  slop          Detect AI slop patterns
-  pr            Create pull request
+  verify         Run verification pipeline
+  verify-receipt Ratify a receipt JSON file offline
+  receipt        Run verify and emit a signed v1 receipt (JSON + HTML)
+  commit         Verify + commit with message
+  review         Two-stage code review
+  slop           Detect AI slop patterns
+  pr             Create pull request
 
 Wiki:
   wiki init     Compile codebase knowledge
@@ -127,6 +130,7 @@ Setup & Config:
 	// ── Build & Verify ──────────────────────────────────────────────────
 	program.addCommand(verifyCommand());
 	program.addCommand(verifyReceiptCommand());
+	program.addCommand(receiptCommand());
 	program.addCommand(commitCommand());
 	program.addCommand(reviewCommand());
 	program.addCommand(reviewDesignCommand());
