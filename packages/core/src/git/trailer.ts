@@ -17,10 +17,9 @@ import { canonicalize } from "../receipt/canonical";
 const VERIFIED_BY_PATTERN =
 	/^Verified-by:[ \t]*Maina@sha256:[0-9a-f]{64}[ \t]*$/m;
 
-/** Global pattern for replaceAll — collapses any number of existing
- * Verified-by lines into one, so duplicates that snuck in get cleaned up. */
-const VERIFIED_BY_PATTERN_GLOBAL =
-	/^Verified-by:[ \t]*Maina@sha256:[0-9a-f]{64}[ \t]*$/gm;
+// Same shape, line-bound (no /m), used to test individual lines after splitting.
+const LINE_VERIFIED_BY_PATTERN =
+	/^Verified-by:[ \t]*Maina@sha256:[0-9a-f]{64}[ \t]*$/;
 
 export type AppendTrailerResult =
 	| { ok: true; data: string }
@@ -58,17 +57,23 @@ export function appendVerifiedByTrailer(
 	const trailer = `Verified-by: Maina@sha256:${hash}`;
 
 	if (VERIFIED_BY_PATTERN.test(message)) {
-		// Collapse duplicates into one line, then de-dup blank lines created by
-		// removing leading/trailing matches.
-		let count = 0;
-		const collapsed = message.replace(VERIFIED_BY_PATTERN_GLOBAL, () => {
-			count += 1;
-			return count === 1 ? trailer : "__MAINA_REMOVE__";
-		});
-		const cleaned = collapsed
-			.replace(/\n__MAINA_REMOVE__/g, "")
-			.replace(/__MAINA_REMOVE__\n?/g, "");
-		return { ok: true, data: cleaned };
+		// Collapse N existing Verified-by trailers into exactly one carrying
+		// `hash`. Line-based filter — no in-band sentinel that could collide
+		// with real commit message content.
+		const lines = message.split("\n");
+		const filtered: string[] = [];
+		let kept = false;
+		for (const line of lines) {
+			if (LINE_VERIFIED_BY_PATTERN.test(line)) {
+				if (!kept) {
+					filtered.push(trailer);
+					kept = true;
+				}
+				continue;
+			}
+			filtered.push(line);
+		}
+		return { ok: true, data: filtered.join("\n") };
 	}
 
 	const trimmed = message.trimEnd();
