@@ -32,6 +32,10 @@ export interface ReceiptActionOptions {
 	outputDir?: string;
 	cwd?: string;
 	noIndex?: boolean;
+	/** Explicit file list to verify. When set, overrides --all/staged
+	 * detection — useful for backfill scripts that compute a PR's
+	 * diff scope directly. */
+	files?: string[];
 }
 
 export interface ReceiptActionResult {
@@ -130,13 +134,22 @@ async function runVerifyPipeline(
 	cwd: string,
 	options: ReceiptActionOptions,
 ): Promise<PipelineResult> {
-	const files = options.all
-		? await getTrackedFiles(cwd)
-		: await getStagedFiles(cwd);
+	let files: string[];
+	if (options.files && options.files.length > 0) {
+		files = options.files;
+	} else if (options.all) {
+		files = await getTrackedFiles(cwd);
+	} else {
+		files = await getStagedFiles(cwd);
+	}
 	return runPipeline({
 		cwd,
 		baseBranch: options.base ?? DEFAULT_BASE_BRANCH,
-		diffOnly: !options.all,
+		// When the caller pinned a file list (e.g. backfill computing a
+		// PR's diff scope), keep the diff filter on so findings still
+		// scope to changed lines. Otherwise default to the legacy --all
+		// switch behaviour.
+		diffOnly: options.files && options.files.length > 0 ? true : !options.all,
 		...(files && files.length > 0 ? { files } : {}),
 	});
 }
