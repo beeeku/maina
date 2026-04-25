@@ -220,15 +220,25 @@ describe("countReceiptFpsByCheck", () => {
 	});
 
 	test("aggregates counts per check for a single constitution", () => {
-		const counts = countReceiptFpsByCheck(HASH_A, mainaDir);
-		expect(counts.get("biome-check")).toBe(2);
-		expect(counts.get("semgrep-check")).toBe(1);
-		expect(counts.size).toBe(2);
+		const result = countReceiptFpsByCheck(HASH_A, mainaDir);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.data.get("biome-check")).toBe(2);
+		expect(result.data.get("semgrep-check")).toBe(1);
+		expect(result.data.size).toBe(2);
 	});
 
 	test("does not bleed counts from a different constitution", () => {
-		const counts = countReceiptFpsByCheck(HASH_B, mainaDir);
-		expect(counts.get("biome-check")).toBe(1);
-		expect(counts.size).toBe(1);
+		const result = countReceiptFpsByCheck(HASH_B, mainaDir);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.data.get("biome-check")).toBe(1);
+		expect(result.data.size).toBe(1);
+	});
+
+	test("rejects malformed constitutionHash with structured error", () => {
+		const result = countReceiptFpsByCheck("garbage", mainaDir);
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.code).toBe("invalid-hash");
 	});
 });

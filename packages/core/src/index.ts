@@ -229,6 +229,7 @@ export {
 	savePreferences,
 } from "./feedback/preferences";
 export {
+	type CountReceiptFpsResult,
 	countReceiptFpsByCheck,
 	type QueryReceiptFpsOptions,
 	type QueryReceiptFpsResult,

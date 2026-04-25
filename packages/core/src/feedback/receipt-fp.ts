@@ -42,7 +42,15 @@ export type RecordReceiptFpResult =
 
 export type QueryReceiptFpsResult =
 	| { ok: true; data: ReceiptFpRecord[] }
-	| { ok: false; code: "io"; message: string };
+	| {
+			ok: false;
+			code: "invalid-hash" | "invalid-check-id" | "io";
+			message: string;
+	  };
+
+export type CountReceiptFpsResult =
+	| { ok: true; data: Map<string, number> }
+	| { ok: false; code: "invalid-hash" | "io"; message: string };
 
 interface FpRow {
 	id: string;
@@ -56,41 +64,47 @@ interface FpRow {
 export function recordReceiptFp(
 	input: RecordReceiptFpInput,
 ): RecordReceiptFpResult {
-	if (!input.checkId || input.checkId.trim().length === 0) {
+	const checkId = input.checkId?.trim();
+	const reason = input.reason?.trim();
+	const constitutionHash = input.constitutionHash?.trim();
+	const receiptHash =
+		input.receiptHash !== undefined ? input.receiptHash.trim() : undefined;
+
+	if (!checkId) {
 		return {
 			ok: false,
 			code: "invalid-check-id",
 			message: "checkId is required",
 		};
 	}
-	if (!input.reason || input.reason.trim().length === 0) {
+	if (!reason) {
 		return {
 			ok: false,
 			code: "invalid-reason",
 			message: "reason is required",
 		};
 	}
-	if (!HEX64.test(input.constitutionHash)) {
+	if (!constitutionHash || !HEX64.test(constitutionHash)) {
 		return {
 			ok: false,
 			code: "invalid-hash",
-			message: `constitutionHash must be 64 lowercase hex chars, got: ${input.constitutionHash}`,
+			message: `constitutionHash must be 64 lowercase hex chars, got: ${constitutionHash ?? "<empty>"}`,
 		};
 	}
-	if (input.receiptHash !== undefined && !HEX64.test(input.receiptHash)) {
+	if (receiptHash !== undefined && !HEX64.test(receiptHash)) {
 		return {
 			ok: false,
 			code: "invalid-hash",
-			message: `receiptHash, when provided, must be 64 lowercase hex chars`,
+			message: "receiptHash, when provided, must be 64 lowercase hex chars",
 		};
 	}
 
 	const record: ReceiptFpRecord = {
 		id: randomUUID(),
-		receiptHash: input.receiptHash ?? null,
-		checkId: input.checkId.trim(),
-		reason: input.reason.trim(),
-		constitutionHash: input.constitutionHash,
+		receiptHash: receiptHash ?? null,
+		checkId,
+		reason,
+		constitutionHash,
 		createdAt: new Date().toISOString(),
 	};
 
@@ -137,15 +151,26 @@ export interface QueryReceiptFpsOptions {
 export function queryReceiptFps(
 	options: QueryReceiptFpsOptions = {},
 ): QueryReceiptFpsResult {
-	if (
-		options.constitutionHash !== undefined &&
-		!HEX64.test(options.constitutionHash)
-	) {
+	const constitutionHash = options.constitutionHash?.trim();
+	if (constitutionHash !== undefined && !HEX64.test(constitutionHash)) {
 		return {
 			ok: false,
-			code: "io",
-			message: `constitutionHash must be 64 lowercase hex chars, got: ${options.constitutionHash}`,
+			code: "invalid-hash",
+			message: `constitutionHash must be 64 lowercase hex chars, got: ${constitutionHash || "<empty>"}`,
 		};
+	}
+
+	let checkId: string | undefined;
+	if (options.checkId !== undefined) {
+		const trimmed = options.checkId.trim();
+		if (trimmed.length === 0) {
+			return {
+				ok: false,
+				code: "invalid-check-id",
+				message: "checkId filter cannot be whitespace-only",
+			};
+		}
+		checkId = trimmed;
 	}
 
 	try {
@@ -160,22 +185,24 @@ export function queryReceiptFps(
 		const db = handle.value.db;
 		const conditions: string[] = [];
 		const params: string[] = [];
-		if (options.constitutionHash) {
+		if (constitutionHash) {
 			conditions.push("constitution_hash = ?");
-			params.push(options.constitutionHash);
+			params.push(constitutionHash);
 		}
-		if (options.checkId) {
+		if (checkId) {
 			conditions.push("check_id = ?");
-			params.push(options.checkId.trim());
+			params.push(checkId);
 		}
 		const where =
 			conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+		// Tie-break on `id` so two FPs filed in the same millisecond keep a
+		// stable order — `created_at` alone isn't unique enough.
 		const rows = db
 			.query<FpRow, string[]>(
 				`SELECT id, receipt_hash, check_id, reason, constitution_hash, created_at
 				FROM receipt_feedback
 				${where}
-				ORDER BY created_at DESC`,
+				ORDER BY created_at DESC, id DESC`,
 			)
 			.all(...params);
 		return {
@@ -192,18 +219,50 @@ export function queryReceiptFps(
 }
 
 /** Aggregate per-check FP counts for a given constitution. Useful for the
- * preferences "noisy rule" detector. */
+ * preferences "noisy rule" detector. Returns a Result so DB failures don't
+ * masquerade as "no FPs recorded". */
 export function countReceiptFpsByCheck(
 	constitutionHash: string,
 	mainaDir?: string,
-): Map<string, number> {
-	const result = queryReceiptFps({ constitutionHash, mainaDir });
-	if (!result.ok) return new Map();
-	const counts = new Map<string, number>();
-	for (const r of result.data) {
-		counts.set(r.checkId, (counts.get(r.checkId) ?? 0) + 1);
+): CountReceiptFpsResult {
+	const trimmed = constitutionHash?.trim();
+	if (!trimmed || !HEX64.test(trimmed)) {
+		return {
+			ok: false,
+			code: "invalid-hash",
+			message: `constitutionHash must be 64 lowercase hex chars, got: ${trimmed || "<empty>"}`,
+		};
 	}
-	return counts;
+
+	try {
+		const handle = getFeedbackDb(mainaDir ?? ".maina");
+		if (!handle.ok) {
+			return {
+				ok: false,
+				code: "io",
+				message: `Failed to open feedback DB: ${handle.error}`,
+			};
+		}
+		// Aggregate in SQL — avoids materializing every row in memory just to
+		// count it.
+		const rows = handle.value.db
+			.query<{ check_id: string; n: number }, string[]>(
+				`SELECT check_id, COUNT(*) AS n
+				FROM receipt_feedback
+				WHERE constitution_hash = ?
+				GROUP BY check_id`,
+			)
+			.all(trimmed);
+		const counts = new Map<string, number>();
+		for (const r of rows) counts.set(r.check_id, Number(r.n));
+		return { ok: true, data: counts };
+	} catch (e) {
+		return {
+			ok: false,
+			code: "io",
+			message: `Failed to count FPs: ${e instanceof Error ? e.message : String(e)}`,
+		};
+	}
 }
 
 function rowToRecord(row: FpRow): ReceiptFpRecord {

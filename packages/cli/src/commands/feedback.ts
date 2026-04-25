@@ -257,7 +257,7 @@ export function feedbackCommand(): Command {
 					if (options.json) {
 						process.stdout.write(`${JSON.stringify(result)}\n`);
 					} else {
-						log.error(`fp recorded failed: ${result.message}`);
+						log.error(`FP recording failed: ${result.message}`);
 					}
 					process.exitCode = 1;
 					return;
@@ -317,15 +317,17 @@ export function feedbackCommand(): Command {
 					return;
 				}
 				if (options.constitutionHash) {
-					const counts = countReceiptFpsByCheck(
+					const countResult = countReceiptFpsByCheck(
 						options.constitutionHash,
 						options.mainaDir,
 					);
-					const summary = Array.from(counts.entries())
-						.sort((a, b) => b[1] - a[1])
-						.map(([check, n]) => `  ${check}: ${n}`)
-						.join("\n");
-					log.message(`Counts by check (constitution-scoped):\n${summary}`);
+					if (countResult.ok) {
+						const summary = Array.from(countResult.data.entries())
+							.sort((a, b) => b[1] - a[1])
+							.map(([check, n]) => `  ${check}: ${n}`)
+							.join("\n");
+						log.message(`Counts by check (constitution-scoped):\n${summary}`);
+					}
 				}
 				const lines = result.data.map(
 					(r) =>
