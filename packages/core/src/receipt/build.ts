@@ -17,6 +17,7 @@ import type {
 	Finding as ReceiptFinding,
 } from "./types";
 import { computeHash } from "./verify";
+import { baselineWalkthrough } from "./walkthrough";
 
 /**
  * Map internal pipeline tool names to the v1 CheckTool enum.
@@ -127,7 +128,18 @@ export async function buildReceipt(
 		checks,
 		walkthrough:
 			input.walkthrough ??
-			"Receipt walkthrough lands in Wave 2.2 (mainahq/maina#238).",
+			baselineWalkthrough({
+				prTitle: input.prTitle,
+				diff: input.diff ?? { additions: 0, deletions: 0, files: 0 },
+				status,
+				retries,
+				checks: checks.map((c) => ({
+					name: c.name,
+					tool: c.tool,
+					status: c.status,
+					findingsCount: c.findings.length,
+				})),
+			}),
 		feedback: [],
 		retries,
 	};

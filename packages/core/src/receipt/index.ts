@@ -30,3 +30,10 @@ export {
 	type VerifyResult,
 	verifyReceipt,
 } from "./verify";
+export {
+	baselineWalkthrough,
+	generateWalkthrough,
+	type WalkthroughDeps,
+	type WalkthroughInput,
+	type WalkthroughResult,
+} from "./walkthrough";

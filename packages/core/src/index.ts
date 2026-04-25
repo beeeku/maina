@@ -347,6 +347,7 @@ export {
 	type AgentIdentity,
 	type BuildReceiptInput,
 	type BuildReceiptResult,
+	baselineWalkthrough,
 	buildReceipt,
 	type Check as ReceiptCheck,
 	type CheckStatus as ReceiptCheckStatus,
@@ -358,6 +359,7 @@ export {
 	detectAgent,
 	type FeedbackEntry as ReceiptFeedbackEntry,
 	type Finding as ReceiptFinding,
+	generateWalkthrough,
 	type Patch as ReceiptPatch,
 	type PromptVersion as ReceiptPromptVersion,
 	type Receipt,
@@ -366,6 +368,9 @@ export {
 	type VerifyErrorCode as ReceiptVerifyErrorCode,
 	type VerifyResult as ReceiptVerifyResult,
 	verifyReceipt,
+	type WalkthroughDeps,
+	type WalkthroughInput,
+	type WalkthroughResult,
 } from "./receipt";
 // Comprehensive Review (Superpowers-style)
 export {

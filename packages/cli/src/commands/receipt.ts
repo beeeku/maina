@@ -11,6 +11,7 @@ import { join, relative } from "node:path";
 import {
 	type BuildReceiptInput,
 	buildReceipt,
+	generateWalkthrough,
 	getStagedFiles,
 	getTrackedFiles,
 	type PipelineResult,
@@ -52,12 +53,37 @@ export async function receiptAction(
 
 	const pipeline = await runVerifyPipeline(cwd, options);
 	const { constitutionHash, promptsHash } = loadPromptVersion(cwd);
+	const prTitle = options.title ?? "Untitled PR";
+	const diff = { additions: 0, deletions: 0, files: 0 };
+	const retries = 0;
+
+	// Generate the walkthrough up-front so the receipt is signed once.
+	const walkthrough = await generateWalkthrough({
+		prTitle,
+		diff,
+		status: pipeline.passed ? "passed" : "failed",
+		retries,
+		mainaDir: join(cwd, MAINA_DIR),
+		checks: pipeline.tools.map((t) => ({
+			name: t.tool,
+			tool: t.tool,
+			status: t.skipped
+				? ("skipped" as const)
+				: t.findings.some((f) => f.severity === "error")
+					? ("failed" as const)
+					: ("passed" as const),
+			findingsCount: t.findings.length,
+		})),
+	});
 
 	const buildInput: BuildReceiptInput = {
-		prTitle: options.title ?? "Untitled PR",
+		prTitle,
 		pipeline,
 		constitutionHash,
 		promptsHash,
+		walkthrough: walkthrough.text,
+		diff,
+		retries,
 		cwd,
 	};
 
