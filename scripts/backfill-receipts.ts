@@ -196,11 +196,35 @@ async function backfillOne(
 		};
 	}
 
+	// Compute the PR's diff scope — files changed between the merge commit
+	// and the merge-base with its target branch. A detached HEAD has nothing
+	// staged, so without this the pipeline runs over an empty file list.
+	const baseRef = `origin/${pr.baseRefName}`;
+	const diffFiles = await runGit(
+		["diff", "--name-only", `${baseRef}...HEAD`],
+		options.cwd,
+	);
+	const files =
+		diffFiles.exitCode === 0
+			? diffFiles.stdout
+					.split("\n")
+					.map((s) => s.trim())
+					.filter((s) => s.length > 0)
+			: [];
+
+	if (files.length === 0) {
+		return {
+			ok: false,
+			reason: `no files in diff scope ${baseRef}...${pr.mergeCommit.oid.slice(0, 12)}`,
+		};
+	}
+
 	try {
 		const receipt = await receiptAction({
 			cwd: options.cwd,
 			base: pr.baseRefName,
 			title: pr.title,
+			files,
 			noIndex: true, // we'll refresh once at the end
 		});
 		return { ok: true, receipt };
