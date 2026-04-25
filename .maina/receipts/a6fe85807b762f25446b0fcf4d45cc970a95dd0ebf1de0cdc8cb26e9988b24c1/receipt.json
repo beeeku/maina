@@ -1,12 +1,12 @@
 {
-  "prTitle": "feat(cli,core): maina receipt emits signed v1 json + html (#237)",
+  "prTitle": "ci(docs): publish .maina/receipts/** via Pages workflow (#263)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:35:53.419Z",
+  "timestamp": "2026-04-25T21:11:30.247Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 1,
+    "additions": 17,
+    "deletions": 0
   },
   "agent": {
     "id": "ci:unknown",
@@ -22,15 +22,7 @@
       "name": "AI slop detector",
       "status": "passed",
       "tool": "slop",
-      "findings": [
-        {
-          "severity": "warning",
-          "file": "packages/cli/src/program.ts",
-          "line": 175,
-          "message": "3 consecutive lines of commented-out code",
-          "rule": "slop/commented-code"
-        }
-      ]
+      "findings": []
     },
     {
       "id": "doc-claims-check",
@@ -141,22 +133,7 @@
       "name": "Biome lint + format",
       "status": "passed",
       "tool": "biome",
-      "findings": [
-        {
-          "severity": "warning",
-          "file": ".maina/wiki/.signals.json",
-          "line": 1,
-          "message": "File has 20214 lines (exceeds 500 line limit). Consider splitting.",
-          "rule": "file-too-long"
-        },
-        {
-          "severity": "warning",
-          "file": "packages/core/src/index.ts",
-          "line": 1,
-          "message": "File has 785 lines (exceeds 500 line limit). Consider splitting.",
-          "rule": "file-too-long"
-        }
-      ]
+      "findings": []
     },
     {
       "id": "review-quality-check",
@@ -166,8 +143,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "feat(cli,core): maina receipt emits signed v1 json + html (#237): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "ci(docs): publish .maina/receipts/** via Pages workflow (#263): +17 / −0 across 1 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "f893a7d9654ccf49e47d8bec3a8f0883462f15a0bda02f5fab6fc907dec1a8e7"
+  "hash": "a6fe85807b762f25446b0fcf4d45cc970a95dd0ebf1de0cdc8cb26e9988b24c1"
 }

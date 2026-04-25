@@ -1,12 +1,12 @@
 {
-  "prTitle": "docs: ADR 0032 agent.id format (#236)",
+  "prTitle": "feat(core,cli): receipt walkthrough — 3-sentence ai header (#238)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:36:14.320Z",
+  "timestamp": "2026-04-25T21:13:00.372Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 11,
+    "additions": 1347,
+    "deletions": 19
   },
   "agent": {
     "id": "ci:unknown",
@@ -133,7 +133,22 @@
       "name": "Biome lint + format",
       "status": "passed",
       "tool": "biome",
-      "findings": []
+      "findings": [
+        {
+          "severity": "warning",
+          "file": ".maina/wiki/.signals.json",
+          "line": 1,
+          "message": "File has 22237 lines (exceeds 500 line limit). Consider splitting.",
+          "rule": "file-too-long"
+        },
+        {
+          "severity": "warning",
+          "file": "packages/core/src/index.ts",
+          "line": 1,
+          "message": "File has 796 lines (exceeds 500 line limit). Consider splitting.",
+          "rule": "file-too-long"
+        }
+      ]
     },
     {
       "id": "review-quality-check",
@@ -143,8 +158,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "docs: ADR 0032 agent.id format (#236): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(core,cli): receipt walkthrough — 3-sentence ai header (#238): +1347 / −19 across 11 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "3ab28047b3f5408a7a793e7c6230a8358baef1aaf777f77198cc2acf82ef3082"
+  "hash": "dffae20060fef23a897460f32c5b75c0aea51fcb6e8bef4efc3aaee79d8097a3"
 }

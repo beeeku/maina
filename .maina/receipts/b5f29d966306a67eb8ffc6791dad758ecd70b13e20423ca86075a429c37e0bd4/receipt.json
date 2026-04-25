@@ -1,12 +1,12 @@
 {
-  "prTitle": "feat(ci): backfill receipts script for wave 3 dogfood (#256)",
+  "prTitle": "feat(core,cli): thread diff stats into receipt builds (#264)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:34:40.819Z",
+  "timestamp": "2026-04-25T21:11:18.529Z",
   "status": "failed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 5,
+    "additions": 207,
+    "deletions": 8
   },
   "agent": {
     "id": "ci:unknown",
@@ -22,7 +22,15 @@
       "name": "AI slop detector",
       "status": "passed",
       "tool": "slop",
-      "findings": []
+      "findings": [
+        {
+          "severity": "warning",
+          "file": "scripts/backfill-receipts.ts",
+          "line": 257,
+          "message": "4 consecutive lines of commented-out code",
+          "rule": "slop/commented-code"
+        }
+      ]
     },
     {
       "id": "doc-claims-check",
@@ -136,9 +144,9 @@
       "findings": [
         {
           "severity": "warning",
-          "file": ".maina/wiki/.signals.json",
+          "file": "packages/core/src/index.ts",
           "line": 1,
-          "message": "File has 25127 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 820 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
         }
       ]
@@ -45435,14 +45443,14 @@
         {
           "severity": "error",
           "file": "scripts/backfill-receipts.ts",
-          "line": 126,
+          "line": 127,
           "message": "typecheck: TS2867: Cannot find name 'Bun'. Do you need to install type definitions for Bun? Try `npm i --save-dev @types/bun`.",
           "rule": "TS2867"
         },
         {
           "severity": "error",
           "file": "scripts/backfill-receipts.ts",
-          "line": 153,
+          "line": 154,
           "message": "typecheck: TS2867: Cannot find name 'Bun'. Do you need to install type definitions for Bun? Try `npm i --save-dev @types/bun`.",
           "rule": "TS2867"
         },
@@ -45564,8 +45572,8 @@
       ]
     }
   ],
-  "walkthrough": "feat(ci): backfill receipts script for wave 3 dogfood (#256): +0 / −0 across 0 file(s). Maina ran 11 check(s) — 8 passed, 1 failed, 2 skipped. Failed — passed 8 of 11 policy checks; the failed entries explain why this change is not yet safe to merge.",
+  "walkthrough": "feat(core,cli): thread diff stats into receipt builds (#264): +207 / −8 across 5 file(s). Maina ran 11 check(s) — 8 passed, 1 failed, 2 skipped. Failed — passed 8 of 11 policy checks; the failed entries explain why this change is not yet safe to merge.",
   "feedback": [],
   "retries": 0,
-  "hash": "5bb01affcb1310f97c22e35203f2dc61fc6a7f0c82b7553a7f0dd868360d9245"
+  "hash": "b5f29d966306a67eb8ffc6791dad758ecd70b13e20423ca86075a429c37e0bd4"
 }

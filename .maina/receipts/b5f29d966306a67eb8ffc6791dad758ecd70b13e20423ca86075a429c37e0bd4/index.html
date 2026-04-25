@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Receipt 5bb01affcb13 — feat(ci): backfill receipts script for wave 3 dogfood (#256)</title>
+<title>Receipt b5f29d966306 — feat(core,cli): thread diff stats into receipt builds (#264)</title>
 <meta name="description" content="Maina proof-of-correctness receipt for mainahq/maina.">
 <style>
 :root { color-scheme: light dark; }
@@ -39,23 +39,23 @@ a { color: oklch(0.55 0.2 250); }
 </style>
 </head>
 <body>
-<h1>feat(ci): backfill receipts script for wave 3 dogfood (#256)</h1>
-<p class="meta">mainahq/maina · 2026-04-25T20:34:40.819Z</p>
+<h1>feat(core,cli): thread diff stats into receipt builds (#264)</h1>
+<p class="meta">mainahq/maina · 2026-04-25T21:11:18.529Z</p>
 
 <p>
   <span class="status status-failed">failed — 8 of 11 checks held</span>
   
 </p>
 
-<p class="walkthrough">feat(ci): backfill receipts script for wave 3 dogfood (#256): +0 / −0 across 0 file(s). Maina ran 11 check(s) — 8 passed, 1 failed, 2 skipped. Failed — passed 8 of 11 policy checks; the failed entries explain why this change is not yet safe to merge.</p>
+<p class="walkthrough">feat(core,cli): thread diff stats into receipt builds (#264): +207 / −8 across 5 file(s). Maina ran 11 check(s) — 8 passed, 1 failed, 2 skipped. Failed — passed 8 of 11 policy checks; the failed entries explain why this change is not yet safe to merge.</p>
 
 <h2>Receipt identity</h2>
 <dl class="kv">
-  <dt>hash</dt><dd class="hash">5bb01affcb1310f97c22e35203f2dc61fc6a7f0c82b7553a7f0dd868360d9245</dd>
+  <dt>hash</dt><dd class="hash">b5f29d966306a67eb8ffc6791dad758ecd70b13e20423ca86075a429c37e0bd4</dd>
   <dt>agent</dt><dd>ci:unknown · unknown</dd>
   <dt>constitution</dt><dd class="hash">b3eaa1f67c18…</dd>
   <dt>prompts</dt><dd class="hash">46f332b9839c…</dd>
-  <dt>diff</dt><dd>+0 / −0 across 0 file(s)</dd>
+  <dt>diff</dt><dd>+207 / −8 across 5 file(s)</dd>
   <dt>retries</dt><dd>0</dd>
 </dl>
 
@@ -63,7 +63,7 @@ a { color: oklch(0.55 0.2 250); }
 <div class="check check-passed">
   <span class="check-name">AI slop detector</span>
   <span class="check-tool">slop · passed</span>
-
+  <div class="finding"><span class="severity severity-warning">warning</span>scripts/backfill-receipts.ts:257 — 4 consecutive lines of commented-out code</div>
 </div>
 <div class="check check-passed">
   <span class="check-name">Doc claims check</span>
@@ -111,7 +111,7 @@ a { color: oklch(0.55 0.2 250); }
 <div class="check check-passed">
   <span class="check-name">Biome lint + format</span>
   <span class="check-tool">biome · passed</span>
-  <div class="finding"><span class="severity severity-warning">warning</span>.maina/wiki/.signals.json:1 — File has 25127 lines (exceeds 500 line limit). Consider splitting.</div>
+  <div class="finding"><span class="severity severity-warning">warning</span>packages/core/src/index.ts:1 — File has 820 lines (exceeds 500 line limit). Consider splitting.</div>
 </div>
 <div class="check check-skipped">
   <span class="check-name">Code quality review</span>
@@ -6589,8 +6589,8 @@ a { color: oklch(0.55 0.2 250); }
   <div class="finding"><span class="severity severity-error">error</span>scripts/__tests__/backfill-receipts.test.ts:11 — typecheck: TS2307: Cannot find module &#39;bun:test&#39; or its corresponding type declarations.</div>
   <div class="finding"><span class="severity severity-error">error</span>scripts/__tests__/backfill-receipts.test.ts:15 — typecheck: TS2339: Property &#39;dir&#39; does not exist on type &#39;ImportMeta&#39;.</div>
   <div class="finding"><span class="severity severity-error">error</span>scripts/__tests__/backfill-receipts.test.ts:20 — typecheck: TS2339: Property &#39;dir&#39; does not exist on type &#39;ImportMeta&#39;.</div>
-  <div class="finding"><span class="severity severity-error">error</span>scripts/backfill-receipts.ts:126 — typecheck: TS2867: Cannot find name &#39;Bun&#39;. Do you need to install type definitions for Bun? Try `npm i --save-dev @types/bun`.</div>
-  <div class="finding"><span class="severity severity-error">error</span>scripts/backfill-receipts.ts:153 — typecheck: TS2867: Cannot find name &#39;Bun&#39;. Do you need to install type definitions for Bun? Try `npm i --save-dev @types/bun`.</div>
+  <div class="finding"><span class="severity severity-error">error</span>scripts/backfill-receipts.ts:127 — typecheck: TS2867: Cannot find name &#39;Bun&#39;. Do you need to install type definitions for Bun? Try `npm i --save-dev @types/bun`.</div>
+  <div class="finding"><span class="severity severity-error">error</span>scripts/backfill-receipts.ts:154 — typecheck: TS2867: Cannot find name &#39;Bun&#39;. Do you need to install type definitions for Bun? Try `npm i --save-dev @types/bun`.</div>
   <div class="finding"><span class="severity severity-error">error</span>scripts/check-paths.ts:27 — typecheck: TS2339: Property &#39;dir&#39; does not exist on type &#39;ImportMeta&#39;.</div>
   <div class="finding"><span class="severity severity-error">error</span>scripts/docs-manifest.ts:24 — typecheck: TS2339: Property &#39;dir&#39; does not exist on type &#39;ImportMeta&#39;.</div>
   <div class="finding"><span class="severity severity-error">error</span>scripts/test-isolated.ts:16 — typecheck: TS2307: Cannot find module &#39;bun&#39; or its corresponding type declarations.</div>
@@ -6614,6 +6614,8 @@ a { color: oklch(0.55 0.2 250); }
 <footer>
 Verified with Maina. Receipt format: v1 (<a href="https://schemas.mainahq.com/v1.json">schemas.mainahq.com/v1.json</a>).
 Verify this receipt offline with <code>maina verify-receipt ./receipt.json</code>.
+<br>
+<a href="../">Back to receipts index</a>
 </footer>
 </body>
 </html>

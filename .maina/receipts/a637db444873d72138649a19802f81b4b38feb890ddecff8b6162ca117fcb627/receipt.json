@@ -1,12 +1,12 @@
 {
-  "prTitle": "feat(core,cli): receipts index page for github pages (#242)",
+  "prTitle": "feat(ci): backfilled receipts for last 10 prs (#258)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:35:22.590Z",
+  "timestamp": "2026-04-25T21:11:48.454Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 21,
+    "additions": 54950,
+    "deletions": 0
   },
   "agent": {
     "id": "ci:unknown",
@@ -136,24 +136,17 @@
       "findings": [
         {
           "severity": "warning",
-          "file": ".maina/wiki/.signals.json",
+          "file": ".maina/receipts/5bb01affcb1310f97c22e35203f2dc61fc6a7f0c82b7553a7f0dd868360d9245/index.html",
           "line": 1,
-          "message": "File has 23104 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 6619 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
         },
         {
           "severity": "warning",
-          "file": "packages/core/src/index.ts",
+          "file": ".maina/receipts/5bb01affcb1310f97c22e35203f2dc61fc6a7f0c82b7553a7f0dd868360d9245/receipt.json",
           "line": 1,
-          "message": "File has 801 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 45572 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
-        },
-        {
-          "severity": "warning",
-          "file": "packages/core/src/receipt/__tests__/index-page.test.ts",
-          "line": 1,
-          "message": "Import 'beforeAll' appears unused",
-          "rule": "unused-import"
         }
       ]
     },
@@ -165,8 +158,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "feat(core,cli): receipts index page for github pages (#242): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(ci): backfilled receipts for last 10 prs (#258): +54950 / −0 across 21 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "6ef4fe558cafcf53244353d67be02f8104f948350a1c6e24049c1da87f4ff263"
+  "hash": "a637db444873d72138649a19802f81b4b38feb890ddecff8b6162ca117fcb627"
 }

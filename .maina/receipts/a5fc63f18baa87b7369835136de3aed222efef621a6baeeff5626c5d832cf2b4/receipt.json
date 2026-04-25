@@ -1,12 +1,12 @@
 {
-  "prTitle": "feat(core,cli): verified-by sha256 git trailer (#241)",
+  "prTitle": "feat(ci): backfill receipts script for wave 3 dogfood (#256)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:35:43.036Z",
+  "timestamp": "2026-04-25T21:12:02.212Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 5,
+    "additions": 781,
+    "deletions": 4
   },
   "agent": {
     "id": "ci:unknown",
@@ -138,21 +138,7 @@
           "severity": "warning",
           "file": ".maina/wiki/.signals.json",
           "line": 1,
-          "message": "File has 21370 lines (exceeds 500 line limit). Consider splitting.",
-          "rule": "file-too-long"
-        },
-        {
-          "severity": "warning",
-          "file": "packages/cli/src/commands/commit.ts",
-          "line": 1,
-          "message": "File has 611 lines (exceeds 500 line limit). Consider splitting.",
-          "rule": "file-too-long"
-        },
-        {
-          "severity": "warning",
-          "file": "packages/core/src/index.ts",
-          "line": 1,
-          "message": "File has 790 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 25127 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
         }
       ]
@@ -165,8 +151,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "feat(core,cli): verified-by sha256 git trailer (#241): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(ci): backfill receipts script for wave 3 dogfood (#256): +781 / −4 across 5 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "764145ea5e601deb645eccb185f0c6ee54a84c2c8fb0893cd6f98e5b56bbf738"
+  "hash": "a5fc63f18baa87b7369835136de3aed222efef621a6baeeff5626c5d832cf2b4"
 }

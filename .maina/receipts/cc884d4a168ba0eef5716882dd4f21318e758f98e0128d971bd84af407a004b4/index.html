@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Receipt ccb90ee8b784 — feat(core,cli): receipt false-positive feedback recording (#239)</title>
+<title>Receipt cc884d4a168b — feat(core): per-receipt footer backlink to receipts index (#268)</title>
 <meta name="description" content="Maina proof-of-correctness receipt for mainahq/maina.">
 <style>
 :root { color-scheme: light dark; }
@@ -39,23 +39,23 @@ a { color: oklch(0.55 0.2 250); }
 </style>
 </head>
 <body>
-<h1>feat(core,cli): receipt false-positive feedback recording (#239)</h1>
-<p class="meta">mainahq/maina · 2026-04-25T20:35:02.209Z</p>
+<h1>feat(core): per-receipt footer backlink to receipts index (#268)</h1>
+<p class="meta">mainahq/maina · 2026-04-25T21:11:05.434Z</p>
 
 <p>
   <span class="status status-passed">passed 8 of 10 checks</span>
   
 </p>
 
-<p class="walkthrough">feat(core,cli): receipt false-positive feedback recording (#239): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.</p>
+<p class="walkthrough">feat(core): per-receipt footer backlink to receipts index (#268): +17 / −0 across 2 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.</p>
 
 <h2>Receipt identity</h2>
 <dl class="kv">
-  <dt>hash</dt><dd class="hash">ccb90ee8b7849c736f376660893705e8c96d1f917aa981b73a6206960bfb9f60</dd>
+  <dt>hash</dt><dd class="hash">cc884d4a168ba0eef5716882dd4f21318e758f98e0128d971bd84af407a004b4</dd>
   <dt>agent</dt><dd>ci:unknown · unknown</dd>
   <dt>constitution</dt><dd class="hash">b3eaa1f67c18…</dd>
   <dt>prompts</dt><dd class="hash">46f332b9839c…</dd>
-  <dt>diff</dt><dd>+0 / −0 across 0 file(s)</dd>
+  <dt>diff</dt><dd>+17 / −0 across 2 file(s)</dd>
   <dt>retries</dt><dd>0</dd>
 </dl>
 
@@ -111,9 +111,7 @@ a { color: oklch(0.55 0.2 250); }
 <div class="check check-passed">
   <span class="check-name">Biome lint + format</span>
   <span class="check-tool">biome · passed</span>
-  <div class="finding"><span class="severity severity-warning">warning</span>.maina/wiki/.signals.json:1 — File has 24260 lines (exceeds 500 line limit). Consider splitting.</div>
-  <div class="finding"><span class="severity severity-warning">warning</span>packages/cli/src/commands/feedback.ts:357 — Usage of &#39;any&#39; type — prefer explicit types or &#39;unknown&#39;</div>
-  <div class="finding"><span class="severity severity-warning">warning</span>packages/core/src/index.ts:1 — File has 816 lines (exceeds 500 line limit). Consider splitting.</div>
+
 </div>
 <div class="check check-skipped">
   <span class="check-name">Code quality review</span>
@@ -124,6 +122,8 @@ a { color: oklch(0.55 0.2 250); }
 <footer>
 Verified with Maina. Receipt format: v1 (<a href="https://schemas.mainahq.com/v1.json">schemas.mainahq.com/v1.json</a>).
 Verify this receipt offline with <code>maina verify-receipt ./receipt.json</code>.
+<br>
+<a href="../">Back to receipts index</a>
 </footer>
 </body>
 </html>

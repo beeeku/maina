@@ -1,12 +1,12 @@
 {
-  "prTitle": "feat(core,cli): receipt false-positive feedback recording (#239)",
+  "prTitle": "feat(core,cli): maina apply-fix — autofix loop closer (#240)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:35:02.209Z",
+  "timestamp": "2026-04-25T21:12:38.375Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 8,
+    "additions": 1269,
+    "deletions": 0
   },
   "agent": {
     "id": "ci:unknown",
@@ -22,7 +22,15 @@
       "name": "AI slop detector",
       "status": "passed",
       "tool": "slop",
-      "findings": []
+      "findings": [
+        {
+          "severity": "warning",
+          "file": "packages/cli/src/program.ts",
+          "line": 177,
+          "message": "3 consecutive lines of commented-out code",
+          "rule": "slop/commented-code"
+        }
+      ]
     },
     {
       "id": "doc-claims-check",
@@ -138,21 +146,14 @@
           "severity": "warning",
           "file": ".maina/wiki/.signals.json",
           "line": 1,
-          "message": "File has 24260 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 23682 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
-        },
-        {
-          "severity": "warning",
-          "file": "packages/cli/src/commands/feedback.ts",
-          "line": 357,
-          "message": "Usage of 'any' type — prefer explicit types or 'unknown'",
-          "rule": "no-any-type"
         },
         {
           "severity": "warning",
           "file": "packages/core/src/index.ts",
           "line": 1,
-          "message": "File has 816 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 805 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
         }
       ]
@@ -165,8 +166,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "feat(core,cli): receipt false-positive feedback recording (#239): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(core,cli): maina apply-fix — autofix loop closer (#240): +1269 / −0 across 8 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "ccb90ee8b7849c736f376660893705e8c96d1f917aa981b73a6206960bfb9f60"
+  "hash": "bf1b2656d40f9e1bdc807ec70835aa47618550120c82c8de65501e8ae5667c84"
 }

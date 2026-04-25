@@ -1,12 +1,12 @@
 {
-  "prTitle": "feat(core,cli): receipt walkthrough — 3-sentence ai header (#238)",
+  "prTitle": "feat(core,cli): receipts index page for github pages (#242)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:35:32.825Z",
+  "timestamp": "2026-04-25T21:12:49.736Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 7,
+    "additions": 1314,
+    "deletions": 0
   },
   "agent": {
     "id": "ci:unknown",
@@ -138,15 +138,22 @@
           "severity": "warning",
           "file": ".maina/wiki/.signals.json",
           "line": 1,
-          "message": "File has 22237 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 23104 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
         },
         {
           "severity": "warning",
           "file": "packages/core/src/index.ts",
           "line": 1,
-          "message": "File has 796 lines (exceeds 500 line limit). Consider splitting.",
+          "message": "File has 801 lines (exceeds 500 line limit). Consider splitting.",
           "rule": "file-too-long"
+        },
+        {
+          "severity": "warning",
+          "file": "packages/core/src/receipt/__tests__/index-page.test.ts",
+          "line": 1,
+          "message": "Import 'beforeAll' appears unused",
+          "rule": "unused-import"
         }
       ]
     },
@@ -158,8 +165,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "feat(core,cli): receipt walkthrough — 3-sentence ai header (#238): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(core,cli): receipts index page for github pages (#242): +1314 / −0 across 7 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "c8b18e7b4b8b5502cd2a1a97bb241b4bf3576510f0b0ff6ea7761a4b38510352"
+  "hash": "0fdcbc34705c8dbde927510b404bb4825bca863e04479fbe0e9a2d5bf2543573"
 }

@@ -1,12 +1,12 @@
 {
-  "prTitle": "docs: add copy discipline guide c2 (#246)",
+  "prTitle": "feat(core): per-receipt footer backlink to receipts index (#268)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:36:03.437Z",
+  "timestamp": "2026-04-25T21:11:05.434Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 2,
+    "additions": 17,
+    "deletions": 0
   },
   "agent": {
     "id": "ci:unknown",
@@ -143,8 +143,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "docs: add copy discipline guide c2 (#246): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(core): per-receipt footer backlink to receipts index (#268): +17 / −0 across 2 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "654fb1a4ddddb237607d923b3f62be4b276ae877305fe4981118188a1229e052"
+  "hash": "cc884d4a168ba0eef5716882dd4f21318e758f98e0128d971bd84af407a004b4"
 }

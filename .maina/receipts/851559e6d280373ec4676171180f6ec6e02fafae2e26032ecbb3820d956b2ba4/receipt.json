@@ -1,12 +1,12 @@
 {
   "prTitle": "feat(core): maina-native prompt templates and agents (#243 #244)",
   "repo": "mainahq/maina",
-  "timestamp": "2026-04-25T20:34:51.242Z",
+  "timestamp": "2026-04-25T21:12:14.706Z",
   "status": "passed",
   "diff": {
-    "additions": 0,
-    "deletions": 0,
-    "files": 0
+    "files": 11,
+    "additions": 1249,
+    "deletions": 0
   },
   "agent": {
     "id": "ci:unknown",
@@ -151,8 +151,8 @@
       "findings": []
     }
   ],
-  "walkthrough": "feat(core): maina-native prompt templates and agents (#243 #244): +0 / −0 across 0 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
+  "walkthrough": "feat(core): maina-native prompt templates and agents (#243 #244): +1249 / −0 across 11 file(s). Maina ran 10 check(s) — 8 passed, 2 skipped. Verified — passed 8 of 10 policy checks.",
   "feedback": [],
   "retries": 0,
-  "hash": "31adad5cec25d4e5f24f99160bb1e746933db4eacaed90f1ee36575ca991c4ed"
+  "hash": "851559e6d280373ec4676171180f6ec6e02fafae2e26032ecbb3820d956b2ba4"
 }
