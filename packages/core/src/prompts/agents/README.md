@@ -22,5 +22,14 @@ The prompts are Maina-original. They follow the
   than invent context.
 - Copy discipline (rule C2) — affirmative framing, never "0 findings".
 
-Edit these files in this directory or override them in
-`.maina/prompts/agents/` to specialise per repo.
+## Overriding per repo
+
+Maina's prompt engine loads user overrides from `.maina/prompts/<task>.md`
+(flat — no nested `agents/` directory). To specialise the review prompt for
+a repo, drop a `.maina/prompts/review.md` next to the constitution and the
+engine picks it up; same pattern for `debug.md`. The agent files in this
+directory are the shipped defaults for those task names.
+
+Wiring the templates in this directory through a richer per-agent loader
+(e.g. `agents/<name>.md` cascade) is tracked as a follow-up — for now the
+flat path is the override surface.

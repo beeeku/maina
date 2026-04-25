@@ -2,9 +2,14 @@
 
 These markdown templates ship inside `@mainahq/core` and are the
 default scaffolding `maina plan`, `maina spec`, and `maina design`
-generate when a feature directory is created. Repos that have written
-their own templates can override them by placing a same-named file in
-`.maina/templates/`.
+generate when a feature directory is created.
+
+**Overriding per repo:** today the prompt engine reads user overrides
+from `.maina/prompts/<task>.md` (flat). Per-template repo-level
+overrides (e.g. a custom `.maina/templates/spec-template.md`) is a
+follow-up — the loader currently uses the flat task-keyed path. Drop a
+`.maina/prompts/spec.md` to override the *spec* prompt; the templates
+in this directory are the rendered scaffolding the prompt produces.
 
 | File | Owner step | Purpose |
 |---|---|---|

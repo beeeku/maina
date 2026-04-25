@@ -6,22 +6,37 @@ const TEMPLATES_DIR = join(import.meta.dir, "..", "templates");
 const AGENTS_DIR = join(import.meta.dir, "..", "agents");
 
 const BANNED_C2_PHRASES = [
-	/\b0\s+findings?\b/i,
-	/\bno\s+issues?\s+found\b/i,
-	/\bno\s+errors?\s+detected\b/i,
+	/\b0\s+(?:findings?|issues?|problems?|errors?)(?:\(s\))?\b/i,
+	/\bno\s+(?:issues?|errors?|problems?|findings?)(?:\s+(?:found|detected))?\b/i,
+	/\bno\s+security\s+(?:findings?|concerns?|issues?)\b/i,
 ];
 
 /**
  * Strip lines that *teach* the C2 rule by quoting the banned phrases as
- * bad examples — those should not trip the regex. A line counts as a
- * teaching line when it contains a "BAD" or "Bad" marker (with optional
- * markdown emphasis), or sits between explicit example fences.
+ * bad examples — those should not trip the regex. A teaching span starts
+ * on a line containing a "BAD" or "**BAD**" marker (with optional
+ * descriptor in parens) and continues until the first blank line, so
+ * wrapped continuation lines are also dropped.
  */
 function stripTeachingLines(content: string): string {
-	return content
-		.split("\n")
-		.filter((line) => !/\*?\*?BAD(?:\s*\(.*?\))?\s*[:*]/i.test(line))
-		.join("\n");
+	const lines = content.split("\n");
+	const out: string[] = [];
+	let inSpan = false;
+	for (const line of lines) {
+		if (/\*{0,2}BAD(?:\s*\(.*?\))?\s*[:*]/i.test(line)) {
+			inSpan = true;
+			continue;
+		}
+		if (inSpan) {
+			if (line.trim().length === 0) {
+				inSpan = false;
+				out.push(line);
+			}
+			continue;
+		}
+		out.push(line);
+	}
+	return out.join("\n");
 }
 
 function listMd(dir: string): string[] {

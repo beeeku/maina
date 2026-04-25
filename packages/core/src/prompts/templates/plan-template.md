@@ -94,5 +94,5 @@ interface FeatureContract {
 > `[NEEDS CLARIFICATION: …]` marker so it's grep-able. Plans don't ship
 > with markers; the spec might.
 
-- [Open question 1]
-- [Open question 2]
+- [NEEDS CLARIFICATION: open question 1 — describe the ambiguity]
+- [NEEDS CLARIFICATION: open question 2 — describe the ambiguity]
