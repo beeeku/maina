@@ -1,9 +1,11 @@
 /**
- * Backfill script — unit tests on its pure helpers.
+ * Backfill script — subprocess-based CLI tests.
  *
- * The script's main flow is tightly coupled to git + the gh CLI + the receipt
- * action, so we test the parsing/argument plumbing here and leave the
- * end-to-end smoke for a future integration harness.
+ * Each test spawns the script as a child process and asserts on stdout,
+ * stderr, and exit code. The main flow is tightly coupled to git + the gh
+ * CLI + the receipt action, so we exercise the parser + arg-validation
+ * paths here and leave the end-to-end smoke for a future integration
+ * harness.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -64,5 +66,23 @@ describe("backfill-receipts CLI", () => {
 		const result = runScript(["--bogus"]);
 		expect(result.exitCode).not.toBe(0);
 		expect(result.stderr.toLowerCase()).toContain("unknown arg");
+	});
+
+	test("rejects --repo with no value", () => {
+		const result = runScript(["--repo"]);
+		expect(result.exitCode).not.toBe(0);
+		expect(result.stderr.toLowerCase()).toMatch(/--repo/);
+	});
+
+	test("rejects --repo followed by a flag", () => {
+		const result = runScript(["--repo", "--dry-run"]);
+		expect(result.exitCode).not.toBe(0);
+		expect(result.stderr.toLowerCase()).toMatch(/--repo/);
+	});
+
+	test("rejects --repo with malformed slug", () => {
+		const result = runScript(["--repo", "no-slash"]);
+		expect(result.exitCode).not.toBe(0);
+		expect(result.stderr.toLowerCase()).toMatch(/owner\/repo/);
 	});
 });

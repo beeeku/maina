@@ -74,9 +74,24 @@ function parseArgs(): BackfillOptions {
 		} else if (arg === "--dry-run") {
 			opts.dryRun = true;
 		} else if (arg === "--repo") {
-			opts.repo = argv[++i];
+			const next = argv[++i];
+			if (!next || next.startsWith("-")) {
+				throw new Error(
+					`--repo requires a value (e.g. owner/repo), got: ${next ?? "<missing>"}`,
+				);
+			}
+			if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(next)) {
+				throw new Error(`--repo must be in owner/repo format, got: ${next}`);
+			}
+			opts.repo = next;
 		} else if (arg?.startsWith("--repo=")) {
-			opts.repo = arg.slice("--repo=".length);
+			const value = arg.slice("--repo=".length);
+			if (!value || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(value)) {
+				throw new Error(
+					`--repo must be in owner/repo format, got: ${value || "<empty>"}`,
+				);
+			}
+			opts.repo = value;
 		} else if (arg === "--help" || arg === "-h") {
 			printHelp();
 			process.exit(0);
@@ -121,6 +136,7 @@ async function runGit(
 
 async function listMergedPrs(
 	limit: number,
+	cwd: string,
 	repo?: string,
 ): Promise<MergedPr[]> {
 	const args = [
@@ -134,7 +150,11 @@ async function listMergedPrs(
 		"number,title,baseRefName,mergeCommit,author",
 	];
 	if (repo) args.push("--repo", repo);
-	const proc = Bun.spawn(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+	const proc = Bun.spawn(["gh", ...args], {
+		cwd,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
 	const stdout = await new Response(proc.stdout).text();
 	const stderr = await new Response(proc.stderr).text();
 	const exitCode = await proc.exited;
@@ -167,12 +187,24 @@ async function ensureCleanWorkingTree(cwd: string): Promise<void> {
 	}
 }
 
-async function getCurrentBranch(cwd: string): Promise<string> {
-	const result = await runGit(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
-	if (result.exitCode !== 0) {
-		throw new Error(`git rev-parse failed: ${result.stderr.trim()}`);
+/** Capture the original ref so we can restore on exit. Returns the branch
+ * name when on a normal branch, or the full commit SHA when detached.
+ * Either form is a valid `git checkout` argument; "HEAD" alone (what
+ * `--abbrev-ref` returns in detached state) is not. */
+async function captureOriginalRef(cwd: string): Promise<string> {
+	const symbolic = await runGit(
+		["symbolic-ref", "--short", "--quiet", "HEAD"],
+		cwd,
+	);
+	if (symbolic.exitCode === 0 && symbolic.stdout.trim().length > 0) {
+		return symbolic.stdout.trim();
 	}
-	return result.stdout.trim();
+	// Detached — fall back to the explicit SHA.
+	const sha = await runGit(["rev-parse", "HEAD"], cwd);
+	if (sha.exitCode !== 0 || sha.stdout.trim().length === 0) {
+		throw new Error(`could not capture original HEAD: ${sha.stderr.trim()}`);
+	}
+	return sha.stdout.trim();
 }
 
 async function backfillOne(
@@ -257,7 +289,7 @@ async function main(): Promise<void> {
 		receiptsDir: join(options.cwd, ".maina", "receipts"),
 	};
 
-	const prs = await listMergedPrs(options.limit, options.repo);
+	const prs = await listMergedPrs(options.limit, options.cwd, options.repo);
 	process.stdout.write(`found ${prs.length} merged PR(s)\n`);
 
 	if (options.dryRun) {
@@ -270,7 +302,7 @@ async function main(): Promise<void> {
 	}
 
 	await ensureCleanWorkingTree(options.cwd);
-	const originalBranch = await getCurrentBranch(options.cwd);
+	const originalBranch = await captureOriginalRef(options.cwd);
 	mkdirSync(summary.receiptsDir, { recursive: true });
 
 	let restored = false;
