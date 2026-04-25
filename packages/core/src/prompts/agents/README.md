@@ -1,16 +1,20 @@
 # Maina agent prompts
 
-System prompts for the verification agents Maina exposes inside the
-verify pipeline and the receipt-rendering surface. Each prompt is
-loaded by `tryAIGenerate` via the prompt engine; downstream callers
-(the receipt walkthrough, `maina review`, `maina explain`) reference
-them by file name.
+System prompts for the verification agents Maina is wiring through
+the prompt engine. Today the engine reads its defaults from
+`packages/core/src/prompts/defaults/<task>.md`; this directory ships
+the next generation of agent-specific prompts, with the loader
+unification tracked as a follow-up.
 
-| File | Used by | Output |
-|---|---|---|
-| `review.md` | `maina review`, receipt two-stage review | "is this safe to merge" 3-sentence verdict |
-| `debug.md` | receipt failed-check explanation | why a specific check went red |
-| `router.md` | `tryAIGenerate` task classification | one of `review`/`debug`/`spec`/`explain`/`meta` |
+| File | Status | Used by | Output |
+|---|---|---|---|
+| `review.md` | shipped (will replace `defaults/review.md`) | `maina review`, receipt two-stage review | "is this safe to merge" 3-sentence verdict |
+| `debug.md` | shipped (new path, no `defaults/` equivalent yet) | receipt failed-check explanation | why a specific check went red |
+| `router.md` | shipped (new path) | task classification before `tryAIGenerate` | one of `review` / `debug` / `meta` |
+
+`spec` and `explain` agents are planned (Wave 5 verification-agent
+catalog) but not yet shipped in this directory; the router routes
+those to `meta` until their prompt files land.
 
 The prompts are Maina-original. They follow the
 **verification-first** framing the receipt depends on:
@@ -24,12 +28,10 @@ The prompts are Maina-original. They follow the
 
 ## Overriding per repo
 
-Maina's prompt engine loads user overrides from `.maina/prompts/<task>.md`
-(flat — no nested `agents/` directory). To specialise the review prompt for
-a repo, drop a `.maina/prompts/review.md` next to the constitution and the
-engine picks it up; same pattern for `debug.md`. The agent files in this
-directory are the shipped defaults for those task names.
-
-Wiring the templates in this directory through a richer per-agent loader
-(e.g. `agents/<name>.md` cascade) is tracked as a follow-up — for now the
-flat path is the override surface.
+The prompt engine loads user overrides from `.maina/prompts/<task>.md`
+(flat — no nested `agents/` directory). Drop `.maina/prompts/review.md`
+next to the constitution and the engine picks it up; same pattern for
+`debug.md`. Until the loader unification lands, the engine pulls
+shipped defaults from `packages/core/src/prompts/defaults/`; once
+unification ships the agent prompts in this directory will become the
+shipped defaults for their respective task ids.

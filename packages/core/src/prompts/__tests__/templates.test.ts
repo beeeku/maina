@@ -5,18 +5,26 @@ import { join } from "node:path";
 const TEMPLATES_DIR = join(import.meta.dir, "..", "templates");
 const AGENTS_DIR = join(import.meta.dir, "..", "agents");
 
+/**
+ * Single source of truth for the rule-C2 banned-phrase set. Keep these in
+ * lock-step with the BAD examples documented in the prompt + template files
+ * — if a prompt teaches a phrase as banned, the regex set must catch it.
+ */
 const BANNED_C2_PHRASES = [
+	// "0 findings", "0 issue(s)", "0 problem(s)", "0 errors", etc.
 	/\b0\s+(?:findings?|issues?|problems?|errors?)(?:\(s\))?\b/i,
+	// "no findings/issues/problems/errors", with or without "found"/"detected"
 	/\bno\s+(?:issues?|errors?|problems?|findings?)(?:\s+(?:found|detected))?\b/i,
+	// "no security findings/concerns/issues"
 	/\bno\s+security\s+(?:findings?|concerns?|issues?)\b/i,
 ];
 
 /**
- * Strip lines that *teach* the C2 rule by quoting the banned phrases as
- * bad examples — those should not trip the regex. A teaching span starts
- * on a line containing a "BAD" or "**BAD**" marker (with optional
- * descriptor in parens) and continues until the first blank line, so
- * wrapped continuation lines are also dropped.
+ * Drop teaching spans where prompts intentionally quote banned phrases.
+ * A span starts at any line that contains a BAD marker
+ * (`BAD`, `**BAD**`, or `BAD (descriptor):`) and runs until the next blank
+ * line so wrapped-quote continuations are also stripped. No fence handling
+ * — a single BAD marker controls one paragraph.
  */
 function stripTeachingLines(content: string): string {
 	const lines = content.split("\n");
@@ -86,9 +94,13 @@ describe("agent prompts", () => {
 		expect(files.sort()).toEqual(["debug.md", "review.md", "router.md"]);
 	});
 
-	test.each(files)("%s — has an Input + persona / process section", (file) => {
+	test.each(files)("%s — has Input + Persona-or-Process structure", (file) => {
 		const content = readFileSync(join(AGENTS_DIR, file), "utf-8");
 		expect(content).toMatch(/## Input/);
+		// Every agent prompt must explain *who* the model is or *how* it
+		// answers. Persona, Process, or Output structure are the three
+		// patterns we ship; at least one must be present.
+		expect(content).toMatch(/## (?:Persona|Process|Output)/);
 	});
 
 	test.each(

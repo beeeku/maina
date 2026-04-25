@@ -8,8 +8,11 @@
 > implemented. Each task traces to a journey from the spec and to a module
 > from the plan; if it doesn't trace, the task isn't justified yet.
 >
-> Mark tasks `[x]` as you complete them. The verifier checks this file
-> before allowing `maina pr` — incomplete checkboxes block the receipt.
+> Mark tasks `[x]` as you complete them. Reviewers (and future
+> contributors reading the receipt walkthrough) lean on the checkbox
+> state to gauge completeness; gating `maina pr` on full task
+> completion is a follow-up automation, not a current enforcement
+> guarantee.
 
 ## TDD discipline
 
@@ -68,5 +71,6 @@ it as a tasks-vs-implementation drift.
 
 > When every task in Phases 1–3 is `[x]` and every OB- task either
 > completes or is explicitly deferred, the feature is `maina pr`-ready.
-> The receipt walkthrough enumerates remaining `[ ]` tasks; a non-empty
-> list trips the slop guard and forces a review pass before merge.
+> Receipt reviewers can scan the checkbox state to assess completeness.
+> Automated checkbox-gating in the `maina pr` flow is a follow-up; for
+> now this section is the social-contract scoreboard, not a hard gate.

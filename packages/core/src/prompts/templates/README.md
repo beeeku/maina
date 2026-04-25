@@ -1,21 +1,32 @@
 # Maina prompt templates
 
-These markdown templates ship inside `@mainahq/core` and are the
-default scaffolding `maina plan`, `maina spec`, and `maina design`
-generate when a feature directory is created.
+These markdown templates ship inside `@mainahq/core` as **reference
+scaffolding** for the spec → plan → tasks workflow. The current
+feature-scaffolding code (`packages/core/src/features/numbering.ts`,
+etc.) writes feature directories from inlined `SPEC_TEMPLATE` /
+`PLAN_TEMPLATE` / `TASKS_TEMPLATE` constants; rewiring those paths to
+read from this directory is a follow-up, tracked under prompt-engine
+unification.
 
-**Overriding per repo:** today the prompt engine reads user overrides
-from `.maina/prompts/<task>.md` (flat). Per-template repo-level
-overrides (e.g. a custom `.maina/templates/spec-template.md`) is a
-follow-up — the loader currently uses the flat task-keyed path. Drop a
-`.maina/prompts/spec.md` to override the *spec* prompt; the templates
-in this directory are the rendered scaffolding the prompt produces.
+Until that lands, this directory is:
 
-| File | Owner step | Purpose |
+1. The **shape of truth** — the canonical Maina template that other
+   tooling (constitution checks, future scaffolders) can grep against.
+2. A **drop-in for repos that want to extend it** — copy a file into
+   `.maina/templates/` to customise; the planned scaffolder reads
+   that location first.
+3. The **document that defines the discipline** — spec/plan/tasks
+   separation, NEEDS-CLARIFICATION markers, copy discipline.
+
+**Today's override surface:** the prompt engine reads user overrides
+from `.maina/prompts/<task>.md` (flat). Drop a `.maina/prompts/spec.md`
+to override the *spec* prompt's rendered output.
+
+| File | Drives | Purpose |
 |---|---|---|
-| `spec-template.md` | `maina spec` | WHAT a feature must do |
-| `plan-template.md` | `maina plan` | HOW it gets built |
-| `tasks-template.md` | `maina spec --tasks` | WHEN each step lands |
+| `spec-template.md` | `maina spec` (planned wiring) | WHAT a feature must do |
+| `plan-template.md` | `maina plan` (planned wiring) | HOW it gets built |
+| `tasks-template.md` | `maina plan` task scaffolding (planned wiring) | WHEN each step lands |
 
 The templates are Maina-original. They follow the
 *spec → plan → tasks* progression because that's the discipline the
