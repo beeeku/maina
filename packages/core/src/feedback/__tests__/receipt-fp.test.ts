@@ -175,12 +175,13 @@ describe("queryReceiptFps", () => {
 		expect(result.data).toHaveLength(2);
 	});
 
-	test("rejects malformed constitutionHash", () => {
+	test("rejects malformed constitutionHash with invalid-hash code", () => {
 		const result = queryReceiptFps({
 			constitutionHash: "garbage",
 			mainaDir,
 		});
 		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.code).toBe("invalid-hash");
 	});
 });
 
