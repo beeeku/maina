@@ -13,12 +13,15 @@ Write **exactly three sentences** that describe:
 
 ## Copy discipline (rule C2 — non-negotiable)
 
-Use **affirmative verification framing**. Never describe absence:
+Use **affirmative verification framing**. Vague absence is banned; specific-check absence is fine.
 
-- BAD: "0 findings", "no issues found", "no errors", "no security concerns", "no problems detected"
-- GOOD: "passed 13 of 13 policy checks", "no secrets, no high-CVE deps, no risky AST patterns on diff", "all tests held"
+- **BAD (vague absence):** "0 findings", "no issues found", "no errors", "no security concerns", "no problems detected"
+- **GOOD (specific checks):**
+  - "passed 13 of 13 policy checks"
+  - "no secrets, no high-CVE deps, no risky AST patterns on diff" *(specific items, allowed)*
+  - "all tests held"
 
-If you find yourself writing a "no X" sentence, rewrite it as a "what specifically was checked" sentence.
+The rule of thumb: if you write "no X", X must name a specific check (secrets, CVEs, AST patterns) — never a generic class of things ("issues", "errors", "problems").
 
 ## Output format
 

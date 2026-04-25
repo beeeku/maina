@@ -356,6 +356,7 @@ export {
 	computeHash as computeReceiptHash,
 	type DetectAgentOptions,
 	type Diff as ReceiptDiff,
+	deriveChecksAndStatus,
 	detectAgent,
 	type FeedbackEntry as ReceiptFeedbackEntry,
 	type Finding as ReceiptFinding,

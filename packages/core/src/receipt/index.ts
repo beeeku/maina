@@ -8,6 +8,7 @@ export {
 	type BuildReceiptInput,
 	type BuildReceiptResult,
 	buildReceipt,
+	deriveChecksAndStatus,
 } from "./build";
 export { canonicalize } from "./canonical";
 export { renderReceiptHtml } from "./render";

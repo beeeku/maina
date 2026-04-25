@@ -65,7 +65,11 @@ describe("baselineWalkthrough", () => {
 
 	test("handles zero-check input without crashing", () => {
 		const text = baselineWalkthrough(input({ checks: [] }));
-		expect(text).toContain("No checks ran");
+		expect(text).toContain("empty check set");
+		// C2 — never use vague absence framing in the baseline
+		expect(text).not.toMatch(
+			/\b(0\s+findings?|no\s+issues?\s+found|no\s+errors?)\b/i,
+		);
 	});
 });
 

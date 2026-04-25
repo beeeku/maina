@@ -41,8 +41,16 @@ export interface WalkthroughResult {
 	source: "ai" | "baseline";
 }
 
+/** Banned C2 framings — vague absence ("0 findings", "no errors", "no
+ * security concerns"). Specific-check absence like "no secrets, no high-CVE
+ * deps, no risky AST patterns on diff" is *allowed* per C2 — but the regex
+ * only flags generic forms, so specific lists pass.
+ *
+ * Covers: "0 findings", "0 finding(s)", "no issues found", "no errors",
+ * "no security findings", "no security concerns", "no problems detected",
+ * "no findings", and all plural/punctuated variants. */
 const BANNED_C2_PATTERN =
-	/\b(?:0\s+(?:findings?|issues?|problems?|errors?)|no\s+(?:issues?|errors?|problems?)\s+found)\b/i;
+	/\b(?:0\s+(?:findings?|issues?|problems?|errors?)(?:\(s\))?|no\s+(?:issues?|errors?|problems?|findings?|security\s+(?:findings?|concerns?|issues?))(?:\s+(?:found|detected))?)\b/i;
 
 export async function generateWalkthrough(
 	input: WalkthroughInput,
@@ -51,12 +59,19 @@ export async function generateWalkthrough(
 	const baseline = baselineWalkthrough(input);
 	const ai = deps.tryAI ?? tryAIGenerate;
 
-	const result = await ai(
-		"walkthrough",
-		input.mainaDir ?? ".maina",
-		walkthroughVariables(input),
-		walkthroughUserPrompt(input),
-	);
+	let result: Awaited<ReturnType<typeof tryAIGenerate>>;
+	try {
+		result = await ai(
+			"walkthrough",
+			input.mainaDir ?? ".maina",
+			walkthroughVariables(input),
+			walkthroughUserPrompt(input),
+		);
+	} catch {
+		// AI call rejected — degrade gracefully to baseline rather than failing
+		// the receipt path. Walkthrough is presentational, not load-bearing.
+		return { text: baseline, source: "baseline" };
+	}
 
 	if (!result.text || !result.fromAI) {
 		// Host delegation or no API key — return baseline. The host can fill the
@@ -81,7 +96,7 @@ export function baselineWalkthrough(input: WalkthroughInput): string {
 	const change = `${input.prTitle.trim()}: +${input.diff.additions} / −${input.diff.deletions} across ${input.diff.files} file(s).`;
 	const verified =
 		total === 0
-			? "No checks ran in this verification."
+			? "Maina recorded an empty check set for this verification."
 			: `Maina ran ${total} check(s) — ${toolList}.`;
 	return `${change} ${verified} ${summary}`;
 }
@@ -125,9 +140,7 @@ function walkthroughVariables(input: WalkthroughInput): Record<string, string> {
 		diffStats: `+${input.diff.additions} / −${input.diff.deletions} across ${input.diff.files} file(s)`,
 		status: input.status,
 		retries: String(input.retries),
-		checkSummary: input.checks
-			.map((c) => `${c.name} (${c.status}, ${c.findingsCount} finding(s))`)
-			.join("; "),
+		checkSummary: summariseChecks(input.checks),
 	};
 }
 
@@ -137,8 +150,28 @@ function walkthroughUserPrompt(input: WalkthroughInput): string {
 PR: ${input.prTitle}
 Diff: +${input.diff.additions} / −${input.diff.deletions} across ${input.diff.files} file(s)
 Status: ${input.status} (retries: ${input.retries})
-Checks:
-${input.checks.map((c) => `  - ${c.name} (${c.tool}): ${c.status} — ${c.findingsCount} finding(s)`).join("\n")}`;
+Checks: ${summariseChecks(input.checks)}`;
+}
+
+/** Aggregate check states into a C2-safe summary string for the model.
+ * Avoids per-check "0 finding(s)" noise that nudged the model toward
+ * banned framings — the model only sees the names + statuses. */
+function summariseChecks(checks: WalkthroughInput["checks"]): string {
+	if (checks.length === 0) return "(no checks recorded)";
+	const passed = checks.filter((c) => c.status === "passed").map((c) => c.tool);
+	const failed = checks.filter((c) => c.status === "failed");
+	const skipped = checks
+		.filter((c) => c.status === "skipped")
+		.map((c) => c.tool);
+	const parts: string[] = [];
+	if (passed.length) parts.push(`passed: ${passed.join(", ")}`);
+	if (failed.length) {
+		parts.push(
+			`failed: ${failed.map((c) => `${c.tool}(${c.findingsCount})`).join(", ")}`,
+		);
+	}
+	if (skipped.length) parts.push(`skipped: ${skipped.join(", ")}`);
+	return parts.join("; ");
 }
 
 function validateAiOutput(
@@ -156,7 +189,7 @@ function validateAiOutput(
 	}
 
 	const sentenceCount = countSentences(trimmed);
-	if (sentenceCount < 2 || sentenceCount > 4) {
+	if (sentenceCount !== 3) {
 		return { ok: false, reason: "wrong-sentence-count" };
 	}
 
